@@ -7,12 +7,10 @@
   <reference>
     <string_value lines="1">generate_reactions</string_value>
   </reference>
+  <phase name="Jadeite_slb_ph"/>
   <phase name="Quartz_slb_ph"/>
   <phase name="Albite_slb_ph"/>
-  <phase name="NaMajorite_slb_ph"/>
-  <phase name="Orthopyroxene_slb_ph"/>
-  <phase name="Grossular_slb_ph"/>
-  <phase name="Jadeite_slb_ph"/>
+  <phase name="Garnet_slb_ph"/>
   <reaction_rate name="R">
     <variable name="T">
       <rank name="Scalar"/>
@@ -95,39 +93,14 @@
       </rank>
     </parameter>
   </global_parameters>
-  <reaction name="NaMaOrth_JadeGrosQuar">
-    <reactant name="NaMa_NaMa" phase="NaMajorite_slb_ph" endmember="NaMajorite_slb_em"/>
-    <reactant name="Orth_Orth" phase="Orthopyroxene_slb_ph" endmember="OrthoDiopside_slb_em"/>
-    <product name="Jade_Jade" phase="Jadeite_slb_ph" endmember="Jadeite_slb_em"/>
-    <product name="Gros_Gros" phase="Grossular_slb_ph" endmember="Grossular_slb_em"/>
-    <product name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
-    <expression>
-      <string_value type="code" language="python" lines="20">NaMaOrth_JadeGrosQuar = (
-Piecewise((exp(-T0/T)*A[0, 0]*Phi[2, 0]*Phi[3, 0]/(R*T), A[0, 0] &gt;=
-0), (exp(-T0/T)*A[0, 0]*Phi[0, 0]*Phi[4, 0]*Phi[5, 0]/(R*T), True))
-)</string_value>
-    </expression>
-  </reaction>
-  <reaction name="NaMaOrth_JadeAlbi">
-    <reactant name="NaMa_NaMa" phase="NaMajorite_slb_ph" endmember="NaMajorite_slb_em"/>
-    <reactant name="Orth_Orth" phase="Orthopyroxene_slb_ph" endmember="OrthoDiopside_slb_em"/>
-    <product name="Jade_Jade" phase="Jadeite_slb_ph" endmember="Jadeite_slb_em"/>
-    <product name="Albi_Albi" phase="Albite_slb_ph" endmember="Albite_slb_em"/>
-    <expression>
-      <string_value type="code" language="python" lines="20">NaMaOrth_JadeAlbi = (
-Piecewise((exp(-T0/T)*A[1, 0]*Phi[2, 0]*Phi[3, 0]/(R*T), A[1, 0] &gt;=
-0), (exp(-T0/T)*A[1, 0]*Phi[1, 0]*Phi[5, 0]/(R*T), True))
-)</string_value>
-    </expression>
-  </reaction>
   <reaction name="JadeQuar_Albi">
     <reactant name="Jade_Jade" phase="Jadeite_slb_ph" endmember="Jadeite_slb_em"/>
     <reactant name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
     <product name="Albi_Albi" phase="Albite_slb_ph" endmember="Albite_slb_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">JadeQuar_Albi = (
-Piecewise((exp(-T0/T)*A[2, 0]*Phi[0, 0]*Phi[5, 0]/(R*T), A[2, 0] &gt;=
-0), (exp(-T0/T)*A[2, 0]*Phi[1, 0]/(R*T), True))
+Piecewise((exp(-T0/T)*A[0, 0]*Phi[0, 0]*Phi[1, 0]/(R*T), A[0, 0] &gt;=
+0), (exp(-T0/T)*A[0, 0]*Phi[2, 0]/(R*T), True))
 )</string_value>
     </expression>
   </reaction>

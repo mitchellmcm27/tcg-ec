@@ -20,26 +20,20 @@ reference = "generate_reactions"
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 def generate_reactions(outdir):
-    phases = [
-        'Quartz', #Quartz
-        'Feldspar', # Anorthite, Albite
-        'Garnet', # Pyrope, Almandine, Grossular, MgMajorite, NaMajorite
-        'Clinopyroxene', # Diopside, Hedenbergite, Clinoenstatite, CaTschermaks, Jadeite
-        'Orthopyroxene', # Enstatite, Ferrosilite, MgTschermaks, OrthoDiopside
-        'Kyanite', # Kyanite
-        'CaPerovskite', # CaPerovskite
-    ] # water?
+    #phases = [
+    #    'Quartz', #Quartz
+    #    'Feldspar', # Anorthite, Albite
+    #    'Garnet', # Pyrope, Almandine, Grossular, MgMajorite, NaMajorite
+    #    'Clinopyroxene', # Diopside, Hedenbergite, Clinoenstatite, CaTschermaks, Jadeite
+    #    'Orthopyroxene', # Enstatite, Ferrosilite, MgTschermaks, OrthoDiopside
+    #    'Kyanite', # Kyanite
+    #    'CaPerovskite', # CaPerovskite
+    #] # water?
+
+    phases = ['Jadeite', 'Quartz', 'Albite', 'Garnet']
 
     reactions = []
 
-    reactions.append((
-        [['NaMajorite', 'NaMajorite'], ['Orthopyroxene', 'OrthoDiopside']],
-        [['Jadeite', 'Jadeite'], ['Grossular', 'Grossular'], ['Quartz', 'Quartz']]
-    ))
-    reactions.append((
-        [['NaMajorite', 'NaMajorite'], ['Orthopyroxene', 'OrthoDiopside']],
-        [['Jadeite', 'Jadeite'], ['Albite','Albite'],]
-    ))
     reactions.append((
         [['Jadeite', 'Jadeite'], ['Quartz', 'Quartz']],
         [['Albite', 'Albite']]
