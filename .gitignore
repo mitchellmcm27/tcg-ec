@@ -2,6 +2,7 @@
 
 *.pickle
 **/*.build/*
+**/install/*
 
 ### CMake ###
 CMakeLists.txt.user
