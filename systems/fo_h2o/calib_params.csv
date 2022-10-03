@@ -1,0 +1,7 @@
+name,type,params
+Olivine,phase,"['T_r', 'P_r']"
+Forsterite_berman,endmember,"['H_TrPr', 'S_TrPr' ]"
+Brucite,phase,"['T_r', 'P_r']"
+Brucite_berman,endmember,"['H_TrPr', 'S_TrPr']"
+Chrysotile,phase,"['T_r', 'P_r']"
+Chrysotile_berman,endmember,"['H_TrPr', 'S_TrPr']"

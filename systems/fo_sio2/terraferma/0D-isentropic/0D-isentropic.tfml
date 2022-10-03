@@ -1,0 +1,1789 @@
+<?xml version='1.0' encoding='utf-8'?>
+<terraferma_options>
+  <geometry>
+    <dimension>
+      <integer_value rank="0">1</integer_value>
+    </dimension>
+    <mesh name="Mesh">
+      <source name="UnitInterval">
+        <number_cells>
+          <integer_value rank="0">1</integer_value>
+        </number_cells>
+        <cell>
+          <string_value lines="1">interval</string_value>
+        </cell>
+      </source>
+    </mesh>
+  </geometry>
+  <io>
+    <output_base_name>
+      <string_value lines="1">ode-isentropic</string_value>
+    </output_base_name>
+    <visualization>
+      <element name="P1">
+        <family>
+          <string_value lines="1">CG</string_value>
+        </family>
+        <degree>
+          <integer_value rank="0">1</integer_value>
+        </degree>
+      </element>
+    </visualization>
+    <dump_periods>
+      <visualization_period_in_timesteps>
+        <integer_value rank="0">10</integer_value>
+      </visualization_period_in_timesteps>
+    </dump_periods>
+    <detectors/>
+  </io>
+  <timestepping>
+    <current_time>
+      <real_value rank="0">0.</real_value>
+    </current_time>
+    <finish_time>
+      <real_value rank="0">1.</real_value>
+    </finish_time>
+    <timestep>
+      <coefficient name="Timestep">
+        <ufl_symbol name="global">
+          <string_value lines="1">dt</string_value>
+        </ufl_symbol>
+        <type name="Constant">
+          <rank name="Scalar" rank="0">
+            <value name="WholeMesh">
+              <constant>
+                <real_value rank="0">.001</real_value>
+              </constant>
+            </value>
+          </rank>
+        </type>
+      </coefficient>
+    </timestep>
+  </timestepping>
+  <global_parameters>
+    <ufl>
+      <string_value type="code" language="python3" lines="20"># some convenience ufl for identifying phases and melt components
+# phase indices
+iLq = 0
+iOl = 1
+iOpx = 2
+ipQz = 3
+
+# liquid endmember indices
+kSi = 0
+kFo = 1; 
+
+# convenience ufl functions
+# volume and phase fraction
+V_i= inner(M_i, irho_i)
+phi_i = dot(diag(M_i), irho_i)/V_i
+V_n= inner(M_n, irho_n)
+phi_n = dot(diag(M_n), irho_n)/V_n</string_value>
+    </ufl>
+    <dolfin/>
+    <cpp>
+      <libraries>
+        <string_value lines="1">fo_sio2_poly_linear_rxns</string_value>
+      </libraries>
+    </cpp>
+  </global_parameters>
+  <system name="IsentropicDecompression">
+    <mesh name="Mesh"/>
+    <ufl_symbol name="global">
+      <string_value lines="1">us</string_value>
+    </ufl_symbol>
+    <field name="Mass">
+      <ufl_symbol name="global">
+        <string_value lines="1">M</string_value>
+      </ufl_symbol>
+      <type name="Function">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">4</integer_value>
+            </size>
+          </element>
+          <initial_condition name="WholeMesh" type="initial_condition">
+            <constant name="arbitrary">
+              <real_value rank="1" shape="4">212.705 91.725 0. 0.</real_value>
+            </constant>
+          </initial_condition>
+        </rank>
+      </type>
+      <diagnostics>
+        <include_in_statistics/>
+      </diagnostics>
+      <comment>vector of masses for each phase
+[ Lq, Ol, Opx, Cpx, Sp, Fsp ]</comment>
+    </field>
+    <field name="cLq">
+      <ufl_symbol name="global">
+        <string_value lines="1">cLq</string_value>
+      </ufl_symbol>
+      <type name="Function">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">2</integer_value>
+            </size>
+          </element>
+          <initial_condition name="WholeMesh" type="initial_condition">
+            <constant name="arbitrary">
+              <real_value rank="1" shape="2">0.19685024 0.80314976</real_value>
+            </constant>
+          </initial_condition>
+        </rank>
+      </type>
+      <diagnostics>
+        <include_in_statistics/>
+      </diagnostics>
+      <comment>composition of 4 component liquid
+Fo, Si, Wo, Cor</comment>
+    </field>
+    <field name="Temperature">
+      <ufl_symbol name="global">
+        <string_value lines="1">T</string_value>
+      </ufl_symbol>
+      <type name="Function">
+        <rank name="Scalar" rank="0">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+          </element>
+          <initial_condition name="WholeMesh" type="initial_condition">
+            <constant>
+              <real_value rank="0">2050.</real_value>
+            </constant>
+          </initial_condition>
+        </rank>
+      </type>
+      <diagnostics>
+        <include_in_statistics/>
+      </diagnostics>
+    </field>
+    <field name="Phi">
+      <ufl_symbol name="global">
+        <string_value lines="1">Phi</string_value>
+      </ufl_symbol>
+      <type name="Function">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">4</integer_value>
+            </size>
+          </element>
+          <initial_condition name="WholeMesh" type="initial_condition">
+            <constant name="arbitrary">
+              <real_value rank="1" shape="4">0.7 0.3 0. 0.</real_value>
+            </constant>
+          </initial_condition>
+        </rank>
+      </type>
+      <diagnostics>
+        <include_in_statistics/>
+      </diagnostics>
+      <comment>Volume Franction</comment>
+    </field>
+    <coefficient name="Gamma0">
+      <ufl_symbol name="global">
+        <string_value lines="1">G0</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value name="WholeMesh" type="value">
+            <constant>
+              <real_value rank="0">26029.050163452288</real_value>
+              <comment>bars</comment>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>scaled rate constant for melting rates</comment>
+    </coefficient>
+    <coefficient name="Gamma">
+      <ufl_symbol name="global">
+        <string_value lines="1">G</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">4</integer_value>
+            </size>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="1">
+              <include>
+                <string_value type="code" language="cpp" lines="20">#include "reactions.h"
+#include &lt;numeric&gt;</string_value>
+              </include>
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr T_ptr, P_ptr;
+GenericFunction_ptr M_ptr, cLq_ptr;
+GenericFunction_ptr Phi_ptr;
+GenericFunction_ptr G0_ptr, ceps_ptr;
+
+// setup up reactions
+fo_sio2_poly_linear_rxns rxn; 
+
+// set up constant indices for phases and liquid endmembers
+const unsigned  iLq = 0, iOl = 1, iOpx =2, iPqz=3;
+const unsigned kSi = 0, kFo = 1;
+
+//set up regularization constant
+double ceps;
+
+// temporary vectors for compositions 
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; C;
+// vectors for reaction rates and phase fractions
+mutable std::vector&lt;double&gt; _Gamma;
+mutable std::vector&lt;double&gt; _Phi;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">// Thermodynamic coordinates
+T_ptr = system()-&gt;fetch_field("Temperature")-&gt;genericfunction_ptr(time());
+cLq_ptr = system()-&gt;fetch_field("cLq")-&gt;genericfunction_ptr(time());
+
+// Phase Masses and fractions
+M_ptr = system()-&gt;fetch_field("Mass")-&gt;genericfunction_ptr(time());
+Phi_ptr = system()-&gt;fetch_field("Phi")-&gt;genericfunction_ptr(time());
+
+//pressure coefficient
+P_ptr = system()-&gt;fetch_coeff("Pressure")-&gt;genericfunction_ptr(time());
+
+//  Constants, cast to double
+G0_ptr = system()-&gt;fetch_coeff("Gamma0")-&gt;genericfunction_ptr(time());
+double Gamma0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(G0_ptr));
+
+ceps_ptr = system()-&gt;fetch_coeff("ceps")-&gt;genericfunction_ptr(time());
+ceps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(ceps_ptr));
+
+// list the phases and endmembers in these reactions
+rxn.report();
+
+// set the rxn parameters
+rxn.set_parameter("r0_melt",Gamma0);
+rxn.set_parameter("r0_xtal",Gamma0);
+rxn.list_parameters();
+
+// initialize concentration matrices
+C = rxn.zero_C();
+//initialize the solid concentrations
+for (int i = 1; i &lt; C.size(); i++)
+{
+  C[i] = {1.};
+}
+// initialize Phase fraction  and reaction rate vectors
+int N = C.size();
+_Phi.resize(N,0.);
+_Gamma.resize(N,0.);</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">dolfin::Array&lt;double&gt; t_values(1);
+dolfin::Array&lt;double&gt; c_values(4);
+dolfin::Array&lt;double&gt; phi_values(6);
+
+// Evaluate Thermodynamic fields
+
+// Thermo-dynamics "coordinates x= [ P,T,C]"
+// Get T,P,C
+T_ptr-&gt;eval(t_values, x, cell);
+double T = t_values[0];
+P_ptr-&gt;eval(t_values, x, cell);
+double P = t_values[0];
+cLq_ptr-&gt;eval(c_values, x, cell);
+
+//pack composition array (and regularize if c &lt; ceps)
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] = std::max(c_values[k], ceps);
+}
+double Ctot = std::accumulate(C[iLq].begin(), C[iLq].end(), 0.);
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] /= Ctot;
+}
+
+// get phase fractions
+Phi_ptr-&gt;eval(phi_values, x, cell);
+for (int i=0; i &lt; _Phi.size(); i++)
+{
+  _Phi[i] = phi_values[i];
+}
+
+//Evaluate all component reaction rates
+rxn.Gamma_i(T,P,C,_Phi,_Gamma);
+
+
+for (int i = 0; i &lt; _Phi.size(); i++)
+{
+  values[i] = _Gamma[i];
+}
+//std::cout &lt;&lt; values.str(true) &lt;&lt; std::endl;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>vector of  reaction rates [ Gamma_i, Gamma_ik[iLq])</comment>
+    </coefficient>
+    <coefficient name="Gamma_Lq">
+      <ufl_symbol name="global">
+        <string_value lines="1">GLq</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">2</integer_value>
+            </size>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="1">
+              <include>
+                <string_value type="code" language="cpp" lines="20">#include "reactions.h"
+#include &lt;numeric&gt;</string_value>
+              </include>
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr T_ptr, P_ptr;
+GenericFunction_ptr M_ptr, cLq_ptr;
+GenericFunction_ptr Phi_ptr;
+GenericFunction_ptr G0_ptr, ceps_ptr;
+
+// setup up reactions
+fo_sio2_poly_linear_rxns rxn; 
+
+// set up constant indices for phases and liquid endmembers
+const unsigned  iLq = 0, iOl = 1, iOpx =2, iPqz=3;
+const unsigned kSi = 0, kFo = 1;
+
+//set up regularization constant
+double ceps;
+
+// temporary vectors for compositions 
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; C;
+// vectors for reaction rates and phase fractions
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; _Gamma_ik;
+mutable std::vector&lt;double&gt; _Phi;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">// Thermodynamic coordinates
+T_ptr = system()-&gt;fetch_field("Temperature")-&gt;genericfunction_ptr(time());
+cLq_ptr = system()-&gt;fetch_field("cLq")-&gt;genericfunction_ptr(time());
+
+// Phase Masses and fractions
+M_ptr = system()-&gt;fetch_field("Mass")-&gt;genericfunction_ptr(time());
+Phi_ptr = system()-&gt;fetch_field("Phi")-&gt;genericfunction_ptr(time());
+
+//pressure coefficient
+P_ptr = system()-&gt;fetch_coeff("Pressure")-&gt;genericfunction_ptr(time());
+
+//  Constants, cast to double
+G0_ptr = system()-&gt;fetch_coeff("Gamma0")-&gt;genericfunction_ptr(time());
+double Gamma0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(G0_ptr));
+
+ceps_ptr = system()-&gt;fetch_coeff("ceps")-&gt;genericfunction_ptr(time());
+ceps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(ceps_ptr));
+
+// list the phases and endmembers in these reactions
+rxn.report();
+
+// set the rxn parameters
+rxn.set_parameter("r0_melt",Gamma0);
+rxn.set_parameter("r0_xtal",Gamma0);
+rxn.list_parameters();
+
+// initialize concentration matrices
+C = rxn.zero_C();
+//initialize the solid concentrations
+for (int i = 1; i &lt; C.size(); i++)
+{
+  C[i] = {1.};
+}
+// initialize Phase fraction  and reaction rate vectors
+int N = C.size();
+_Phi.resize(N,0.);
+_Gamma_ik = rxn.zero_C();</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">dolfin::Array&lt;double&gt; t_values(1);
+dolfin::Array&lt;double&gt; c_values(4);
+dolfin::Array&lt;double&gt; phi_values(6);
+
+// Evaluate Thermodynamic fields
+
+// Thermo-dynamics "coordinates x= [ P,T,C]"
+// Get T,P,C
+T_ptr-&gt;eval(t_values, x, cell);
+double T = t_values[0];
+P_ptr-&gt;eval(t_values, x, cell);
+double P = t_values[0];
+cLq_ptr-&gt;eval(c_values, x, cell);
+
+//pack composition array (and regularize if c &lt; ceps)
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] = std::max(c_values[k], ceps);
+}
+double Ctot = std::accumulate(C[iLq].begin(), C[iLq].end(), 0.);
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] /= Ctot;
+}
+
+// get phase fractions
+Phi_ptr-&gt;eval(phi_values, x, cell);
+for (int i=0; i &lt; _Phi.size(); i++)
+{
+  _Phi[i] = phi_values[i];
+}
+
+//Evaluate all component reaction rates
+rxn.Gamma_ik(T,P,C,_Phi,_Gamma_ik);
+
+
+for (int k = 0; k &lt; 2; k++)
+{
+  values[k] = _Gamma_ik[iLq][k];
+}
+//std::cout &lt;&lt; values.str(true) &lt;&lt; std::endl;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>vector of  reaction rates [ Gamma_i, Gamma_ik[iLq])</comment>
+    </coefficient>
+    <coefficient name="dGamma_dT">
+      <ufl_symbol name="global">
+        <string_value lines="1">dG_dT</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">4</integer_value>
+            </size>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="1">
+              <include>
+                <string_value type="code" language="cpp" lines="20">#include "reactions.h"
+#include &lt;numeric&gt;</string_value>
+              </include>
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr T_ptr, P_ptr;
+GenericFunction_ptr M_ptr, cLq_ptr;
+GenericFunction_ptr Phi_ptr;
+GenericFunction_ptr G0_ptr, ceps_ptr;
+
+// setup up reactions
+fo_sio2_poly_linear_rxns rxn; 
+
+// set up constant indices for phases and liquid endmembers
+const unsigned  iLq = 0, iOl = 1, iOpx =2, iPqz=3;
+const unsigned kSi = 0, kFo = 1;
+
+//set up regularization constant
+double ceps;
+
+// temporary vectors for compositions 
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; C;
+// vectors for reaction rates and phase fractions
+mutable std::vector&lt;double&gt; _dGamma;
+mutable std::vector&lt;double&gt; _Phi;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">// Thermodynamic coordinates
+T_ptr = system()-&gt;fetch_field("Temperature")-&gt;genericfunction_ptr(time());
+cLq_ptr = system()-&gt;fetch_field("cLq")-&gt;genericfunction_ptr(time());
+
+// Phase Masses and fractions
+M_ptr = system()-&gt;fetch_field("Mass")-&gt;genericfunction_ptr(time());
+Phi_ptr = system()-&gt;fetch_field("Phi")-&gt;genericfunction_ptr(time());
+
+//pressure coefficient
+P_ptr = system()-&gt;fetch_coeff("Pressure")-&gt;genericfunction_ptr(time());
+
+//  Constants, cast to double
+G0_ptr = system()-&gt;fetch_coeff("Gamma0")-&gt;genericfunction_ptr(time());
+double Gamma0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(G0_ptr));
+
+ceps_ptr = system()-&gt;fetch_coeff("ceps")-&gt;genericfunction_ptr(time());
+ceps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(ceps_ptr));
+
+// list the phases and endmembers in these reactions
+rxn.report();
+
+// set the rxn parameters
+rxn.set_parameter("r0_melt",Gamma0);
+rxn.set_parameter("r0_xtal",Gamma0);
+rxn.list_parameters();
+
+// initialize concentration matrices
+C = rxn.zero_C();
+//initialize the solid concentrations
+for (int i = 1; i &lt; C.size(); i++)
+{
+  C[i] = {1.};
+}
+// initialize Phase fraction  and reaction rate vectors
+int N = C.size();
+_Phi.resize(N,0.);
+_dGamma.resize(N,0.);</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">dolfin::Array&lt;double&gt; t_values(1);
+dolfin::Array&lt;double&gt; c_values(4);
+dolfin::Array&lt;double&gt; phi_values(6);
+
+// Evaluate Thermodynamic fields
+
+// Thermo-dynamics "coordinates x= [ P,T,C]"
+// Get T,P,C
+T_ptr-&gt;eval(t_values, x, cell);
+double T = t_values[0];
+P_ptr-&gt;eval(t_values, x, cell);
+double P = t_values[0];
+cLq_ptr-&gt;eval(c_values, x, cell);
+
+//pack composition array (and regularize if c &lt; ceps)
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] = std::max(c_values[k], ceps);
+}
+double Ctot = std::accumulate(C[iLq].begin(), C[iLq].end(), 0.);
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] /= Ctot;
+}
+
+// get phase fractions
+Phi_ptr-&gt;eval(phi_values, x, cell);
+for (int i=0; i &lt; _Phi.size(); i++)
+{
+  _Phi[i] = phi_values[i];
+}
+
+//Evaluate all component reaction rates
+rxn.dGamma_i_dT(T,P,C,_Phi,_dGamma);
+
+
+for (int i = 0; i &lt; _Phi.size(); i++)
+{
+  values[i] = _dGamma[i];
+}
+//std::cout &lt;&lt; values.str(true) &lt;&lt; std::endl;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>vector of  reaction rates [ Gamma_i, Gamma_ik[iLq])</comment>
+    </coefficient>
+    <coefficient name="dGamma_Lq_dT">
+      <ufl_symbol name="global">
+        <string_value lines="1">dGLq_dT</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">2</integer_value>
+            </size>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="1">
+              <include>
+                <string_value type="code" language="cpp" lines="20">#include "reactions.h"
+#include &lt;numeric&gt;</string_value>
+              </include>
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr T_ptr, P_ptr;
+GenericFunction_ptr M_ptr, cLq_ptr;
+GenericFunction_ptr Phi_ptr;
+GenericFunction_ptr G0_ptr, ceps_ptr;
+
+// setup up reactions
+fo_sio2_poly_linear_rxns rxn; 
+
+// set up constant indices for phases and liquid endmembers
+const unsigned  iLq = 0, iOl = 1, iOpx =2, iPqz=3;
+const unsigned kSi = 0, kFo = 1;
+
+//set up regularization constant
+double ceps;
+
+// temporary vectors for compositions 
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; C;
+// vectors for reaction rates and phase fractions
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; _dGamma;
+mutable std::vector&lt;double&gt; _Phi;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">// Thermodynamic coordinates
+T_ptr = system()-&gt;fetch_field("Temperature")-&gt;genericfunction_ptr(time());
+cLq_ptr = system()-&gt;fetch_field("cLq")-&gt;genericfunction_ptr(time());
+
+// Phase Masses and fractions
+M_ptr = system()-&gt;fetch_field("Mass")-&gt;genericfunction_ptr(time());
+Phi_ptr = system()-&gt;fetch_field("Phi")-&gt;genericfunction_ptr(time());
+
+//pressure coefficient
+P_ptr = system()-&gt;fetch_coeff("Pressure")-&gt;genericfunction_ptr(time());
+
+//  Constants, cast to double
+G0_ptr = system()-&gt;fetch_coeff("Gamma0")-&gt;genericfunction_ptr(time());
+double Gamma0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(G0_ptr));
+
+ceps_ptr = system()-&gt;fetch_coeff("ceps")-&gt;genericfunction_ptr(time());
+ceps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(ceps_ptr));
+
+// list the phases and endmembers in these reactions
+rxn.report();
+
+// set the rxn parameters
+rxn.set_parameter("r0_melt",Gamma0);
+rxn.set_parameter("r0_xtal",Gamma0);
+rxn.list_parameters();
+
+// initialize concentration matrices
+C = rxn.zero_C();
+//initialize the solid concentrations
+for (int i = 1; i &lt; C.size(); i++)
+{
+  C[i] = {1.};
+}
+// initialize Phase fraction  and reaction rate vectors
+int N = C.size();
+_Phi.resize(N,0.);
+_dGamma = rxn.zero_C();</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">dolfin::Array&lt;double&gt; t_values(1);
+dolfin::Array&lt;double&gt; c_values(4);
+dolfin::Array&lt;double&gt; phi_values(6);
+
+// Evaluate Thermodynamic fields
+
+// Thermo-dynamics "coordinates x= [ P,T,C]"
+// Get T,P,C
+T_ptr-&gt;eval(t_values, x, cell);
+double T = t_values[0];
+P_ptr-&gt;eval(t_values, x, cell);
+double P = t_values[0];
+cLq_ptr-&gt;eval(c_values, x, cell);
+
+//pack composition array (and regularize if c &lt; ceps)
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] = std::max(c_values[k], ceps);
+}
+double Ctot = std::accumulate(C[iLq].begin(), C[iLq].end(), 0.);
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] /= Ctot;
+}
+
+// get phase fractions
+Phi_ptr-&gt;eval(phi_values, x, cell);
+for (int i=0; i &lt; _Phi.size(); i++)
+{
+  _Phi[i] = phi_values[i];
+}
+
+//Evaluate all component reaction rates
+rxn.dGamma_ik_dT(T,P,C,_Phi,_dGamma);
+
+
+for (int k = 0; k &lt; 2; k++)
+{
+  values[k] = _dGamma[iLq][k];
+}
+//std::cout &lt;&lt; values.str(true) &lt;&lt; std::endl;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>vector of  reaction rates [ Gamma_i, Gamma_ik[iLq])</comment>
+    </coefficient>
+    <coefficient name="dGamma_dC">
+      <ufl_symbol name="global">
+        <string_value lines="1">dG_dC</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Tensor" rank="2">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <shape>
+              <integer_value rank="1" dim1="2" shape="2">4 2</integer_value>
+            </shape>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="2">
+              <include>
+                <string_value type="code" language="cpp" lines="20">#include "reactions.h"
+#include &lt;numeric&gt;</string_value>
+              </include>
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr T_ptr, P_ptr;
+GenericFunction_ptr M_ptr, cLq_ptr;
+GenericFunction_ptr Phi_ptr;
+GenericFunction_ptr G0_ptr, ceps_ptr;
+
+// setup up reactions
+fo_sio2_poly_linear_rxns rxn; 
+
+// set up constant indices for phases and liquid endmembers
+const unsigned  iLq = 0, iOl = 1, iOpx =2, iPqz=3;
+const unsigned kSi = 0, kFo = 1;
+
+//set up regularization constant
+double ceps;
+
+// temporary vectors for compositions 
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; C;
+// vectors for reaction rates and phase fractions
+mutable std::vector&lt;std::vector&lt;std::vector&lt;double&gt; &gt; &gt; _dGamma;
+mutable std::vector&lt;double&gt; _Phi;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">// Thermodynamic coordinates
+T_ptr = system()-&gt;fetch_field("Temperature")-&gt;genericfunction_ptr(time());
+cLq_ptr = system()-&gt;fetch_field("cLq")-&gt;genericfunction_ptr(time());
+
+// Phase Masses and fractions
+M_ptr = system()-&gt;fetch_field("Mass")-&gt;genericfunction_ptr(time());
+Phi_ptr = system()-&gt;fetch_field("Phi")-&gt;genericfunction_ptr(time());
+
+//pressure coefficient
+P_ptr = system()-&gt;fetch_coeff("Pressure")-&gt;genericfunction_ptr(time());
+
+//  Constants, cast to double
+G0_ptr = system()-&gt;fetch_coeff("Gamma0")-&gt;genericfunction_ptr(time());
+double Gamma0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(G0_ptr));
+
+ceps_ptr = system()-&gt;fetch_coeff("ceps")-&gt;genericfunction_ptr(time());
+ceps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(ceps_ptr));
+
+// list the phases and endmembers in these reactions
+rxn.report();
+
+// set the rxn parameters
+rxn.set_parameter("r0_melt",Gamma0);
+rxn.set_parameter("r0_xtal",Gamma0);
+rxn.list_parameters();
+
+// initialize concentration matrices
+C = rxn.zero_C();
+//initialize the solid concentrations
+for (int i = 1; i &lt; C.size(); i++)
+{
+  C[i] = {1.};
+}
+// initialize Phase fraction  and reaction rate vectors
+int N = C.size();
+_Phi.resize(N,0.);
+_dGamma.resize(N,rxn.zero_C());</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">dolfin::Array&lt;double&gt; t_values(1);
+dolfin::Array&lt;double&gt; c_values(4);
+dolfin::Array&lt;double&gt; phi_values(6);
+
+// Evaluate Thermodynamic fields
+
+// Thermo-dynamics "coordinates x= [ P,T,C]"
+// Get T,P,C
+T_ptr-&gt;eval(t_values, x, cell);
+double T = t_values[0];
+P_ptr-&gt;eval(t_values, x, cell);
+double P = t_values[0];
+cLq_ptr-&gt;eval(c_values, x, cell);
+
+//pack composition array (and regularize if c &lt; ceps)
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] = std::max(c_values[k], ceps);
+}
+double Ctot = std::accumulate(C[iLq].begin(), C[iLq].end(), 0.);
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] /= Ctot;
+}
+
+// get phase fractions
+Phi_ptr-&gt;eval(phi_values, x, cell);
+for (int i=0; i &lt; _Phi.size(); i++)
+{
+  _Phi[i] = phi_values[i];
+}
+
+//Evaluate all component reaction rates
+rxn.dGamma_i_dC(T,P,C,_Phi,_dGamma);
+
+
+for (int i = 0; i &lt; _Phi.size(); i++)
+{
+  for (int k = 0; k &lt; 2; k++)
+  {
+    values[2*i + k] = _dGamma[i][iLq][k];
+  }
+}
+//std::cout &lt;&lt; values.str(true) &lt;&lt; std::endl;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>vector of  reaction rates [ Gamma_i, Gamma_ik[iLq])</comment>
+    </coefficient>
+    <coefficient name="dGamma_Lq_dC">
+      <ufl_symbol name="global">
+        <string_value lines="1">dGLq_dC</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Tensor" rank="2">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <shape>
+              <integer_value rank="1" dim1="2" shape="2">2 2</integer_value>
+            </shape>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="2">
+              <include>
+                <string_value type="code" language="cpp" lines="20">#include "reactions.h"
+#include &lt;numeric&gt;</string_value>
+              </include>
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr T_ptr, P_ptr;
+GenericFunction_ptr M_ptr, cLq_ptr;
+GenericFunction_ptr Phi_ptr;
+GenericFunction_ptr G0_ptr, ceps_ptr;
+
+// setup up reactions
+fo_sio2_poly_linear_rxns rxn; 
+
+// set up constant indices for phases and liquid endmembers
+const unsigned  iLq = 0, iOl = 1, iOpx =2, iPqz=3;
+const unsigned kSi = 0, kFo = 1;
+
+//set up regularization constant
+double ceps;
+
+// temporary vectors for compositions 
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; C;
+// vectors for reaction rates and phase fractions
+mutable std::vector&lt;std::vector&lt;double&gt; &gt;  _dGamma;
+mutable std::vector&lt;double&gt; _Phi;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">// Thermodynamic coordinates
+T_ptr = system()-&gt;fetch_field("Temperature")-&gt;genericfunction_ptr(time());
+cLq_ptr = system()-&gt;fetch_field("cLq")-&gt;genericfunction_ptr(time());
+
+// Phase Masses and fractions
+M_ptr = system()-&gt;fetch_field("Mass")-&gt;genericfunction_ptr(time());
+Phi_ptr = system()-&gt;fetch_field("Phi")-&gt;genericfunction_ptr(time());
+
+//pressure coefficient
+P_ptr = system()-&gt;fetch_coeff("Pressure")-&gt;genericfunction_ptr(time());
+
+//  Constants, cast to double
+G0_ptr = system()-&gt;fetch_coeff("Gamma0")-&gt;genericfunction_ptr(time());
+double Gamma0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(G0_ptr));
+
+ceps_ptr = system()-&gt;fetch_coeff("ceps")-&gt;genericfunction_ptr(time());
+ceps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(ceps_ptr));
+
+// list the phases and endmembers in these reactions
+rxn.report();
+
+// set the rxn parameters
+rxn.set_parameter("r0_melt",Gamma0);
+rxn.set_parameter("r0_xtal",Gamma0);
+rxn.list_parameters();
+
+// initialize concentration matrices
+C = rxn.zero_C();
+//initialize the solid concentrations
+for (int i = 1; i &lt; C.size(); i++)
+{
+  C[i] = {1.};
+}
+// initialize Phase fraction  and reaction rate vectors
+int N = C.size();
+_Phi.resize(N,0.);
+_dGamma.resize(C[iLq].size(),C[iLq]);</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">dolfin::Array&lt;double&gt; t_values(1);
+dolfin::Array&lt;double&gt; c_values(4);
+dolfin::Array&lt;double&gt; phi_values(6);
+
+// Evaluate Thermodynamic fields
+
+// Thermo-dynamics "coordinates x= [ P,T,C]"
+// Get T,P,C
+T_ptr-&gt;eval(t_values, x, cell);
+double T = t_values[0];
+P_ptr-&gt;eval(t_values, x, cell);
+double P = t_values[0];
+cLq_ptr-&gt;eval(c_values, x, cell);
+
+//pack composition array (and regularize if c &lt; ceps)
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] = std::max(c_values[k], ceps);
+}
+double Ctot = std::accumulate(C[iLq].begin(), C[iLq].end(), 0.);
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] /= Ctot;
+}
+
+// get phase fractions
+Phi_ptr-&gt;eval(phi_values, x, cell);
+for (int i=0; i &lt; _Phi.size(); i++)
+{
+  _Phi[i] = phi_values[i];
+}
+
+//Evaluate all component reaction rates
+rxn.dGamma_ik_dC(T,P,C,_Phi, iLq, _dGamma);
+
+
+for (int i = 0; i &lt; 2; i++)
+{
+  for (int k = 0; k &lt; 2; k++)
+  {
+    values[2*i + k] = _dGamma[i][k];
+  }
+}
+//std::cout &lt;&lt; values.str(true) &lt;&lt; std::endl;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>vector of  reaction rates [ Gamma_i, Gamma_ik[iLq])</comment>
+    </coefficient>
+    <coefficient name="invRho">
+      <ufl_symbol name="global">
+        <string_value lines="1">irho</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">4</integer_value>
+            </size>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="1">
+              <include>
+                <string_value type="code" language="cpp" lines="20">#include "reactions.h"
+#include &lt;numeric&gt;</string_value>
+              </include>
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr T_ptr, P_ptr;
+GenericFunction_ptr cLq_ptr;
+GenericFunction_ptr G0_ptr, ceps_ptr;
+
+// setup up reactions
+fo_sio2_poly_linear_rxns rxn; 
+
+// set up constant indices for phases and liquid endmembers
+const unsigned  iLq = 0, iOl = 1, iOpx =2, iPqz=3;
+const unsigned kSi = 0, kFo = 1;
+
+//set up regularization constant
+double ceps;
+
+// temporary vectors for compositions 
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; C;
+// vectors for reaction rates and phase fractions
+mutable std::vector&lt;double&gt; rho;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">// Thermodynamic coordinates
+T_ptr = system()-&gt;fetch_field("Temperature")-&gt;genericfunction_ptr(time());
+cLq_ptr = system()-&gt;fetch_field("cLq")-&gt;genericfunction_ptr(time());
+//pressure coefficient
+P_ptr = system()-&gt;fetch_coeff("Pressure")-&gt;genericfunction_ptr(time());
+
+//  Constants, cast to double
+G0_ptr = system()-&gt;fetch_coeff("Gamma0")-&gt;genericfunction_ptr(time());
+double Gamma0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(G0_ptr));
+
+ceps_ptr = system()-&gt;fetch_coeff("ceps")-&gt;genericfunction_ptr(time());
+ceps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(ceps_ptr));
+
+// list the phases and endmembers in these reactions
+rxn.report();
+
+// set the rxn parameters
+rxn.set_parameter("r0_melt",Gamma0);
+rxn.set_parameter("r0_xtal",Gamma0);
+rxn.list_parameters();
+
+// initialize concentration matrices
+C = rxn.zero_C();
+//initialize the solid concentrations
+for (int i = 1; i &lt; C.size(); i++)
+{
+  C[i] = {1.};
+}
+// initialize density vector
+rho.resize(C.size(), 0.);</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">dolfin::Array&lt;double&gt; t_values(1);
+dolfin::Array&lt;double&gt; c_values(4);
+dolfin::Array&lt;double&gt; phi_values(6);
+
+// Evaluate Thermodynamic fields
+
+// Thermo-dynamics "coordinates x= [ P,T,C]"
+// Get T,P,C
+T_ptr-&gt;eval(t_values, x, cell);
+double T = t_values[0];
+P_ptr-&gt;eval(t_values, x, cell);
+double P = t_values[0];
+cLq_ptr-&gt;eval(c_values, x, cell);
+
+//pack composition array (and regularize if c &lt; ceps)
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] = std::max(c_values[k], ceps);
+}
+double Ctot = std::accumulate(C[iLq].begin(), C[iLq].end(), 0.);
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] /= Ctot;
+}
+
+//Evaluate density of phases component reaction rates
+rxn.rho(T,P,C,rho);
+
+// return inverse densities
+for (int i = 0; i &lt; C.size(); i++)
+{
+  values[i] = 1./rho[i];
+}
+//std::cout &lt;&lt; values.str(true) &lt;&lt; std::endl;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>vector of inverse densities</comment>
+    </coefficient>
+    <coefficient name="Entropy">
+      <ufl_symbol name="global">
+        <string_value lines="1">s</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">4</integer_value>
+            </size>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="1">
+              <include>
+                <string_value type="code" language="cpp" lines="20">#include "reactions.h"
+#include &lt;numeric&gt;</string_value>
+              </include>
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr T_ptr, P_ptr, cLq_ptr;
+GenericFunction_ptr G0_ptr, ceps_ptr;
+
+// setup up reactions
+fo_sio2_poly_linear_rxns rxn; 
+
+// set up constant indices for phases and liquid endmembers
+const unsigned  iLq = 0, iOl = 1, iOpx =2, iPqz=3;
+const unsigned kSi = 0, kFo = 1;
+
+//set up regularization constant
+double ceps;
+
+// temporary vectors for compositions 
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; C;
+// vectors for reaction rates and phase fractions
+mutable std::vector&lt;double&gt; _s;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">// Thermodynamic coordinates
+T_ptr = system()-&gt;fetch_field("Temperature")-&gt;genericfunction_ptr(time());
+cLq_ptr = system()-&gt;fetch_field("cLq")-&gt;genericfunction_ptr(time());
+
+//pressure coefficient
+P_ptr = system()-&gt;fetch_coeff("Pressure")-&gt;genericfunction_ptr(time());
+
+//  Constants, cast to double
+G0_ptr = system()-&gt;fetch_coeff("Gamma0")-&gt;genericfunction_ptr(time());
+double Gamma0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(G0_ptr));
+
+ceps_ptr = system()-&gt;fetch_coeff("ceps")-&gt;genericfunction_ptr(time());
+ceps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(ceps_ptr));
+
+// list the phases and endmembers in these reactions
+rxn.report();
+
+// set the rxn parameters
+rxn.set_parameter("r0_melt",Gamma0);
+rxn.set_parameter("r0_xtal",Gamma0);
+rxn.list_parameters();
+
+// initialize concentration matrices
+C = rxn.zero_C();
+//initialize the solid concentrations
+for (int i = 1; i &lt; C.size(); i++)
+{
+  C[i] = {1.};
+}
+// initialize Phase fraction  and reaction rate vectors
+_s.resize(C.size(),0.);</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">dolfin::Array&lt;double&gt; t_values(1);
+dolfin::Array&lt;double&gt; c_values(4);
+
+// Evaluate Thermodynamic fields
+
+// Thermo-dynamics "coordinates x= [ P,T,C]"
+// Get T,P,C
+T_ptr-&gt;eval(t_values, x, cell);
+double T = t_values[0];
+P_ptr-&gt;eval(t_values, x, cell);
+double P = t_values[0];
+cLq_ptr-&gt;eval(c_values, x, cell);
+
+//pack composition array (and regularize if c &lt; ceps)
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] = std::max(c_values[k], ceps);
+}
+double Ctot = std::accumulate(C[iLq].begin(), C[iLq].end(), 0.);
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] /= Ctot;
+}
+
+//Evaluate all component reaction rates
+rxn.s(T,P,C,_s);
+
+
+for (int i = 0; i &lt; _s.size(); i++)
+{
+  values[i] = _s[i];
+}
+//std::cout &lt;&lt; values.str(true) &lt;&lt; std::endl;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>vector of  phase entropies</comment>
+    </coefficient>
+    <coefficient name="ds_dT">
+      <ufl_symbol name="global">
+        <string_value lines="1">ds_dT</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">4</integer_value>
+            </size>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="1">
+              <include>
+                <string_value type="code" language="cpp" lines="20">#include "reactions.h"
+#include &lt;numeric&gt;</string_value>
+              </include>
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr T_ptr, P_ptr, cLq_ptr;
+GenericFunction_ptr G0_ptr, ceps_ptr;
+
+// setup up reactions
+fo_sio2_poly_linear_rxns rxn; 
+
+// set up constant indices for phases and liquid endmembers
+const unsigned  iLq = 0, iOl = 1, iOpx =2, iPqz=3;
+const unsigned kSi = 0, kFo = 1;
+
+//set up regularization constant
+double ceps;
+
+// temporary vectors for compositions 
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; C;
+// vectors for reaction rates and phase fractions
+mutable std::vector&lt;double&gt; _ds;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">// Thermodynamic coordinates
+T_ptr = system()-&gt;fetch_field("Temperature")-&gt;genericfunction_ptr(time());
+cLq_ptr = system()-&gt;fetch_field("cLq")-&gt;genericfunction_ptr(time());
+
+//pressure coefficient
+P_ptr = system()-&gt;fetch_coeff("Pressure")-&gt;genericfunction_ptr(time());
+
+//  Constants, cast to double
+G0_ptr = system()-&gt;fetch_coeff("Gamma0")-&gt;genericfunction_ptr(time());
+double Gamma0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(G0_ptr));
+
+ceps_ptr = system()-&gt;fetch_coeff("ceps")-&gt;genericfunction_ptr(time());
+ceps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(ceps_ptr));
+
+// list the phases and endmembers in these reactions
+rxn.report();
+
+// set the rxn parameters
+rxn.set_parameter("r0_melt",Gamma0);
+rxn.set_parameter("r0_xtal",Gamma0);
+rxn.list_parameters();
+
+// initialize concentration matrices
+C = rxn.zero_C();
+//initialize the solid concentrations
+for (int i = 1; i &lt; C.size(); i++)
+{
+  C[i] = {1.};
+}
+// initialize Phase fraction  and reaction rate vectors
+_ds.resize(C.size(),0.);</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">dolfin::Array&lt;double&gt; t_values(1);
+dolfin::Array&lt;double&gt; c_values(4);
+
+// Evaluate Thermodynamic fields
+
+// Thermo-dynamics "coordinates x= [ P,T,C]"
+// Get T,P,C
+T_ptr-&gt;eval(t_values, x, cell);
+double T = t_values[0];
+P_ptr-&gt;eval(t_values, x, cell);
+double P = t_values[0];
+cLq_ptr-&gt;eval(c_values, x, cell);
+
+//pack composition array (and regularize if c &lt; ceps)
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] = std::max(c_values[k], ceps);
+}
+double Ctot = std::accumulate(C[iLq].begin(), C[iLq].end(), 0.);
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] /= Ctot;
+}
+
+//Evaluate Heat capacity,  as ds/dT = Cp/T
+rxn.Cp(T,P,C,_ds);
+
+
+for (int i = 0; i &lt; _ds.size(); i++)
+{
+  values[i] = _ds[i]/T;
+}
+//std::cout &lt;&lt; values.str(true) &lt;&lt; std::endl;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>vector of  derivatives of entropy with T (ds_dT = Cp/T)</comment>
+    </coefficient>
+    <coefficient name="ds_dC">
+      <ufl_symbol name="global">
+        <string_value lines="1">ds_dC</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Vector" rank="1">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+            <size>
+              <integer_value rank="0">2</integer_value>
+            </size>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="1">
+              <include>
+                <string_value type="code" language="cpp" lines="20">#include "reactions.h"
+#include &lt;numeric&gt;</string_value>
+              </include>
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr T_ptr, P_ptr, cLq_ptr;
+GenericFunction_ptr G0_ptr, ceps_ptr;
+
+// setup up reactions
+fo_sio2_poly_linear_rxns rxn; 
+
+// set up constant indices for phases and liquid endmembers
+const unsigned  iLq = 0, iOl = 1, iOpx =2, iPqz=3;
+const unsigned kSi = 0, kFo = 1;
+
+//set up regularization constant
+double ceps;
+
+// temporary vectors for compositions 
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; C;
+// vectors for  entropy derivatives, mole fraction and inverse molecular weight
+mutable std::vector&lt;std::vector&lt;double&gt; &gt; _ds;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">// Thermodynamic coordinates
+T_ptr = system()-&gt;fetch_field("Temperature")-&gt;genericfunction_ptr(time());
+cLq_ptr = system()-&gt;fetch_field("cLq")-&gt;genericfunction_ptr(time());
+
+//pressure coefficient
+P_ptr = system()-&gt;fetch_coeff("Pressure")-&gt;genericfunction_ptr(time());
+
+//  Constants, cast to double
+G0_ptr = system()-&gt;fetch_coeff("Gamma0")-&gt;genericfunction_ptr(time());
+double Gamma0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(G0_ptr));
+
+ceps_ptr = system()-&gt;fetch_coeff("ceps")-&gt;genericfunction_ptr(time());
+ceps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(ceps_ptr));
+
+// list the phases and endmembers in these reactions
+rxn.report();
+
+// set the rxn parameters
+rxn.set_parameter("r0_melt",Gamma0);
+rxn.set_parameter("r0_xtal",Gamma0);
+rxn.list_parameters();
+
+// initialize concentration matrices
+C = rxn.zero_C();
+//initialize the solid concentrations
+for (int i = 1; i &lt; C.size(); i++)
+{
+  C[i] = {1.};
+}
+// initialize ds and mole fraction  vectors for liquid
+_ds = rxn.zero_C();</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">dolfin::Array&lt;double&gt; t_values(1);
+dolfin::Array&lt;double&gt; c_values(4);
+
+// Evaluate Thermodynamic fields
+
+// Thermo-dynamics "coordinates x= [ P,T,C]"
+// Get T,P,C
+T_ptr-&gt;eval(t_values, x, cell);
+double T = t_values[0];
+P_ptr-&gt;eval(t_values, x, cell);
+double P = t_values[0];
+cLq_ptr-&gt;eval(c_values, x, cell);
+
+//pack composition array (and regularize if c &lt; ceps)
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] = std::max(c_values[k], ceps);
+}
+double Ctot = std::accumulate(C[iLq].begin(), C[iLq].end(), 0.);
+for (int k=0; k &lt; 2; k++)
+{
+  C[iLq][k] /= Ctot;
+}
+
+//Evaluate ds_dC for just the liquid phase
+// note rxn.ds_dC computes change in entropy per unit mass
+// Lq.ds_dc computes change in entropy per mole
+rxn.ds_dC(T, P, C, _ds);
+
+for (int k = 0; k &lt; 2; k++)
+{
+  values[k] = _ds[iLq][k];
+}
+//std::cout &lt;&lt; values.str(true) &lt;&lt; std::endl;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>vector of  derivatives of entropy (of Liquid) with composition (of liquid)</comment>
+    </coefficient>
+    <coefficient name="S0">
+      <ufl_symbol name="global">
+        <string_value lines="1">S0</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value name="WholeMesh" type="value">
+            <constant>
+              <real_value rank="0">875.</real_value>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics>
+        <include_in_statistics/>
+      </diagnostics>
+    </coefficient>
+    <coefficient name="ceps">
+      <ufl_symbol name="global">
+        <string_value lines="1">ceps</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value name="WholeMesh" type="value">
+            <constant>
+              <real_value rank="0">1.e-5</real_value>
+              <comment>bars</comment>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>compositional regularization parameter</comment>
+    </coefficient>
+    <coefficient name="Meps">
+      <ufl_symbol name="global">
+        <string_value lines="1">Meps</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value name="WholeMesh" type="value">
+            <constant>
+              <real_value rank="0">1.e-2</real_value>
+              <comment>bars</comment>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>Liquid Mass regularization parameter in grams</comment>
+    </coefficient>
+    <coefficient name="Pmax">
+      <ufl_symbol name="global">
+        <string_value lines="1">Pmax</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value name="WholeMesh" type="value">
+            <constant>
+              <real_value rank="0">25000.</real_value>
+              <comment>bars</comment>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>maximum pressure at bottom of column</comment>
+    </coefficient>
+    <coefficient name="Pmin">
+      <ufl_symbol name="global">
+        <string_value lines="1">Pmin</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value name="WholeMesh" type="value">
+            <constant>
+              <real_value rank="0">1000.</real_value>
+              <comment>bars</comment>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>minimum pressure at bottom of column</comment>
+    </coefficient>
+    <coefficient name="Pressure">
+      <ufl_symbol name="global">
+        <string_value lines="1">P</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Scalar" rank="0">
+          <element name="P0">
+            <family>
+              <string_value lines="1">DG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">0</integer_value>
+            </degree>
+          </element>
+          <value name="WholeMesh" type="value">
+            <cpp rank="0">
+              <members>
+                <string_value type="code" language="cpp" lines="20">GenericFunction_ptr Pmax_ptr, Pmin_ptr;
+double Pmax, Pmin;</string_value>
+              </members>
+              <initialization>
+                <string_value type="code" language="cpp" lines="20">//  Constants, cast to double
+Pmax_ptr = system()-&gt;fetch_coeff("Pmax")-&gt;genericfunction_ptr(time());
+Pmax = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(Pmax_ptr));
+
+Pmin_ptr = system()-&gt;fetch_coeff("Pmin")-&gt;genericfunction_ptr(time());
+Pmin = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(Pmin_ptr));</string_value>
+              </initialization>
+              <eval>
+                <string_value type="code" language="cpp" lines="20">double t = *time();
+values[0]  = Pmax + (Pmin - Pmax)*t;</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics>
+        <include_in_visualization/>
+        <include_in_statistics/>
+      </diagnostics>
+    </coefficient>
+    <coefficient name="ceps">
+      <ufl_symbol name="global">
+        <string_value lines="1">ceps</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value name="WholeMesh" type="value">
+            <constant>
+              <real_value rank="0">1.e-5</real_value>
+              <comment>bars</comment>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>compositional regularization parameter</comment>
+    </coefficient>
+    <coefficient name="Meps">
+      <ufl_symbol name="global">
+        <string_value lines="1">Meps</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value name="WholeMesh" type="value">
+            <constant>
+              <real_value rank="0">1.e-2</real_value>
+              <comment>bars</comment>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+      <comment>Liquid Mass regularization parameter in grams</comment>
+    </coefficient>
+    <nonlinear_solver name="Init">
+      <type name="SNES">
+        <form name="Residual" rank="0">
+          <string_value type="code" language="python3" lines="20">F_T = T_t*(T_i - T_n)*dx
+F_M = inner(M_t, M_i - M_n)*dx
+F_phi = inner(Phi_t, Phi_i - phi_i)*dx
+F_cLq = inner(cLq_t, cLq_i - cLq_n)*dx
+F = F_T + F_M + F_phi + F_cLq</string_value>
+          <ufl_symbol name="solver">
+            <string_value lines="1">F</string_value>
+          </ufl_symbol>
+        </form>
+        <form name="Jacobian" rank="1">
+          <string_value type="code" language="python3" lines="20">J = derivative(F, us_i, us_a)</string_value>
+          <ufl_symbol name="solver">
+            <string_value lines="1">J</string_value>
+          </ufl_symbol>
+          <ident_zeros/>
+        </form>
+        <form_representation name="quadrature"/>
+        <quadrature_rule name="default"/>
+        <snes_type name="ls">
+          <ls_type name="cubic"/>
+          <convergence_test name="default"/>
+        </snes_type>
+        <relative_error>
+          <real_value rank="0">1.e-6</real_value>
+        </relative_error>
+        <absolute_error>
+          <real_value rank="0">1.e-10</real_value>
+        </absolute_error>
+        <max_iterations>
+          <integer_value rank="0">20</integer_value>
+        </max_iterations>
+        <monitors>
+          <residual/>
+        </monitors>
+        <linear_solver>
+          <iterative_method name="preonly"/>
+          <preconditioner name="lu">
+            <factorization_package name="mumps"/>
+          </preconditioner>
+        </linear_solver>
+        <never_ignore_solver_failures/>
+      </type>
+      <solve name="at_start"/>
+    </nonlinear_solver>
+    <nonlinear_solver name="update">
+      <type name="SNES">
+        <form name="Residual" rank="0">
+          <string_value type="code" language="python3" lines="20"># Change in melt composition
+dc = dt*V_i/(M[iLq] + Meps)*(GLq_i - cLq_i*G_i[iLq])
+
+F_Phi = inner(Phi_t, Phi_i - phi_i)*dx
+F_M = inner(M_t, M_i - M_n - dt*V_i*G_i)*dx
+F_c = inner(cLq_t, cLq_i - cLq_n - dc)*dx
+# start with isothermal problem
+#F_t = T_t*(T_i - T_n)*dx
+# now try isentropic version
+F_t = T_t*(inner(s_i,M_i) - S0)*dx
+
+F = F_Phi + F_M + F_c + F_t</string_value>
+          <ufl_symbol name="solver">
+            <string_value lines="1">F</string_value>
+          </ufl_symbol>
+        </form>
+        <form name="Jacobian" rank="1">
+          <string_value type="code" language="python3" lines="20">J = derivative(F, us_i, us_a)
+
+# additional jacobian terms
+dG = dG_dT_i*T_a + dot(dG_dC_i,cLq_a)
+dGLq = dGLq_dT_i*T_a + dot(dGLq_dC_i, cLq_a)
+ddc = dt*V_i/(M[iLq] + Meps)*(dGLq - cLq_i*dG[iLq])
+
+J += inner(M_t, - dt*V_i*dG)*dx
+J += inner(cLq_t, - ddc)*dx
+J += T_t*(inner(ds_dT_i*T_a,M_i))*dx
+J += T_t*M_i[iLq]*inner(ds_dC_i,cLq_a)*dx</string_value>
+          <comment># Change in melt composition
+dc = dt*V_i/(M[iLq] + Meps)*(GLq_i - cLq_i*G_i[iLq])
+
+F_Phi = inner(Phi_t, Phi_i - phi_i)*dx
+F_M = inner(M_t, M_i - M_n - dt*V_i*G_i)*dx
+F_c = inner(cLq_t, cLq_i - cLq_n - dc)*dx
+# start with isothermal problem
+#F_t = T_t*(T_i - T_n)*dx
+# now try isentropic version
+F_t = T_t*(inner(s_i,M_i) - S0)*dx
+
+F = F_Phi + F_M + F_c + F_t</comment>
+          <ufl_symbol name="solver">
+            <string_value lines="1">J</string_value>
+          </ufl_symbol>
+        </form>
+        <form_representation name="quadrature"/>
+        <quadrature_rule name="default"/>
+        <snes_type name="ls">
+          <ls_type name="cubic"/>
+          <convergence_test name="default"/>
+        </snes_type>
+        <relative_error>
+          <real_value rank="0">1.e-6</real_value>
+        </relative_error>
+        <absolute_error>
+          <real_value rank="0">1.e-8</real_value>
+        </absolute_error>
+        <max_iterations>
+          <integer_value rank="0">20</integer_value>
+        </max_iterations>
+        <monitors>
+          <residual/>
+        </monitors>
+        <linear_solver>
+          <iterative_method name="preonly"/>
+          <preconditioner name="lu">
+            <factorization_package name="umfpack"/>
+          </preconditioner>
+        </linear_solver>
+        <never_ignore_solver_failures/>
+      </type>
+      <solve name="in_timeloop"/>
+    </nonlinear_solver>
+  </system>
+</terraferma_options>

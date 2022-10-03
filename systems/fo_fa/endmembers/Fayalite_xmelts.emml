@@ -1,0 +1,213 @@
+<?xml version='1.0' encoding='utf-8'?>
+<endmember_options>
+  <name name="Fayalite_xmelts"/>
+  <formula name="FE(2)SI(1)O(4)"/>
+  <reference>
+    <string_value lines="1">Thermocodegen-v0.6.9/share/thermocodegen/examples/Systems/fo_fa/notebooks/Generate_xmelts_endmembers.ipynb</string_value>
+  </reference>
+  <free_energy_model name="Gibbs">
+    <variable name="T">
+      <rank name="Scalar"/>
+      <units>K</units>
+    </variable>
+    <variable name="P">
+      <rank name="Scalar"/>
+      <units>bar</units>
+    </variable>
+    <parameter name="T_r">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">298.15</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'K'</string_value>
+        </units>
+      </rank>
+      <symbol>
+        <string_value lines="1">T_r</string_value>
+      </symbol>
+    </parameter>
+    <parameter name="P_r">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">1</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'bar'</string_value>
+        </units>
+      </rank>
+      <symbol>
+        <string_value lines="1">P_r</string_value>
+      </symbol>
+    </parameter>
+  </free_energy_model>
+  <parameters>
+    <parameter name="Trl">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">1673.15</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="H_TrPr">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">-1479360</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="S_TrPr">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">150.93</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="V_TrlPr">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">5.42</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/bar-m'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="T_fus">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">1490</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="S_fus">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">59.9</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="Cpl">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">240.2</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="k0">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">248.93</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/K-m'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="k1">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">-1920</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J-K^(1/2)-m'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="k2">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">0</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J-K/m'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="k3">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">-139000000</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J-K^2'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="v1">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">0.000584</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'1/bar'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="v2">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">-2.79e-05</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'1/bar^2'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="v3">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">-2.3e-08</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'1/K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="v4">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">1.46e-09</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'1/K^2'</string_value>
+        </units>
+      </rank>
+    </parameter>
+  </parameters>
+  <functions/>
+  <potential name="G">
+    <expression>
+      <string_value type="code" language="python" lines="20">G = (
+Cpl*T - Cpl*T_fus + H_TrPr + P**3*v4/6 + P**2*(-P_r*v4/2 + T*v3/4 -
+Trl*v3/4 + v2/2) + P*(P_r**2*v4/2 - P_r*T*v3/2 + P_r*Trl*v3/2 - P_r*v2
++ T*v1 - Trl*v1 + V_TrlPr) - P_r**3*v4/6 - P_r**2*(-P_r*v4/2 + T*v3/4
+- Trl*v3/4 + v2/2) - P_r*(P_r**2*v4/2 - P_r*T*v3/2 + P_r*Trl*v3/2 -
+P_r*v2 + T*v1 - Trl*v1 + V_TrlPr) + S_fus*T_fus - T*(Cpl*log(T) -
+Cpl*log(T_fus) + S_TrPr + S_fus + k0*log(T_fus) - k0*log(T_r) +
+k2/(2*T_r**2) + k3/(3*T_r**3) + 2*k1/sqrt(T_r) - k2/(2*T_fus**2) -
+k3/(3*T_fus**3) - 2*k1/sqrt(T_fus)) + 2*sqrt(T_fus)*k1 + T_fus*k0 -
+2*sqrt(T_r)*k1 - T_r*k0 + k2/T_r + k3/(2*T_r**2) - k2/T_fus -
+k3/(2*T_fus**2)
+)</string_value>
+    </expression>
+  </potential>
+</endmember_options>
