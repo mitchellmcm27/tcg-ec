@@ -104,4 +104,25 @@ Piecewise((exp(-T0/T)*A[0, 0]*Phi[0, 0]*Phi[1, 0]/(R*T), A[0, 0] &gt;=
 )</string_value>
     </expression>
   </reaction>
+  <reaction name="NaMaQuar_Albi">
+    <reactant name="NaMa_Garn" phase="Garnet_slb_ph" endmember="NaMajorite_slb_em"/>
+    <reactant name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
+    <product name="Albi_Albi" phase="Albite_slb_ph" endmember="Albite_slb_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">NaMaQuar_Albi = (
+Piecewise((exp(-T0/T)*A[1, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[1, 0] &gt;=
+0), (exp(-T0/T)*A[1, 0]*Phi[2, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="Jade_NaMa">
+    <reactant name="Jade_Jade" phase="Jadeite_slb_ph" endmember="Jadeite_slb_em"/>
+    <product name="NaMa_Garn" phase="Garnet_slb_ph" endmember="NaMajorite_slb_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">Jade_NaMa = (
+Piecewise((exp(-T0/T)*A[2, 0]*Phi[0, 0]/(R*T), A[2, 0] &gt;= 0),
+(exp(-T0/T)*A[2, 0]*Phi[3, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
 </reaction_options>

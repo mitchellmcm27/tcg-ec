@@ -39,6 +39,16 @@ def generate_reactions(outdir):
         [['Albite', 'Albite']]
     ))
 
+    reactions.append((
+    [['Garnet', 'NaMajorite'], ['Quartz', 'Quartz']],
+    [['Albite', 'Albite']]
+))
+
+    reactions.append((
+        [['Jadeite', 'Jadeite']],
+        [['Garnet', 'NaMajorite']]
+    ))
+
     generate_reaction(outdir, 'eclogite', phases, reactions)
 
     # repeat for more classes of reactions...
