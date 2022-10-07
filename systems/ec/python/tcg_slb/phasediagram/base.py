@@ -551,25 +551,27 @@ class PDReactiveGrid:
     kwargs = None
     
     def solve(self,rxn,odecls,i0,ax_args,x_range,y_range,end,**kwargs):
+
+        # save args to class properties
         self.odecls = odecls
-
         self.i0 = i0
-        
         self.ax_args
-
         self.x_range = x_range
         self.y_range = y_range
-
         self.end = end
-        
         self.kwargs = kwargs
 
+        # parse kwargs, 
+        # removing ones that we can't later pass to the ODE as kwargs
         T = kwargs.pop('T', None)
         p = kwargs.pop('p', None)
         Cik0 = kwargs.pop('Cik0', None)
-        
+        mi0 = kwargs.pop('mi0', None)
+
+        # create xgrid, ygrid        
         self.xgrid, self.ygrid = np.meshgrid(self.x_range, self.y_range)
         
+        # initialize needed grids
         self.Tgrid     = [[None for j in range(len(self.x_range))] for i in range(len(self.y_range))]
         self.pgrid     = [[None for j in range(len(self.x_range))] for i in range(len(self.y_range))]
         self.mi0grid   = [[None for j in range(len(self.x_range))] for i in range(len(self.y_range))]
@@ -580,26 +582,32 @@ class PDReactiveGrid:
         self.excgrid   = [[''   for j in range(len(self.x_range))] for i in range(len(self.y_range))]
         self.stimegrid = [[None for j in range(len(self.x_range))] for i in range(len(self.y_range))]
         
+        # loop through x,y ranges (passed in as args)
+
         for i,y in enumerate(self.y_range):
             for j,x in enumerate(self.x_range):
-                ode = self.odecls(rxn)
 
+                ode = self.odecls(rxn)
                 vals = [x,y]
-                for ax,arg in enumerate(ax_args):
+
+                # loop through axix-related args
+                # pick up values of T, p, etc. (whatever the axes actually are)
+
+                for axis_index, arg in enumerate(ax_args):
                     if arg == 'T': 
-                        T = vals[ax]
+                        T = vals[axis_index]
                     if arg == 'p':
-                        p = vals[ax]
+                        p = vals[axis_index]
                     if arg in ['Xi0k0', 'Ci0k0']:
                         if arg=='Xi0k0':
                             phase0 = rxn.phases()[self.i0]
-                            Xi0k0 = vals[ax]
+                            Xi0k0 = vals[axis_index]
                             Xi0 = np.zeros(ode.Kis[self.i0])
                             Xi0[0] = Xi0k0
                             Xi0[1:] = (1.-Xi0k0)/(ode.Kis[self.i0]-1)
                             Ci0k0 = phase0.x_to_c(Xi0)[0]
                         else:
-                            Ci0k0 = vals[ax]
+                            Ci0k0 = vals[axis_index]
                         Cik0 = np.zeros(ode.K)
                         for ip in range(ode.I):
                             if ode.Kis[ip] == 1:
@@ -608,17 +616,24 @@ class PDReactiveGrid:
                                  Cik0[sum(ode.Kis[:ip])] = Ci0k0
                                  Cik0[sum(ode.Kis[:ip])+1:sum(ode.Kis[:ip+1])][:] = (1.-Ci0k0)/(ode.Kis[ip]-1.)
                 
-                # initial conditions
-                mi0 = np.zeros(ode.I)
-                mi0[self.i0] = 1.0
+                if mi0 is None:
+                    # initial conditions
+                    # m = mole fraction?, set all to zero
+                    mi0 = np.zeros(ode.I)
+
+                    # initial composition, set m to 1
+                    mi0[self.i0] = 1.0
                 
+                # solve the ODE at the specific p, T, etc.
                 ode.solve(T,GPa2Bar(p),mi0,Cik0,end,**kwargs)
                 
+                # populate the grid cell with the inputs
                 self.Tgrid[i][j]    = T
                 self.pgrid[i][j]    = p
                 self.mi0grid[i][j]  = mi0
                 self.Cik0grid[i][j] = Cik0
 
+                # populate the grid cell with solution/outputs
                 self.solgrid[i][j] = ode.sol
                 self.outgrid[i][j] = ode.stdout
                 self.errgrid[i][j] = ode.stderr
