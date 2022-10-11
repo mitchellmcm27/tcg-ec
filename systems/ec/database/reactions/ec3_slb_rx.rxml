@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <reaction_options>
-  <name name="eclogite_slb_rx"/>
+  <name name="ec3_slb_rx"/>
   <database>
     <string_value lines="1">file://../database/tcg_slb_database.tar.gz</string_value>
   </database>
@@ -115,6 +115,32 @@ Piecewise((exp(-T0/T)*A[0, 0]*Phi[3, 0]/(R*T), A[0, 0] &gt;= 0),
       <string_value type="code" language="python" lines="20">AnorEnst_DiopPyroQuar = (
 Piecewise((exp(-T0/T)*A[1, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[1, 0] &gt;=
 0), (exp(-T0/T)*A[1, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="GrosPyroQuar_EnstAnor">
+    <reactant name="Gros_Garn" phase="Garnet_slb_ph" endmember="Grossular_slb_em"/>
+    <reactant name="Pyro_Garn" phase="Garnet_slb_ph" endmember="Pyrope_slb_em"/>
+    <reactant name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
+    <product name="Enst_Orth" phase="Orthopyroxene_slb_ph" endmember="Enstatite_slb_em"/>
+    <product name="Anor_Feld" phase="Feldspar_slb_ph" endmember="Anorthite_slb_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">GrosPyroQuar_EnstAnor = (
+Piecewise((exp(-T0/T)*A[2, 0]*Phi[2, 0]**2*Phi[4, 0]/(R*T), A[2, 0] &gt;=
+0), (exp(-T0/T)*A[2, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="GrosAlmaQuar_FerrAnor">
+    <reactant name="Gros_Garn" phase="Garnet_slb_ph" endmember="Grossular_slb_em"/>
+    <reactant name="Alma_Garn" phase="Garnet_slb_ph" endmember="Almandine_slb_em"/>
+    <reactant name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
+    <product name="Ferr_Orth" phase="Orthopyroxene_slb_ph" endmember="Ferrosilite_slb_em"/>
+    <product name="Anor_Feld" phase="Feldspar_slb_ph" endmember="Anorthite_slb_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">GrosAlmaQuar_FerrAnor = (
+Piecewise((exp(-T0/T)*A[3, 0]*Phi[2, 0]**2*Phi[4, 0]/(R*T), A[3, 0] &gt;=
+0), (exp(-T0/T)*A[3, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), True))
 )</string_value>
     </expression>
   </reaction>

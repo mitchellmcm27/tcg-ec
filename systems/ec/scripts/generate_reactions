@@ -20,30 +20,47 @@ reference = "generate_reactions"
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 def generate_reactions(outdir):
-    #phases = [
-    #    'Quartz', #Quartz
-    #    'Feldspar', # Anorthite, Albite
-    #    'Garnet', # Pyrope, Almandine, Grossular, MgMajorite, NaMajorite
-    #    'Clinopyroxene', # Diopside, Hedenbergite, Clinoenstatite, CaTschermaks, Jadeite
-    #    'Orthopyroxene', # Enstatite, Ferrosilite, MgTschermaks, OrthoDiopside
-    #    'Kyanite', # Kyanite
-    #    'CaPerovskite', # CaPerovskite
-    #] # water?
-    phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Feldspar', 'Quartz'] # water?
 
-    #phases = ['Jadeite', 'Quartz', 'Albite', 'Garnet']
+    phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Feldspar', 'Quartz']
+    reactions = [
+        (
+            [['Feldspar', 'Albite']],
+            [['Clinopyroxene', 'Jadeite'], ['Quartz', 'Quartz']],
+        )
+    ]
+    generate_reaction(outdir, 'ec1', phases, reactions)
 
-    reactions =[(
-        [['Feldspar', 'Albite']],
-        [['Clinopyroxene', 'Jadeite'], ['Quartz', 'Quartz']],
-    ),(
-        [['Feldspar', 'Anorthite'], ['Orthopyroxene', 'Enstatite']],
-        [['Clinopyroxene', 'Diopside'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']],
-    )]
+    phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Feldspar', 'Quartz']
+    reactions = [
+        (
+            [['Feldspar', 'Albite']],
+            [['Clinopyroxene', 'Jadeite'], ['Quartz', 'Quartz']],
+        ),(
+            [['Feldspar', 'Anorthite'], ['Orthopyroxene', 'Enstatite']],
+            [['Clinopyroxene', 'Diopside'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']]),
+    ]
 
-    generate_reaction(outdir, 'eclogite', phases, reactions)
+    generate_reaction(outdir, 'ec2', phases, reactions)
 
-    # repeat for more classes of reactions...
+    phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Feldspar', 'Quartz']
+    reactions = [
+        (
+            [['Feldspar', 'Albite']],
+            [['Clinopyroxene', 'Jadeite'], ['Quartz', 'Quartz']],
+        ),
+        (
+            [['Feldspar', 'Anorthite'], ['Orthopyroxene', 'Enstatite']],
+            [['Clinopyroxene', 'Diopside'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']],
+        ),
+        ( # Mg-rich: grossular + 2 pyrope + 3 quartz = 3 enstatite + 3 anorthite 
+            [['Garnet', 'Grossular'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']],
+            [['Orthopyroxene', 'Enstatite'], ['Feldspar','Anorthite']],
+        ),
+        ( # Fe-rich: grossular + 2 almandine + 3 quartz = 3 ferrosilite + 3 anorthite.
+            [['Garnet', 'Grossular'], ['Garnet', 'Almandine'], ['Quartz', 'Quartz']],
+            [['Orthopyroxene','Ferrosilite'], ['Feldspar','Anorthite']],
+        )]
+    generate_reaction(outdir, 'ec3', phases, reactions)
 
 def generate_reaction(outdir, name, phases, reactions):
     try:
