@@ -582,6 +582,10 @@ class PDReactiveGrid:
         self.excgrid   = [[''   for j in range(len(self.x_range))] for i in range(len(self.y_range))]
         self.stimegrid = [[None for j in range(len(self.x_range))] for i in range(len(self.y_range))]
         
+        # initialize compositions to those passed in
+        Cik = Cik0
+        mi = mi0
+
         # loop through x,y ranges (passed in as args)
 
         for i,y in enumerate(self.y_range):
@@ -625,8 +629,12 @@ class PDReactiveGrid:
                     mi0[self.i0] = 1.0
                 
                 # solve the ODE at the specific p, T, etc.
-                ode.solve(T,GPa2Bar(p),mi0,Cik0,end,**kwargs)
-                
+                ode.solve(T,GPa2Bar(p),mi,Cik,end,**kwargs)
+
+                # get the solutions for mi and Cik, use them next time
+                Cik = ode.sol.y[ode.I:ode.I+ode.K,-1]
+                mi = ode.sol.y[:ode.I,-1]
+
                 # populate the grid cell with the inputs
                 self.Tgrid[i][j]    = T
                 self.pgrid[i][j]    = p
@@ -735,6 +743,28 @@ class PDReactiveGridDiagnostics:
         fig.colorbar(s,location='left',ax=axi)
         
         self.plot_phase_labels(ax)
+        return s
+
+    @update
+    def plot_rho2(self):
+        
+        rhogrid = np.empty(self.grid.ygrid.shape)
+        for i,P in enumerate(self.grid.y_range):
+            for j,x in enumerate(self.grid.x_range):
+                ode = self.reconstruct_ode(i,j)
+                if ode.sol is not None:
+                    rhogrid[i][j] = ode.final_rho()
+        
+        fig = plt.figure(figsize=(12,14))
+        axi = fig.add_subplot(1,1,1)
+        ax = self.setup_axes(axi)
+
+        cmap = plt.get_cmap('bwr')
+        s = self.scatter(ax,self.grid.ygrid[self.phaseis>=0],self.grid.xgrid[self.phaseis>=0],rhogrid[self.phaseis>=0],cmap)
+        fig.colorbar(s,location='left',ax=axi)
+        
+        self.plot_phase_labels(ax)
+        return s
 
         
     

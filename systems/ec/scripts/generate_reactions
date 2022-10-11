@@ -29,15 +29,17 @@ def generate_reactions(outdir):
     #    'Kyanite', # Kyanite
     #    'CaPerovskite', # CaPerovskite
     #] # water?
+    phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Feldspar', 'Quartz'] # water?
 
-    phases = ['Jadeite', 'Quartz', 'Albite', 'Garnet']
+    #phases = ['Jadeite', 'Quartz', 'Albite', 'Garnet']
 
-    reactions = []
-
-    reactions.append((
-        [['Jadeite', 'Jadeite'], ['Quartz', 'Quartz']],
-        [['Albite', 'Albite']]
-    ))
+    reactions =[(
+        [['Feldspar', 'Albite']],
+        [['Clinopyroxene', 'Jadeite'], ['Quartz', 'Quartz']],
+    ),(
+        [['Feldspar', 'Anorthite'], ['Orthopyroxene', 'Enstatite']],
+        [['Clinopyroxene', 'Diopside'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']],
+    )]
 
     generate_reaction(outdir, 'eclogite', phases, reactions)
 

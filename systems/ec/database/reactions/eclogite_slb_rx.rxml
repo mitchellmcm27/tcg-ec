@@ -7,10 +7,11 @@
   <reference>
     <string_value lines="1">generate_reactions</string_value>
   </reference>
-  <phase name="Jadeite_slb_ph"/>
-  <phase name="Quartz_slb_ph"/>
-  <phase name="Albite_slb_ph"/>
+  <phase name="Clinopyroxene_slb_ph"/>
+  <phase name="Orthopyroxene_slb_ph"/>
   <phase name="Garnet_slb_ph"/>
+  <phase name="Feldspar_slb_ph"/>
+  <phase name="Quartz_slb_ph"/>
   <reaction_rate name="R">
     <variable name="T">
       <rank name="Scalar"/>
@@ -93,14 +94,27 @@
       </rank>
     </parameter>
   </global_parameters>
-  <reaction name="JadeQuar_Albi">
-    <reactant name="Jade_Jade" phase="Jadeite_slb_ph" endmember="Jadeite_slb_em"/>
-    <reactant name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
-    <product name="Albi_Albi" phase="Albite_slb_ph" endmember="Albite_slb_em"/>
+  <reaction name="Albi_JadeQuar">
+    <reactant name="Albi_Feld" phase="Feldspar_slb_ph" endmember="Albite_slb_em"/>
+    <product name="Jade_Clin" phase="Clinopyroxene_slb_ph" endmember="Jadeite_slb_em"/>
+    <product name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
     <expression>
-      <string_value type="code" language="python" lines="20">JadeQuar_Albi = (
-Piecewise((exp(-T0/T)*A[0, 0]*Phi[0, 0]*Phi[1, 0]/(R*T), A[0, 0] &gt;=
-0), (exp(-T0/T)*A[0, 0]*Phi[2, 0]/(R*T), True))
+      <string_value type="code" language="python" lines="20">Albi_JadeQuar = (
+Piecewise((exp(-T0/T)*A[0, 0]*Phi[3, 0]/(R*T), A[0, 0] &gt;= 0),
+(exp(-T0/T)*A[0, 0]*Phi[0, 0]*Phi[4, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="AnorEnst_DiopPyroQuar">
+    <reactant name="Anor_Feld" phase="Feldspar_slb_ph" endmember="Anorthite_slb_em"/>
+    <reactant name="Enst_Orth" phase="Orthopyroxene_slb_ph" endmember="Enstatite_slb_em"/>
+    <product name="Diop_Clin" phase="Clinopyroxene_slb_ph" endmember="Diopside_slb_em"/>
+    <product name="Pyro_Garn" phase="Garnet_slb_ph" endmember="Pyrope_slb_em"/>
+    <product name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">AnorEnst_DiopPyroQuar = (
+Piecewise((exp(-T0/T)*A[1, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[1, 0] &gt;=
+0), (exp(-T0/T)*A[1, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
