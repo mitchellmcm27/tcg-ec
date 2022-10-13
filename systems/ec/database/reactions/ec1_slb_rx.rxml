@@ -12,6 +12,7 @@
   <phase name="Garnet_slb_ph"/>
   <phase name="Feldspar_slb_ph"/>
   <phase name="Quartz_slb_ph"/>
+  <phase name="Kyanite_slb_ph"/>
   <reaction_rate name="R">
     <variable name="T">
       <rank name="Scalar"/>

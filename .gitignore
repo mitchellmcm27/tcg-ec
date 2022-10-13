@@ -1,5 +1,5 @@
 ## added manually
-
+.DS_Store
 *.pickle
 **/*.build/*
 **/install/*

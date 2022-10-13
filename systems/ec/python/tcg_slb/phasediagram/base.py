@@ -581,10 +581,6 @@ class PDReactiveGrid:
         self.errgrid   = [[''   for j in range(len(self.x_range))] for i in range(len(self.y_range))]
         self.excgrid   = [[''   for j in range(len(self.x_range))] for i in range(len(self.y_range))]
         self.stimegrid = [[None for j in range(len(self.x_range))] for i in range(len(self.y_range))]
-        
-        # initialize compositions to those passed in
-        Cik = Cik0
-        mi = mi0
 
         # loop through x,y ranges (passed in as args)
 
@@ -629,7 +625,7 @@ class PDReactiveGrid:
                     mi0[self.i0] = 1.0
                 
                 # solve the ODE at the specific p, T, etc.
-                ode.solve(T,GPa2Bar(p),mi,Cik,end,**kwargs)
+                ode.solve(T,GPa2Bar(p),mi0,Cik0,end,**kwargs)
 
                 # get the solutions for mi and Cik, use them next time
                 Cik = ode.sol.y[ode.I:ode.I+ode.K,-1]
@@ -760,7 +756,7 @@ class PDReactiveGridDiagnostics:
         ax = self.setup_axes(axi)
 
         cmap = plt.get_cmap('bwr')
-        s = self.scatter(ax,self.grid.ygrid[self.phaseis>=0],self.grid.xgrid[self.phaseis>=0],rhogrid[self.phaseis>=0],cmap)
+        s = self.scatter(ax,self.grid.ygrid[self.phaseis>=0],self.grid.xgrid[self.phaseis>=0],np.transpose(rhogrid[self.phaseis>=0]),cmap)
         fig.colorbar(s,location='left',ax=axi)
         
         self.plot_phase_labels(ax)
