@@ -1,0 +1,13 @@
+version: '3'
+services:
+  tcg:
+    build: ./docker/tcg
+    ports:
+     - "5000:5000"
+  te:
+    build: ./docker/te
+    user: root
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/home/jovyan/work/
