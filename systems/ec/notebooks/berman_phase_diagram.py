@@ -73,34 +73,36 @@ def run(phase_symbols = None, oxides = None, T=None, P=None, name=None):
         for i,p in enumerate(P):
             comps[i][j] = update_system(system, t,p)
 
-    categories = np.unique(comps).flatten()
-    cmap = plt.get_cmap('tab20')
-    colormap = cmap(np.linspace(0, 1, 20))
-    colorLookup = dict([(key, value) for key, value in zip(categories, colormap)])
+    try:
+        categories = np.unique(comps).flatten()
+        cmap = plt.get_cmap('tab20')
+        colormap = cmap(np.linspace(0, 1, 20))
+        colorLookup = dict([(key, value) for key, value in zip(categories, colormap)])
 
-    colors = [colorLookup[c] for c in comps.flatten()]
+        colors = [colorLookup[c] for c in comps.flatten()]
 
-    shape = (comps.shape[0], comps.shape[1], 4)
-    colorgrid = np.reshape(colors, shape)
+        shape = (comps.shape[0], comps.shape[1], 4)
+        colorgrid = np.reshape(colors, shape)
 
-    fig =plt.figure(figsize=(8,10),facecolor='white')
-    ax  =plt.subplot(211)
-    for q,cat in enumerate(categories):
-        indx = comps.flatten() == cat
-        ax.scatter(Ts.flatten()[indx], Ps.flatten()[indx], label=cat, color=colorLookup[cat])
-    plt.xlim([Tmin,Tmax])
-    plt.ylim([Pmin,Pmax])
-    plt.ylabel("Pressure (Pa)")
+        fig =plt.figure(figsize=(8,10),facecolor='white')
+        ax  =plt.subplot(211)
+        for q,cat in enumerate(categories):
+            indx = comps.flatten() == cat
+            ax.scatter(Ts.flatten()[indx], Ps.flatten()[indx], label=cat, color=colorLookup[cat])
+        plt.xlim([Tmin,Tmax])
+        plt.ylim([Pmin,Pmax])
+        plt.ylabel("Pressure (Pa)")
 
-    leg1 = ax.legend()
+        leg1 = ax.legend()
 
-    ax2 = plt.subplot(212)
-    ax2.imshow(colorgrid, origin='lower', extent=(Tmin,Tmax,Pmin/units.GPA,Pmax/units.GPA), aspect="auto")
-    ax2.legend(*ax.get_legend_handles_labels())
-    plt.ylabel("Pressure (GPa)")
-    plt.xlabel("Temperature (K)")
-    plt.title(name)
-    plt.savefig(name + "_"+ dt.datetime.now().isoformat() + ".png")
+        ax2 = plt.subplot(212)
+        ax2.imshow(colorgrid, origin='lower', extent=(Tmin,Tmax,Pmin/units.GPA,Pmax/units.GPA), aspect="auto")
+        ax2.legend(*ax.get_legend_handles_labels())
+        plt.ylabel("Pressure (GPa)")
+        plt.xlabel("Temperature (K)")
+        plt.title(name)
+        plt.savefig(name + "_"+ dt.datetime.now().isoformat() + ".png")
+    except Exception as e: print(e)
 
     return [
         Ts, Ps, comps
