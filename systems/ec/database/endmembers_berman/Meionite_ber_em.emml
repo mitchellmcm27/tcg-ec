@@ -1,0 +1,173 @@
+<?xml version='1.0' encoding='utf-8'?>
+<endmember_options>
+  <name name="Meionite_ber_em"/>
+  <formula name="CA(4)AL(6)SI(6)O(27)C(1)"/>
+  <reference>
+    <string_value lines="1">generate_berman_endmembers</string_value>
+  </reference>
+  <free_energy_model name="Gibbs">
+    <variable name="T">
+      <rank name="Scalar"/>
+      <units>K</units>
+    </variable>
+    <variable name="P">
+      <rank name="Scalar"/>
+      <units>bar</units>
+    </variable>
+    <parameter name="T_r">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">298.15</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'K'</string_value>
+        </units>
+      </rank>
+      <symbol>
+        <string_value lines="1">T_r</string_value>
+      </symbol>
+    </parameter>
+    <parameter name="P_r">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">1</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'bar'</string_value>
+        </units>
+      </rank>
+      <symbol>
+        <string_value lines="1">P_r</string_value>
+      </symbol>
+    </parameter>
+  </free_energy_model>
+  <parameters>
+    <parameter name="H_TrPr">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">-13849722.94</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="S_TrPr">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">730</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="V_TrPr">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">34.036</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/bar'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="k0">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">1511.34497</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/K-m'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="k1">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">-13243.328</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/K^(1/2)-m'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="k2">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">0</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J-K/m'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="k3">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">-751613952</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J-K^2'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="v1">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">-1.1103e-06</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'1/bar'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="v2">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">0</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'1/bar^2'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="v3">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">9.34e-06</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'1/K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="v4">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">0</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'1/K^2'</string_value>
+        </units>
+      </rank>
+    </parameter>
+  </parameters>
+  <functions/>
+  <potential name="G">
+    <expression>
+      <string_value type="code" language="python" lines="20">G = (
+H_TrPr + P**3*V_TrPr*v2/3 + P**2*(-P_r*V_TrPr*v2 + V_TrPr*v1/2) +
+P*(P_r**2*V_TrPr*v2 - P_r*V_TrPr*v1 + T**2*V_TrPr*v4 -
+2*T*T_r*V_TrPr*v4 + T*V_TrPr*v3 + T_r**2*V_TrPr*v4 - T_r*V_TrPr*v3 +
+V_TrPr) - P_r**3*V_TrPr*v2/3 - P_r**2*(-P_r*V_TrPr*v2 + V_TrPr*v1/2) -
+P_r*(P_r**2*V_TrPr*v2 - P_r*V_TrPr*v1 + T**2*V_TrPr*v4 -
+2*T*T_r*V_TrPr*v4 + T*V_TrPr*v3 + T_r**2*V_TrPr*v4 - T_r*V_TrPr*v3 +
+V_TrPr) + 2*sqrt(T)*k1 + T*k0 - T*(S_TrPr + k0*log(T) - k0*log(T_r) +
+k2/(2*T_r**2) + k3/(3*T_r**3) + 2*k1/sqrt(T_r) - k2/(2*T**2) -
+k3/(3*T**3) - 2*k1/sqrt(T)) - 2*sqrt(T_r)*k1 - T_r*k0 + k2/T_r +
+k3/(2*T_r**2) - k2/T - k3/(2*T**2)
+)</string_value>
+    </expression>
+  </potential>
+</endmember_options>
