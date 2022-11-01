@@ -87,6 +87,55 @@ def generate_reactions(outdir):
 
     generate_reaction(outdir, 'ec4', phases, reactions)
 
+    phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Feldspar', 'Quartz', 'Kyanite']
+    reactions = [
+        ( # HP breakdown of feldspars
+            [['Feldspar', 'Albite']],
+            [['Clinopyroxene', 'Jadeite'], ['Quartz', 'Quartz']],
+        ),
+        ( # HP breakdown of feldspars
+            [['Feldspar', 'Anorthite']],
+            [['Clinopyroxene', 'CaTschermaks'], ['Quartz', 'Quartz']],
+        ),
+        #( # HP breakdown of feldspars
+        #    [['Feldspar', 'Anorthite'], ['Orthopyroxene', 'Enstatite']],
+        #    [['Clinopyroxene', 'Diopside'], ['Quartz', 'Quartz']],
+        #),
+        ( # anorthite/opx breakdown to garnet
+            [['Feldspar', 'Anorthite'], ['Orthopyroxene', 'Enstatite']],
+            [['Garnet', 'Grossular'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']],
+        ),
+        ( # anorthite/opx breakdown to garnet
+            [['Feldspar', 'Anorthite'], ['Clinopyroxene', 'Clinoenstatite']],
+            [['Garnet', 'Grossular'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']],
+        ),
+   
+        ( # anorthite/opx breakdown to garnet
+            [['Feldspar','Anorthite'], ['Orthopyroxene','Ferrosilite']],
+            [['Garnet','Grossular'], ['Garnet','Almandine'], ['Quartz','Quartz']]
+        ),
+
+        ( # C/Opx -> Grt
+            [['Clinopyroxene','Diopside'], ['Clinopyroxene', 'CaTschermaks']],
+            [['Garnet','Grossular'], ['Garnet','Pyrope']]
+        ),
+        ( # C/Opx -> Grt
+            [['Orthopyroxene','OrthoDiopside'], ['Clinopyroxene', 'CaTschermaks']],
+            [['Garnet','Grossular'], ['Garnet','Pyrope']]
+        ),
+
+        ( # C/Opx -> Grt
+            [['Clinopyroxene','Hedenbergite'], ['Clinopyroxene', 'CaTschermaks']],
+            [['Garnet','Grossular'], ['Garnet','Almandine']]
+        ),
+
+        ( # Anorthite -> garnet/kyanite
+            [['Feldspar','Anorthite']],
+            [['Kyanite', 'Kyanite'], ['Garnet', 'Grossular'], ['Quartz','Quartz']],
+        )
+    ]
+    generate_reaction(outdir, 'ec5', phases, reactions)
+
 def generate_reaction(outdir, name, phases, reactions):
     try:
         os.mkdir(outdir)
