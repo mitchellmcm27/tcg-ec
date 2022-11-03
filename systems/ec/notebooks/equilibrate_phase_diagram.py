@@ -21,8 +21,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import sys
 
-sys.path.append(os.path.join(os.path.pardir, 'database', 'install','ec5_slb_rx','lib','python3.8','site-packages/')) # the final slash is necessary!
-import py_ec5_slb_rx as tcgdb
+sys.path.append(os.path.join(os.path.pardir, 'database', 'install','tcg_slb_database','lib','python3.8','site-packages')) # the final slash is necessary!
+import py_tcg_slb_database as tcgdb
 stixrudeDB = thermo.model.Database.from_thermocodegen(tcgdb)
 
 def supress_stdout(func):
