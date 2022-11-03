@@ -3,7 +3,7 @@ import sympy as sym
 import pandas as pd
 from thermocodegen.coder import coder
 
-class SLBPhase:
+class TCGPhase:
     name   = None
     abbrev = None
     reference = None
@@ -216,3 +216,7 @@ class SLBPhase:
         self.set_model_values()
         filename = self.model.to_xml(path=outdir)
         return filename
+
+class SLBPhase(TCGPhase):
+
+class BermanPhase(TCGPhase):
