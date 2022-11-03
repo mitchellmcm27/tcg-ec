@@ -1,1 +1,1 @@
-FROM registry.gitlab.com/enki-portal/thermoengine:staging
+FROM mitchellmcm27/thermoengine:latest

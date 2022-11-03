@@ -6,7 +6,7 @@ import ast
 from thermocodegen.coder import coder
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'python'))
-from tcg_slb.phase import SLBPhase
+from tcg_slb.phase import BermanPhase
 
 reference= 'generate_berman_phases' 
 
