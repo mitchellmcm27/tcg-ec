@@ -5,9 +5,6 @@ warnings.simplefilter(action='ignore', category=DeprecationWarning)
 import collections
 collections.MutableSequence = collections.abc.MutableSequence
 
-import scipy
-scipy.random = scipy.sparse.random
-
 #from __future__ import annotations # Enable Python 4 type hints in Python 3
 from thermoengine.equilibrate import PhaseLibrary, GibbsMinimizer, System
 import thermoengine as thermo
@@ -21,7 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import sys
 
-sys.path.append(os.path.join(os.path.pardir, 'database', 'install','tcg_slb_database','lib','python3.8','site-packages')) # the final slash is necessary!
+sys.path.append(os.path.join(os.path.pardir, 'database', 'install','tcg_slb_database','lib','python3.9','site-packages')) # the final slash is necessary!
 import py_tcg_slb_database as tcgdb
 stixrudeDB = thermo.model.Database.from_thermocodegen(tcgdb)
 
@@ -69,8 +66,19 @@ def run(phase_symbols = None, oxides = None, T=None, P=None, name=None, database
         "Fsp",
     ]
 
+    phase_symbols_stixrude_tcg = [
+        "qtz",
+        "gt",  
+        "cpx",
+        "opx",
+        "ky",
+        "plg",
+    ]
+
     phase_abbrev_list = phase_symbols_berman if database == "Berman" and phase_symbols is None else phase_symbols
     phase_abbrev_list = phase_symbols_stixrude if database == "Stixrude" and phase_symbols is None else phase_symbols
+    phase_abbrev_list = phase_symbols_stixrude_tcg if database is not None and phase_symbols is None else phase_symbols
+
 
     assert(name is not None)
     assert(P is not None)
