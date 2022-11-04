@@ -255,6 +255,10 @@ class BermanPolyEndmember(TCGEndmember):
         self.param_vals['r_Fe'] = self.r_Fe()
         self.param_vals['R'] = 8.31446261815324
 
+    def G_Pr_default(self):   
+        # Heat Capacity
+        Cp_Pr = self.syms.k0+self.syms.k1/sym.sqrt(self.T)+self.syms.k2/self.T**2+self.syms.k3/self.T**3
+        return self.syms.H_TrPr + sym.integrate(Cp_Pr,(self.T,self.T_r,self.T)) - self.T*(self.syms.S_TrPr + sym.integrate(Cp_Pr/self.T,(self.T,self.T_r,self.T)))
         
     def add_potential_to_model(self):
         assert(self.G is not None)

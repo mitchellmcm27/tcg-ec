@@ -13,15 +13,14 @@ def generate_berman_endmembers(outdir):
   cols_ss = ['Phase', 'Formula', 'sAbbrev', 'lAbbrev', 'H_TrPr', 'S_TrPr', 'V_TrPr','k0', 'k1', 'k2', 'k3', 'v1', 'v2', 'v3', 'v4']
   df1 = df1[cols_ss]
   df1 = df1.rename(index=str,columns={'Phase':'name', 'Formula':'formula'})
-  df2 = pd.read_csv(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'berman_thermoengine_extended.csv'),skipinitialspace=True)
+  df2 = pd.read_csv(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'berman_thermoengine_extended.csv'))
 
-  df = [df1, df2]
+  df = pd.concat([df1, df2],ignore_index=True)
 
   try:
       os.mkdir(outdir)
   except FileExistsError:
       pass
-
 
   formula = 'SI(1)O(2)'
   df_si = df[df['formula']==formula]
@@ -38,7 +37,6 @@ def generate_berman_endmembers(outdir):
   df_poly = df_si.set_index('name').filter(items=polymorphs,axis=0)
   em = BermanPolyEndmember(name,formula,reference,polymorphs,df_poly)
   print(em.tofile(outdir))
-
   
   for i, row in df.iterrows():
       values_dict = row.to_dict()
