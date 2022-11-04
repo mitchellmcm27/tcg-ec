@@ -11,12 +11,12 @@ def generate_berman_endmembers(outdir):
   reference= 'generate_berman_endmembers' 
   df1 = pd.read_json(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'berman_1988.json'))
   cols_ss = ['Phase', 'Formula', 'sAbbrev', 'lAbbrev', 'H_TrPr', 'S_TrPr', 'V_TrPr','k0', 'k1', 'k2', 'k3', 'v1', 'v2', 'v3', 'v4']
-  df = df[cols_ss]
-  df = df.rename(index=str,columns={'Phase':'name', 'Formula':'formula'})
-  df2 = pd.read_csv(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'berman_thermoengine_extended.csv'))
+  df1 = df1[cols_ss]
+  df1 = df1.rename(index=str,columns={'Phase':'name', 'Formula':'formula'})
+  df2 = pd.read_csv(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'berman_thermoengine_extended.csv'),skipinitialspace=True)
 
   df = [df1, df2]
-  
+
   try:
       os.mkdir(outdir)
   except FileExistsError:
