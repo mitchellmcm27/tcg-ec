@@ -9,11 +9,14 @@ from tcg_slb.endmember import BermanEndmember, BermanPolyEndmember
 
 def generate_berman_endmembers(outdir):
   reference= 'generate_berman_endmembers' 
-  df = pd.read_json(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'berman_1988.json'))
+  df1 = pd.read_json(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'berman_1988.json'))
   cols_ss = ['Phase', 'Formula', 'sAbbrev', 'lAbbrev', 'H_TrPr', 'S_TrPr', 'V_TrPr','k0', 'k1', 'k2', 'k3', 'v1', 'v2', 'v3', 'v4']
   df = df[cols_ss]
   df = df.rename(index=str,columns={'Phase':'name', 'Formula':'formula'})
+  df2 = pd.read_csv(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'berman_thermoengine_extended.csv'))
 
+  df = [df1, df2]
+  
   try:
       os.mkdir(outdir)
   except FileExistsError:
@@ -36,6 +39,7 @@ def generate_berman_endmembers(outdir):
   em = BermanPolyEndmember(name,formula,reference,polymorphs,df_poly)
   print(em.tofile(outdir))
 
+  
   for i, row in df.iterrows():
       values_dict = row.to_dict()
       # clean up names to make them coder compliant
@@ -45,8 +49,6 @@ def generate_berman_endmembers(outdir):
       values_dict.pop('lAbbrev')
       em = BermanEndmember(name,formula,reference,**values_dict)
       print(em.tofile(outdir))
-
-
 
 if __name__ == "__main__":
     import argparse
