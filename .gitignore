@@ -3,6 +3,8 @@
 *.pickle
 **/*.build/*
 **/install/*
+/database/phases/
+/database/endmembers/
 
 ### CMake ###
 CMakeLists.txt.user
