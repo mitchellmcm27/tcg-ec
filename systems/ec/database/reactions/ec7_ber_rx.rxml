@@ -1,0 +1,191 @@
+<?xml version='1.0' encoding='utf-8'?>
+<reaction_options>
+  <name name="ec7_ber_rx"/>
+  <database>
+    <string_value lines="1">file://../database/tcg_ber_database.tar.gz</string_value>
+  </database>
+  <reference>
+    <string_value lines="1">generate_reactions</string_value>
+  </reference>
+  <phase name="Clinopyroxene_ber_ph"/>
+  <phase name="Orthopyroxene_ber_ph"/>
+  <phase name="Garnet_ber_ph"/>
+  <phase name="Plagioclase_ber_ph"/>
+  <phase name="Quartz_ber_ph"/>
+  <phase name="Kyanite_ber_ph"/>
+  <phase name="KFeldspar_ber_ph"/>
+  <phase name="Rutile_ber_ph"/>
+  <phase name="Hematite_ber_ph"/>
+  <phase name="Spinel_ber_ph"/>
+  <reaction_rate name="R">
+    <variable name="T">
+      <rank name="Scalar"/>
+      <units>K</units>
+    </variable>
+    <variable name="P">
+      <rank name="Scalar"/>
+      <units>bar</units>
+    </variable>
+    <variable name="C">
+      <rank name="Matrix">
+        <n_rows>N</n_rows>
+        <n_cols>Kmax</n_cols>
+      </rank>
+      <units>None</units>
+    </variable>
+    <variable name="Phi">
+      <rank name="Vector">
+        <size>N</size>
+      </rank>
+      <units>%</units>
+    </variable>
+    <function name="A">
+      <type name="external">
+        <rank name="Vector">
+          <size>J</size>
+        </rank>
+        <variable name="T">
+          <rank name="Scalar"/>
+          <units>K</units>
+        </variable>
+        <variable name="P">
+          <rank name="Scalar"/>
+          <units>bar</units>
+        </variable>
+        <variable name="C">
+          <rank name="Matrix">
+            <n_rows>N</n_rows>
+            <n_cols>Kmax</n_cols>
+          </rank>
+          <units>None</units>
+        </variable>
+      </type>
+    </function>
+    <function name="rho">
+      <type name="external">
+        <rank name="Vector">
+          <size>J</size>
+        </rank>
+        <variable name="T">
+          <rank name="Scalar"/>
+          <units>K</units>
+        </variable>
+        <variable name="P">
+          <rank name="Scalar"/>
+          <units>bar</units>
+        </variable>
+      </type>
+    </function>
+  </reaction_rate>
+  <global_parameters>
+    <parameter name="T0">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">2000</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="R">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">8.31446261815324</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/mol/K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+  </global_parameters>
+  <reaction name="AnorOrth_DiopPyroB_Qu">
+    <reactant name="Anor_Plag" phase="Plagioclase_ber_ph" endmember="Anorthite_ber_em"/>
+    <reactant name="Orth_Orth" phase="Orthopyroxene_ber_ph" endmember="Orthoenstatite_ber_em"/>
+    <product name="Diop_Clin" phase="Clinopyroxene_ber_ph" endmember="Diopside_ber_em"/>
+    <product name="Pyro_Garn" phase="Garnet_ber_ph" endmember="Pyrope_ber_em"/>
+    <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">AnorOrth_DiopPyroB_Qu = (
+Piecewise((exp(-T0/T)*A[0, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[0, 0] &gt;=
+0), (exp(-T0/T)*A[0, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="AnorFerr_HedeAlmaB_Qu">
+    <reactant name="Anor_Plag" phase="Plagioclase_ber_ph" endmember="Anorthite_ber_em"/>
+    <reactant name="Ferr_Orth" phase="Orthopyroxene_ber_ph" endmember="Ferrosilite_ber_em"/>
+    <product name="Hede_Clin" phase="Clinopyroxene_ber_ph" endmember="Hedenbergite_ber_em"/>
+    <product name="Alma_Garn" phase="Garnet_ber_ph" endmember="Almandine_ber_em"/>
+    <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">AnorFerr_HedeAlmaB_Qu = (
+Piecewise((exp(-T0/T)*A[1, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[1, 0] &gt;=
+0), (exp(-T0/T)*A[1, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="AlbiOrth_JadePyroB_Qu">
+    <reactant name="Albi_Plag" phase="Plagioclase_ber_ph" endmember="Albite_ber_em"/>
+    <reactant name="Orth_Orth" phase="Orthopyroxene_ber_ph" endmember="Orthoenstatite_ber_em"/>
+    <product name="Jade_Clin" phase="Clinopyroxene_ber_ph" endmember="Jadeite_ber_em"/>
+    <product name="Pyro_Garn" phase="Garnet_ber_ph" endmember="Pyrope_ber_em"/>
+    <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">AlbiOrth_JadePyroB_Qu = (
+Piecewise((exp(-T0/T)*A[2, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[2, 0] &gt;=
+0), (exp(-T0/T)*A[2, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="AlbiFerr_JadeAlmaB_Qu">
+    <reactant name="Albi_Plag" phase="Plagioclase_ber_ph" endmember="Albite_ber_em"/>
+    <reactant name="Ferr_Orth" phase="Orthopyroxene_ber_ph" endmember="Ferrosilite_ber_em"/>
+    <product name="Jade_Clin" phase="Clinopyroxene_ber_ph" endmember="Jadeite_ber_em"/>
+    <product name="Alma_Garn" phase="Garnet_ber_ph" endmember="Almandine_ber_em"/>
+    <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">AlbiFerr_JadeAlmaB_Qu = (
+Piecewise((exp(-T0/T)*A[3, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[3, 0] &gt;=
+0), (exp(-T0/T)*A[3, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="Albi_JadeB_Qu">
+    <reactant name="Albi_Plag" phase="Plagioclase_ber_ph" endmember="Albite_ber_em"/>
+    <product name="Jade_Clin" phase="Clinopyroxene_ber_ph" endmember="Jadeite_ber_em"/>
+    <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">Albi_JadeB_Qu = (
+Piecewise((exp(-T0/T)*A[4, 0]*Phi[3, 0]/(R*T), A[4, 0] &gt;= 0),
+(exp(-T0/T)*A[4, 0]*Phi[0, 0]*Phi[4, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="AnorOrth_DiopKyanB_Qu">
+    <reactant name="Anor_Plag" phase="Plagioclase_ber_ph" endmember="Anorthite_ber_em"/>
+    <reactant name="Orth_Orth" phase="Orthopyroxene_ber_ph" endmember="Orthoenstatite_ber_em"/>
+    <product name="Diop_Clin" phase="Clinopyroxene_ber_ph" endmember="Diopside_ber_em"/>
+    <product name="Kyan_Kyan" phase="Kyanite_ber_ph" endmember="Kyanite_ber_em"/>
+    <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">AnorOrth_DiopKyanB_Qu = (
+Piecewise((exp(-T0/T)*A[5, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[5, 0] &gt;=
+0), (exp(-T0/T)*A[5, 0]*Phi[0, 0]*Phi[4, 0]*Phi[5, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="AnorFerr_HedeKyanB_Qu">
+    <reactant name="Anor_Plag" phase="Plagioclase_ber_ph" endmember="Anorthite_ber_em"/>
+    <reactant name="Ferr_Orth" phase="Orthopyroxene_ber_ph" endmember="Ferrosilite_ber_em"/>
+    <product name="Hede_Clin" phase="Clinopyroxene_ber_ph" endmember="Hedenbergite_ber_em"/>
+    <product name="Kyan_Kyan" phase="Kyanite_ber_ph" endmember="Kyanite_ber_em"/>
+    <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">AnorFerr_HedeKyanB_Qu = (
+Piecewise((exp(-T0/T)*A[6, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[6, 0] &gt;=
+0), (exp(-T0/T)*A[6, 0]*Phi[0, 0]*Phi[4, 0]*Phi[5, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+</reaction_options>

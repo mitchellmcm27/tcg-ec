@@ -56,6 +56,7 @@ class BasePDReactiveODE:
         self.Cik0  = Cik0
         C  = self.reshapeC(self.Cik0)
         Cs = self.regularizeC(C)
+
         self.rho0  = 1./self.v(self.T, self.p, Cs, self.mi0)
 
         self.sol    = kwargs.get('sol', None)
@@ -626,11 +627,7 @@ class PDReactiveGrid:
                 
                 # solve the ODE at the specific p, T, etc.
                 ode.solve(T,GPa2Bar(p),mi0,Cik0,end,**kwargs)
-
-                # get the solutions for mi and Cik, use them next time
-                Cik = ode.sol.y[ode.I:ode.I+ode.K,-1]
-                mi = ode.sol.y[:ode.I,-1]
-
+                
                 # populate the grid cell with the inputs
                 self.Tgrid[i][j]    = T
                 self.pgrid[i][j]    = p

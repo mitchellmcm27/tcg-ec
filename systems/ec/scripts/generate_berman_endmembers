@@ -55,7 +55,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser( \
                            description="""Generate emmls for the Berman thermodynamic database.""")
     parser.add_argument('-o', '--outdir', action='store', metavar='outdir', 
-                        default=os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'endmembers_berman'), type=str, required=False,
+                        default=os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'endmembers'), type=str, required=False,
                         help='Output directory for emml files (defaults to ../database/endmembers_berman relative to script).')
     args = parser.parse_args()
 

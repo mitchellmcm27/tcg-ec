@@ -11,9 +11,7 @@ class SLBReactions:
         R = kwargs.get('R', 8.31446261815324)
         T0 = kwargs.get('T0', 2000.0)
         
-        self.rxn = reaction.Reaction.from_database(total_reactions=nreactions,  \
-                                                   phase_names=phases, \
-                                                   database=database)
+        self.rxn = reaction.Reaction.from_database(total_reactions=nreactions,phase_names=phases,database=database)
         self.j = 0
         
         self.T   = self.rxn.T

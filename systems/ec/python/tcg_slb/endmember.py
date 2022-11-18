@@ -86,6 +86,7 @@ class SLBEndmember(TCGEndmember):
                             'bar', '', 'K', \
                             '', '', '', \
                             'J/K-m' ]
+
         symdict = dict( ( p, sym.symbols(p,real=True) ) for p in self.param_strs )
         self.syms = types.SimpleNamespace(**symdict)
 
@@ -129,7 +130,6 @@ class SLBEndmember(TCGEndmember):
     def A_default(self):
         return self.A_iso_default() + self.A_quasi_default() + self.A_mag_default()
 
-
     def add_potential_to_model(self):
         if self.A is None: self.A = self.A_default()
         self.model.add_potential_to_model('A', self.A, self.params())
@@ -143,9 +143,10 @@ class BermanEndmember(TCGEndmember):
                             'k0', 'k1', 'k2', 'k3',\
                             'v1', 'v2', 'v3', 'v4']
 
-        self.param_unit = [ 'J', 'J/K', 'J/bar',\
+        self.param_unit = [ 'J', 'J/K', 'J/bar-m',\
                             'J/K-m', 'J/K^(1/2)-m', 'J-K/m', 'J-K^2',\
                             '1/bar', '1/bar^2', '1/K', '1/K^2']
+
         symdict = dict( ( p, sym.symbols(p,real=True) ) for p in self.param_strs )
         self.syms = types.SimpleNamespace(**symdict)
 
@@ -160,8 +161,8 @@ class BermanEndmember(TCGEndmember):
         self.param_vals = dict( (p, kwargs[p]) for p in required_params )
         self.param_vals['r_Fe'] = self.r_Fe()
     
-    def G_Pr_default(self):   
-        # Heat Capacity
+    def G_Pr_default(self):        
+        # Expression for heat capacity
         Cp_Pr = self.syms.k0+self.syms.k1/sym.sqrt(self.T)+self.syms.k2/self.T**2+self.syms.k3/self.T**3
         return self.syms.H_TrPr + sym.integrate(Cp_Pr,(self.T,self.T_r,self.T)) - self.T*(self.syms.S_TrPr + sym.integrate(Cp_Pr/self.T,(self.T,self.T_r,self.T)))
     
@@ -183,50 +184,54 @@ class BermanPolyEndmember(TCGEndmember):
 
         # init the SS model
         super().__init__(name,formula,reference,'TP')      
-     
-     
-        abbrevs = df['sAbbrev'].tolist()
-        # concatenate the param strings from all rows using abbreviations
-        # concatenate the needed units as well (they are the same for each row)
+
+        # set up the root symbols like we would for any EM
         root_strs = [
             'H_TrPr', 'S_TrPr', 'V_TrPr',
             'k0', 'k1', 'k2', 'k3',
             'v1', 'v2', 'v3', 'v4'
         ]
         root_unit = [
-            'J', 'J/K', 'J/bar',
+            'J', 'J/K', 'J/bar-m',
             'J/K-m', 'J/K^(1/2)-m', 'J-K/m', 'J-K^2',
             '1/bar', '1/bar^2', '1/K', '1/K^2'
         ]
-        param_strs = []
-        param_unit = []
-
+        # convenient way to get a dict
         params_root = coder.set_coder_params(root_strs, root_unit)
         symbol_dict_root = coder.get_symbol_dict_from_params(params_root)
 
-        for index, row in df.iterrows():
-            abbrev = row['sAbbrev']
+        # make params for each polymorph according to abbreviations
+        abbrevs = df['sAbbrev'].tolist()
+        param_strs = []
+        param_unit = []
+        for abbrev in abbrevs:
+            # for each root string, concatenate the EM's abbrevation
             param_strs += ['{}_{}'.format(p,abbrev) for p in root_strs]
             param_unit += root_unit
 
-     
+        # we set our param strings/units as the polymorphic ones
         self.param_strs = param_strs
         self.param_unit = param_unit
 
-        # update coder
+        # get a dict
         params = coder.set_coder_params(self.param_strs, self.param_unit)
         symbol_dict = coder.get_symbol_dict_from_params(params)
 
+        # get a list of symbols 
         self.param_syms = [ symbol_dict[p] for p in self.param_strs ]
+
+        # combine the root symbols and the polymorphic symbols
         self.syms = types.SimpleNamespace(**symbol_dict_root, **symbol_dict)
 
         # override P,T, etc. with updated coder model
+        # not sure if this is necessary
         self.model = coder.StdStateModel.from_type()
         self.T = self.model.get_symbol_for_t()
         self.P = self.model.get_symbol_for_p()
         self.T_r = self.model.get_symbol_for_tr()
         self.P_r = self.model.get_symbol_for_pr()
 
+        # create an expression for volume
         self.V = self.syms.V_TrPr*(1+self.syms.v1*(self.P-self.P_r)+self.syms.v2*(self.P-self.P_r)**2+self.syms.v3*(self.T-self.T_r)+self.syms.v4*(self.T-self.T_r)**2)
         
         # override self.G for solid solution
@@ -235,15 +240,20 @@ class BermanPolyEndmember(TCGEndmember):
         G_ss = GPr + GPrToP
         
         N = len(root_strs)
+
+        # list of Gibbs symbols for each polymorph
         G_p = [sym.Symbol('G_{}'.format(a)) for a in abbrevs]
         symbol_list = list(symbol_dict.values())
 
         for i,p in enumerate(polymorphs):
             subs_dict = dict(zip(symbol_dict_root.values(),symbol_list[i*N:(i+1)*N]))
+            # add the subscripts to each G_p
             G_p[i]=G_ss.subs(subs_dict)
         
+        # minimize the list of Gibbs of each polymorph
         self.G = sym.Min(*G_p)
         
+        # get the values from the dataframe
         param_vals = dict()
         for ind, row in df.iterrows():
             abbrev = row.pop('sAbbrev')

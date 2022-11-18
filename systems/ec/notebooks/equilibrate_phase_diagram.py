@@ -44,17 +44,17 @@ def update_system(sys,T,P, comp=None, phase_library=None):
     sys.update(T=T, P=P)
     return sys
 
-def run(phase_symbols = None, oxides = None, T=None, P=None, name=None, database="Berman"):
+def run(phase_symbols = None, oxides = None, T=None, P=None, name=None, comp=None, database="Berman"):
 
     phase_symbols_berman =  [
-        "Qz", "Coe",
+        "Qz",
         "Grt",  
-        'Di','Jd','cEn', #'Cpx'
-        'En', 'Fs',
+        "Jd", "cEn", "Dis"
+        "En","Fs",
         "Ky",
-        "Ab", "An",
+        "Fsp",
         "Rt",
-        "Mc"
+#        "Mc"
     ]
 
     phase_symbols_stixrude = [
@@ -75,23 +75,30 @@ def run(phase_symbols = None, oxides = None, T=None, P=None, name=None, database
         "plg",
     ]
 
-    phase_abbrev_list = phase_symbols_berman if database == "Berman" and phase_symbols is None else phase_symbols
-    phase_abbrev_list = phase_symbols_stixrude if database == "Stixrude" and phase_symbols is None else phase_symbols
-    phase_abbrev_list = phase_symbols_stixrude_tcg if database is not None and phase_symbols is None else phase_symbols
+    if phase_symbols is None:
+        if database=="Berman":
+            phase_abbrev_list = phase_symbols_berman
+        elif database == "Stixrude":
+            phase_abbrev_list = phase_symbols_stixrude
+        else:
+            phase_abbrev_list = phase_symbols_stixrude_tcg
+    else:
+        phase_abbrev_list = phase_symbols
 
 
+    if oxides is None:
+        comp = comp
+    else:
+        comp = thermo.OxideWtComp(**oxides)
     assert(name is not None)
     assert(P is not None)
     assert(T is not None)
-    assert(oxides is not None)
     assert(phase_abbrev_list is not None)
     
     Tmin = np.amin(T)
     Tmax = np.amax(T)
     Pmin = np.amin(P)
     Pmax = np.amax(P)
-
-    oxide_comp = thermo.OxideWtComp(**oxides)
 
     db = thermo.model.Database(database=database) if database == "Berman"  else stixrudeDB
     phases = db.get_phases(phase_abbrev_list)
@@ -101,7 +108,7 @@ def run(phase_symbols = None, oxides = None, T=None, P=None, name=None, database
             None,
             T=800,
             P=0.25*units.GPA,
-            comp=oxide_comp,
+            comp=comp,
             phase_library=phase_library,
         )
 
@@ -128,7 +135,7 @@ def run(phase_symbols = None, oxides = None, T=None, P=None, name=None, database
 
 def plot_result(system,Ts,Ps,assemblages,title):
     
-    get_hash = lambda assemblage : " ".join(sorted(assemblage.names[assemblage.amounts>0.001]))
+    get_hash = lambda assemblage : " ".join(sorted(assemblage.unique_phase_names))
     get_n_phases = lambda s: len(s.split())
 
     comps = np.vectorize(get_hash)(assemblages)

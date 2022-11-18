@@ -1,7 +1,11 @@
-name,abbrev,endmember_names,formula_str,conversion_strs,X,d,W,sites,TC0,VD,SD
-Feldspar,plg,"['Anorthite', 'Albite']",Na[Na]Ca[Ca]Al[Al]Si[Si]O8,"['[0]=[Ca]', '[1]=[Na]']","[1.0, 1.0]","[1.0, 1.0]",[26000.0],"[[1.0, [1.0, 0.0]], [1.0, [0.0, 1.0]]]",,,
-Orthopyroxene,opx,"['Orthoenstatite', 'Ferrosilite', 'MgTschermaks', 'OrthoDiopside']",Ca[Ca]Mg[Mg]Fe[Fe]Al[Al]Si[Si]O6,"['[0]=([Mg]-[Ca]-[Al]/2.0)/2.0', '[1]=[Fe]/2.0', '[2]=[Al]/2.0', '[3]=[Ca]']","[1.0, 1.0, 1.0, 1.0]","[1.0, 1.0, 1.0, 1.0]","[0.0, 0.0, 0.0, 32100.0, 0.0, 48000.0]","[[1.0, [0.0, 0.0, 0.0, 1.0]], [1.0, [1.0, 0.0, 1.0, 0.0]], [1.0, [0.0, 1.0, 0.0, 0.0]], [1.0, [1.0, 0.0, 0.0, 1.0]], [1.0, [0.0, 1.0, 0.0, 0.0]], [1.0, [0.0, 0.0, 1.0, 0.0]]]",,,
-Clinopyroxene,cpx,"['Diopside', 'Hedenbergite', 'Clinoenstatite', 'CaTschermaks', 'Jadeite']",Na[Na]Ca[Ca]Mg[Mg]Fe[Fe]Al[Al]Si[Si]O6,"['[0]=[Ca] - [Fe] - ([Al]-[Na])/2.0', '[1]=[Fe]', '[2]=([Mg] - ([Ca] - [Fe] - ([Al]-[Na])/2.0))/2.0', '[3]=([Al]-[Na])/2.0', '[4]=[Na]']","[1.0, 1.0, 1.0, 1.0, 1.0]","[1.0, 1.0, 1.0, 3.5, 1.0]","[0.0, 24700.0, 24700.0, 26000.0, 0.0, 60600.0, 24300.0, 0.0, 0.0, 10000.0]","[[1.0, [1.0, 1.0, 0.0, 1.0, 0.0]], [1.0, [0.0, 0.0, 1.0, 0.0, 0.0]], [1.0, [0.0, 0.0, 0.0, 0.0, 1.0]], [1.0, [1.0, 0.0, 1.0, 0.0, 0.0]], [1.0, [0.0, 1.0, 0.0, 0.0, 0.0]], [1.0, [0.0, 0.0, 0.0, 1.0, 1.0]], [2.0, [0.0, 0.0, 0.0, 0.5, 0.0]], [2.0, [1.0, 1.0, 1.0, 0.5, 1.0]]]",,,
-Garnet,gt,"['Pyrope', 'Almandine', 'Grossular', 'MgMajorite', 'NaMajorite']",Na[Na]Ca[Ca]Mg[Mg]Fe[Fe]Al[Al]Si[Si]O12,"['[0]=([Al] - 2.0*[Fe]/3.0 - 2.0*[Ca]/3.0 - 2.0*[Na]/2.0)/2.0', '[1]=[Fe]/3.0', '[2]=[Ca]/3.0', '[3]=([Mg] - 3.0*(([Al] - 2.0*[Fe]/3.0 - 2.0*[Ca]/3.0 - 2.0*[Na]/2.0)/2.0))/4.0', '[4]=[Na]/2.0']","[1.0, 1.0, 1.0, 1.0, 1.0]","[1.0, 1.0, 1.0, 1.0, 1.0]","[0.0, 30000.0, 0.0, 21300.0, 0.0, 58000.0, 0.0, 0.0, 0.0, 0.0]","[[3.0, [0.0, 0.0, 1.0, 0.0, 0.0]], [3.0, [1.0, 0.0, 0.0, 1.0, 0.0]], [3.0, [0.0, 1.0, 0.0, 0.0, 0.0]], [3.0, [0.0, 0.0, 0.0, 0.0, 0.666666666]], [3.0, [0.0, 0.0, 0.0, 0.0, 0.333333333]], [1.0, [0.0, 0.0, 0.0, 1.0, 0.0]], [1.0, [1.0, 1.0, 1.0, 0.0, 1.0]], [1.0, [0.0, 0.0, 0.0, 1.0, 1.0]], [1.0, [1.0, 1.0, 1.0, 0.0, 0.0]]]",,,
-Quartz,qtz,['Quartz'],Si[Si]O2,['[0]=[Si]'],[1.0],[1.0],[],[],[847.0],[0.1222],[5.164]
-Kyanite,ky,['Kyanite'],Al[Al]SiO5,['[0]=[Al]/2.0'],[1.0],[1.0],[],[],,,
+name,abbrev,endmember_names,formula_str,conversion_strs
+Plagioclase,plg,"['Anorthite', 'Albite']",Na[Na]Ca[Ca]Al[Al]Si[Si]O8,"['[0]=[Ca]', '[1]=[Na]']"
+Clinopyroxene,cpx,"['Diopside', 'Hedenbergite', 'Jadeite', 'Clinoenstatite']",Na[Na]Ca[Ca]Mg[Mg]Fe[Fe]Al[Al]Si[Si]O6,"['[0]=([Ca]+[Mg])/2.0', '[1]=[Fe]', '[2]=[Na]', '[3]=[Mg]/2.0']"
+Garnet,gt,"['Pyrope', 'Almandine', 'Grossular']",Ca[Ca]Mg[Mg]Fe[Fe]Al[Al]Si[Si]O12,"['[0]=[Mg]/3.0', '[1]=[Fe]/3.0', '[2]=[Ca]/3.0']"
+Orthopyroxene,opx,"['Orthoenstatite', 'Ferrosilite']",Ca[Ca]Mg[Mg]Fe[Fe]Al[Al]Si[Si]O6,"['[0]=([Mg]-[Ca]-[Al]/2.0)/2.0', '[1]=[Fe]/2.0']"
+Quartz,qtz,"['B_Quartz']",Si[Si]O2,"['[0]=[Si]']"
+Spinel,sp,"['Spinel']",Mg[Mg]Al2O4,"['[0]=[Mg]']"
+Rutile,ru,"['Rutile']",Ti[Ti]O2,"['[0]=[Si]']"
+Kyanite,ky,"['Kyanite']",Al[Al]SiO5,"['[0]=[Al]/2.0']"
+KFeldspar,kfs,"['Potassium_Feldspar']",K[K]AlSi3O8,"['[0]=[K]']"
+Hematite,hem,"['Hematite']",Fe[Fe]O[O],"['[0]=[Fe]/2']"

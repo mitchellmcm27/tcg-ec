@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./systems/ec/python", "/Users/mmcmillan31/documents/developer/thermocodegen/lib/python3.9/site-packages/"
+    ]
+}

@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 
-import os,sys
+import os, sys
 import pandas as pd
 import ast
 import numpy as np
 import sympy as sym
 from collections import OrderedDict
 from thermocodegen.coder import coder
-
-dbfile = os.path.join(os.path.pardir, 'database', 'tcg_slb_database.tar.gz')
-dbpath = "file://{}".format(dbfile)
-print(dbpath)
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'python'))
 from tcg_slb.reactions import SLBReactions
@@ -28,19 +24,19 @@ def generate_reactions(outdir):
             [['Clinopyroxene', 'Jadeite'], ['Quartz', 'Quartz']],
         )
     ]
-    generate_reaction(outdir, 'ec1', phases, reactions)
+    generate_reaction(outdir, 'ec1', phases, reactions, 'slb')
 
     phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Feldspar', 'Quartz', 'Kyanite']
     reactions = [
         (
             [['Feldspar', 'Albite']],
             [['Clinopyroxene', 'Jadeite'], ['Quartz', 'Quartz']],
-        ),(
+        ), (
             [['Feldspar', 'Anorthite'], ['Orthopyroxene', 'Enstatite']],
             [['Clinopyroxene', 'Diopside'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']]),
     ]
 
-    generate_reaction(outdir, 'ec2', phases, reactions)
+    generate_reaction(outdir, 'ec2', phases, reactions, 'slb')
 
     phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Feldspar', 'Quartz', 'Kyanite']
     reactions = [
@@ -54,13 +50,13 @@ def generate_reactions(outdir):
         ),
         ( # Mg-rich: grossular + 2 pyrope + 3 quartz = 3 enstatite + 3 anorthite 
             [['Garnet', 'Grossular'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']],
-            [['Orthopyroxene', 'Enstatite'], ['Feldspar','Anorthite']],
+            [['Orthopyroxene', 'Enstatite'], ['Feldspar', 'Anorthite']],
         ),
         ( # Fe-rich: grossular + 2 almandine + 3 quartz = 3 ferrosilite + 3 anorthite.
             [['Garnet', 'Grossular'], ['Garnet', 'Almandine'], ['Quartz', 'Quartz']],
-            [['Orthopyroxene','Ferrosilite'], ['Feldspar','Anorthite']],
+            [['Orthopyroxene', 'Ferrosilite'], ['Feldspar', 'Anorthite']],
         )]
-    generate_reaction(outdir, 'ec3', phases, reactions)
+    generate_reaction(outdir, 'ec3', phases, reactions, 'slb')
 
     phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Feldspar', 'Quartz', 'Kyanite']
     reactions = [
@@ -74,18 +70,18 @@ def generate_reactions(outdir):
         ),
         ( # Mg-rich: grossular + 2 pyrope + 3 quartz = 3 enstatite + 3 anorthite 
             [['Garnet', 'Grossular'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']],
-            [['Orthopyroxene', 'Enstatite'], ['Feldspar','Anorthite']],
+            [['Orthopyroxene', 'Enstatite'], ['Feldspar', 'Anorthite']],
         ),
         ( # Fe-rich: grossular + 2 almandine + 3 quartz = 3 ferrosilite + 3 anorthite.
             [['Garnet', 'Grossular'], ['Garnet', 'Almandine'], ['Quartz', 'Quartz']],
-            [['Orthopyroxene','Ferrosilite'], ['Feldspar','Anorthite']],
+            [['Orthopyroxene', 'Ferrosilite'], ['Feldspar', 'Anorthite']],
         ),
         ( # Anorthite to kyanite
-            [['Feldspar','Anorthite']],
-            [['Kyanite', 'Kyanite'], ['Garnet', 'Grossular'], ['Quartz','Quartz']],
+            [['Feldspar', 'Anorthite']],
+            [['Kyanite', 'Kyanite'], ['Garnet', 'Grossular'], ['Quartz', 'Quartz']],
         )]
 
-    generate_reaction(outdir, 'ec4', phases, reactions)
+    generate_reaction(outdir, 'ec4', phases, reactions, 'slb')
 
     phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Feldspar', 'Quartz', 'Kyanite']
     reactions = [
@@ -109,56 +105,244 @@ def generate_reactions(outdir):
             [['Feldspar', 'Anorthite'], ['Clinopyroxene', 'Clinoenstatite']],
             [['Garnet', 'Grossular'], ['Garnet', 'Pyrope'], ['Quartz', 'Quartz']],
         ),
-   
+
         ( # anorthite/opx breakdown to garnet
-            [['Feldspar','Anorthite'], ['Orthopyroxene','Ferrosilite']],
-            [['Garnet','Grossular'], ['Garnet','Almandine'], ['Quartz','Quartz']]
+            [['Feldspar', 'Anorthite'], ['Orthopyroxene', 'Ferrosilite']],
+            [['Garnet', 'Grossular'], ['Garnet', 'Almandine'], ['Quartz', 'Quartz']]
         ),
 
         ( # C/Opx -> Grt
-            [['Clinopyroxene','Diopside'], ['Clinopyroxene', 'CaTschermaks']],
-            [['Garnet','Grossular'], ['Garnet','Pyrope']]
+            [['Clinopyroxene', 'Diopside'], ['Clinopyroxene', 'CaTschermaks']],
+            [['Garnet', 'Grossular'], ['Garnet', 'Pyrope']]
         ),
         ( # C/Opx -> Grt
-            [['Orthopyroxene','OrthoDiopside'], ['Clinopyroxene', 'CaTschermaks']],
-            [['Garnet','Grossular'], ['Garnet','Pyrope']]
+            [['Orthopyroxene', 'OrthoDiopside'], ['Clinopyroxene', 'CaTschermaks']],
+            [['Garnet', 'Grossular'], ['Garnet', 'Pyrope']]
         ),
 
         ( # C/Opx -> Grt
-            [['Clinopyroxene','Hedenbergite'], ['Clinopyroxene', 'CaTschermaks']],
-            [['Garnet','Grossular'], ['Garnet','Almandine']]
+            [['Clinopyroxene', 'Hedenbergite'], ['Clinopyroxene', 'CaTschermaks']],
+            [['Garnet', 'Grossular'], ['Garnet', 'Almandine']]
         ),
 
         ( # Anorthite -> garnet/kyanite
-            [['Feldspar','Anorthite']],
-            [['Kyanite', 'Kyanite'], ['Garnet', 'Grossular'], ['Quartz','Quartz']],
+            [['Feldspar', 'Anorthite']],
+            [['Kyanite', 'Kyanite'], ['Garnet', 'Grossular'], ['Quartz', 'Quartz']],
         )
     ]
-    generate_reaction(outdir, 'ec5', phases, reactions)
+    generate_reaction(outdir, 'ec5', phases, reactions, 'slb')
+    
+    phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Plagioclase', 'Quartz', 'Kyanite', 'KFeldspar', 'Rutile','Hematite','Spinel']
+    reactions = [
+        ( # HP breakdown of feldspars
+            [['Plagioclase', 'Albite']],
+            [['Clinopyroxene', 'Jadeite'], ['Quartz', 'B_Quartz']],
+        ),
 
-def generate_reaction(outdir, name, phases, reactions):
+        ( # anorthite/opx breakdown to garnet
+            [['Plagioclase', 'Anorthite'], ['Orthopyroxene', 'Orthoenstatite']],
+            [['Garnet', 'Grossular'], ['Garnet', 'Pyrope'], ['Quartz', 'B_Quartz']],
+        ),
+
+        ( # anorthite/opx breakdown to garnet
+            [['Plagioclase', 'Anorthite'], ['Clinopyroxene', 'Clinoenstatite']],
+            [['Garnet', 'Grossular'], ['Garnet', 'Pyrope'], ['Quartz', 'B_Quartz']],
+        ),
+
+        ( # anorthite/opx breakdown to garnet
+            [['Plagioclase', 'Anorthite'], ['Orthopyroxene', 'Ferrosilite']],
+            [['Garnet', 'Grossular'], ['Garnet', 'Almandine'], ['Quartz', 'B_Quartz']]
+        ),
+
+
+        ( # Anorthite -> garnet/kyanite
+            [['Plagioclase', 'Anorthite']],
+            [['Kyanite', 'Kyanite'], ['Garnet', 'Grossular'], ['Quartz', 'B_Quartz']],
+        ),
+    ]
+
+    generate_reaction(outdir, 'ec5', phases, reactions, 'ber')
+
+    an = ['Plagioclase', 'Anorthite']
+    ab = ['Plagioclase', 'Albite']
+
+    fs = ['Orthopyroxene', 'Ferrosilite']
+    oEn = ['Orthopyroxene', 'Orthoenstatite']
+
+    jd = ['Clinopyroxene', 'Jadeite']
+    hed = ['Clinopyroxene', 'Hedenbergite']
+    cEn = ['Clinopyroxene', 'Clinoenstatite']
+    di = ['Clinopyroxene', 'Diopside']
+
+    alm = ['Garnet', 'Almandine']
+    pyp = ['Garnet', 'Pyrope']
+    gs = ['Garnet', 'Grossular']
+
+    qz = ['Quartz', 'B_Quartz']
+    ky = ['Kyanite', 'Kyanite']
+    ru = ['Rutile', 'Rutile']
+    kfs = ['Kfeldspar', 'Kfeldspar']
+
+    hem = ['Hematite', 'Hematite']
+    spl = ['Spinel', 'Spinel']
+
+    phases = ['Clinopyroxene', 'Orthopyroxene', 'Garnet', 'Plagioclase', 'Quartz', 'Kyanite', 'KFeldspar', 'Rutile', "Hematite", "Spinel"]
+
+    reactions = [
+
+        ([ky, hem, qz], [alm]),
+        ([ky, oEn], [pyp, qz]),
+
+    #   ⎡                                         ⎤
+    #   ⎢  Plg + Opx + Hem <<=>> Gt + Cpx + Spl   ⎥
+    #   ⎣                                         ⎦
+
+        
+        # An + Opx + Hem <-> Gt
+
+        # Plag + Hem <-> Gt
+        ([an, hem, qz], [alm, gs]),
+
+        # An + En -> gs + pyp + Spl + qtz
+        ([an, oEn], [gs, pyp, spl, qz]),
+
+        # An + Fs + qtz -> gs + pyp + spl?
+        ([an, fs, qz], [gs, pyp, spl]),
+
+
+        # Spl + Cpx <-> Gt
+        ([di, spl, qz], [gs, pyp]),
+        ([hed, spl, qz], [gs, pyp, alm]),
+
+        # An + Opx + Spl <-> Gt
+        ([an, fs, spl, qz], [gs, alm, pyp, ky]),
+        ([an, oEn, spl, qz], [gs, pyp, ky]),
+
+        #   ⎡
+        #   ⎢  Plag + Opx -> Cpx + Grt + Qtz
+        #   ⎣
+
+        # Anorthite + Enstatite
+        ([an, oEn], [di, pyp, qz]),
+
+        # Anorthite + Ferrosilite
+        ([an, fs], [hed, alm, qz]),
+
+        # Albite + Enstatite
+        ([ab, oEn], [jd, pyp, qz]),
+
+        # Albite + Ferrosilite
+        ([ab, fs], [jd, alm, qz]),
+
+        # Only Albite
+        ([ab], [jd, qz]),
+
+        ###############
+        # Plag + Opx + Kyanite -> Grt + Qtz
+        ###############
+
+        # Anorthite + Ferosilite
+        ([an, fs, ky], [alm, qz]),
+
+        # Anorthite + Enstatite
+        ([an, oEn, ky], [pyp, qz]),
+
+
+        #############
+        # Cpx + Kyanite -> Grt + (Opx) + Qtz
+        #############
+
+        # Hedenbergite -> 2 garnets
+        ([hed, ky], [gs, alm, qz]),
+
+        # Hedenbergite -> garnet + opx
+        ([hed, ky], [gs, fs, qz]),
+
+        # Diopside -> 2 garnets
+        ([di, ky], [gs, pyp, qz]),
+
+        # Diopside -> garnet + opx
+        ([di, ky], [gs, oEn, qz]),
+
+        # Clinoenstatite
+        ([cEn, ky], [pyp, qz]),
+
+
+        ############
+        # Plag + Opx -> Cpx + Kyanite + (Quartz)
+        ############
+
+        # Anorthite + Enstatite 
+        ([an, oEn], [di, ky, qz]),
+
+        # Anorthite + Ferrosilite -> Diopside + Kyanite
+        ([an, fs], [hed, ky, qz]),
+    ]
+
+    generate_reaction(outdir, 'ec6', phases, reactions, 'ber')
+
+    reactions = [
+        # Plag + Opx -> Cpx + Grt + Qtz
+        
+        # Anorthite + Enstatite
+        ([an, oEn], [di, pyp, qz]),
+
+        # Anorthite + Ferrosilite
+        ([an, fs], [hed, alm, qz]),
+
+        # Albite + Enstatite
+        ([ab, oEn], [jd, pyp, qz]),
+
+        # Albite + Ferrosilite
+        ([ab, fs], [jd, alm, qz]),
+
+        # Only Albite
+        ([ab], [jd, qz]),
+
+
+        # Plag + Opx -> Cpx + Kyanite + (Quartz)
+
+        # Anorthite + Enstatite 
+        ([an, oEn], [di, ky, qz]),
+
+        # Anorthite + Ferrosilite -> Diopside + Kyanite
+        ([an, fs], [hed, ky, qz]),
+    ]
+    generate_reaction(outdir, 'ec7', phases, reactions, 'ber')
+
+def generate_reaction(outdir, name, phases, reactions, db):
+
+    if(db=="slb"):
+        return
+
+    dbfile = os.path.join(os.path.pardir, 'database', 'tcg_'+db+'_database.tar.gz')
+    dbpath = "file://{}".format(dbfile)
+
     try:
         os.mkdir(outdir)
     except FileExistsError:
         pass
-    name = name+'_slb_rx'
-    phases = [ph+"_slb_ph" for ph in phases]
-    slbrx = SLBReactions(name, len(reactions), phases, dbpath, reference)
+
+    name = name+"_"+db+"_rx"
+    phases = [ph+"_"+db+"_ph" for ph in phases]
+    
+    rxn = SLBReactions(name, len(reactions), phases, dbpath, reference)
     for reaction in reactions:
-        reactants = [[[ph+"_slb_ph", em+"_slb_em"] for ph, em in reaction[i]] for i in range(2)]
-        slbrx.add_reaction(*reactants)
-    slbrx.tofile(outdir)
+        reactants = [[[ph+"_"+db+"_ph", em+"_"+db+"_em"] for ph, em in reaction[i]] for i in range(2)]
+        rxn.add_reaction(*reactants)
+    rxn.tofile(outdir)
 
 if __name__ == "__main__":
     import argparse
     import os
 
     parser = argparse.ArgumentParser( \
-                           description="""Generate rxmls for SLB thermodynamic database.""")
+                           description="""Generate rxmls for a given thermodynamic database.""")
     parser.add_argument('-o', '--outdir', action='store', metavar='outdir', 
                         default=os.path.join(os.path.pardir, 'database', 'reactions'), type=str, required=False,
                         help='Output directory for rxml files (defaults to ../database/reactions relative to script).')
-    args = parser.parse_args()
 
+    args = parser.parse_args()
+    print(args.outdir)
     generate_reactions(args.outdir)
 
