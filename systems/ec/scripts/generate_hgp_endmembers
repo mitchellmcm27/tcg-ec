@@ -21,8 +21,16 @@ def generate_hgp_endmembers(outdir):
       continue
     formula = ''
     formula_obj = obj['formula']
-    for el in formula_obj:
-      formula += '{}({})'.format(el, formula_obj[el])
+
+    try:
+      for el in formula_obj:
+        amount = formula_obj[el]
+        assert(float(amount).is_integer())
+        formula += '{}({:.0f})'.format(el, formula_obj[el])
+    except:
+      print("Skipping endmember {} (encountered fractions in formula)".format(name))
+      continue
+    
     params = obj
     params.pop('name')
     params.pop('formula')
@@ -44,6 +52,16 @@ def generate_hgp_endmembers(outdir):
     
     em = BurnmanEndmember(name, formula, reference, **params)
     print(em.tofile(outdir))
+
+    # generate orthodiopside (odi)
+    if(name=="di_hgp_em"):
+      print("Generate orthodiopside endmember")
+      name = "odi_hgp_em"
+      odi = BurnmanEndmember(name,formula,reference,**params)
+      odi.G = odi.gibbs_free_energy() - 0.1 + 0.000211*odi.T + 0.005*odi.P*1000. # kbar
+      print(odi.tofile(outdir))
+
+
 
 if __name__ == "__main__":
     import argparse

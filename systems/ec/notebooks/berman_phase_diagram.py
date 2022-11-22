@@ -15,8 +15,6 @@ from scipy import interpolate
 import math
 import matplotlib.colors as mcolors
 
-from boustrophedon import boustrophedon
-
 def supress_stdout(func):
     def wrapper(*a, **ka):
         with open(os.devnull, 'w') as devnull:

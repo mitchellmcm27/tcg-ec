@@ -282,37 +282,126 @@ def generate_reactions(outdir):
     generate_reaction(outdir, 'ec6', phases, reactions, 'ber')
 
     reactions = [
-        # Plag + Opx -> Cpx + Grt + Qtz
-        
-        # Anorthite + Enstatite
+
+        ([oEn],[pyp]),        
+        # Plag + Opx -> Cpx + Grt + Qz
         ([an, oEn], [di, pyp, qz]),
-
-        # Anorthite + Ferrosilite
         ([an, fs], [hed, alm, qz]),
-
-        # Albite + Enstatite
         ([ab, oEn], [jd, pyp, qz]),
-
-        # Albite + Ferrosilite
         ([ab, fs], [jd, alm, qz]),
 
-        # Only Albite
-        ([ab], [jd, qz]),
-
+        # Plag + Opx -> Grt + Spinel
+        ([an, fs, qz], [gs, pyp, spl]),
 
         # Plag + Opx -> Cpx + Kyanite + (Quartz)
-
-        # Anorthite + Enstatite 
         ([an, oEn], [di, ky, qz]),
-
-        # Anorthite + Ferrosilite -> Diopside + Kyanite
         ([an, fs], [hed, ky, qz]),
     ]
     generate_reaction(outdir, 'ec7', phases, reactions, 'ber')
 
+    phases = ['di', 'hed', 'en', 'fs', 'q', 'ab','an', 'py', 'gr', "alm", 'ky', 'cats','mgts','jd']
+
+    an = ['an', 'an']
+    ab = ['ab','ab']
+
+    fs = ['fs', 'fs']
+    oEn = ['en', 'en']
+
+    hed = ['hed', 'hed']
+    di = ['di', 'di']
+    jd = ['jd','jd']
+
+    alm = ['alm', 'alm']
+    pyp = ['py', 'py']
+    gs = ['gr', 'gr']
+
+    qz = ['q', 'q']
+    ky = ['ky', 'ky']
+
+    cats = ['cats','cats']
+    mgts = ['mgts','mgts']
+
+
+    reactions = [
+        # plag -> grt
+        ([an,oEn],[di,mgts,qz]),
+        ([an],[cats,qz]),
+
+        # plag/opx -> grt/cpx
+        # ([oEn, fs, an],[pyp, alm, di, hed, qz]),
+         ([oEn, an],[pyp, di, qz]),
+         ([fs, an],[alm, hed, qz]),
+
+        # ([oEn, fs, an],[pyp, alm, gs, qz]),
+        ([oEn, an],[pyp, gs, qz]),
+        ([fs, an],[alm, gs, qz]),
+
+        # Al-opx/cpx -> grt
+        ([oEn, mgts], [pyp]),
+        ([cats, oEn], [gs, pyp]),
+
+        # albite
+        ([ab], [jd, qz])
+    ]
+
+    generate_reaction(outdir, 'ec_simple', phases, reactions, 'hgp')
+
+
+    phases = ['Clinopyroxene',#'di', 'hed', 'jd','cats'
+              'Orthopyroxene',#'en', 'fs', 
+              'Quartz',#'q', 
+              'Feldspar',#'ab','an',
+              'Garnet',#'py', 'gr', "alm", 
+              'Kyanite']
+
+    an = ['Feldspar', 'Anorthite']
+    ab = ['Feldspar','Albite']
+
+    fs = ['Orthopyroxene', 'Ferrosilite']
+    oEn = ['Orthopyroxene', 'Enstatite']
+
+    hed = ['Clinopyroxene', 'Hedenbergite']
+    di = ['Clinopyroxene', 'Diopside']
+    jd = ['Clinopyroxene','Jadeite']
+
+    alm = ['Garnet', 'Almandine']
+    pyp = ['Garnet', 'Pyrope']
+    gs = ['Garnet', 'Grossular']
+
+    qz = ['Quartz', 'Quartz']
+    ky = ['Kyanite', 'Kyanite']
+
+    cats = ['Clinopyroxene','CaTschermaks']
+    mgts = ['Orthopyroxene','MgTschermaks']
+
+
+    reactions = [
+        # plag -> grt
+        ([an,oEn],[di,mgts,qz]),
+        ([an],[cats,qz]),
+
+        # plag/opx -> grt/cpx
+        # ([oEn, fs, an],[pyp, alm, di, hed, qz]),
+         ([oEn, an],[pyp, di, qz]),
+         ([fs, an],[alm, hed, qz]),
+
+        # ([oEn, fs, an],[pyp, alm, gs, qz]),
+        ([oEn, an],[pyp, gs, qz]),
+        ([fs, an],[alm, gs, qz]),
+
+        # Al-opx/cpx -> grt
+        ([oEn, mgts], [pyp]),
+        ([cats, oEn], [gs, pyp]),
+
+        # albite
+        ([ab], [jd, qz])
+    ]
+
+    generate_reaction(outdir, 'ec_simple', phases, reactions, 'slb')
+
 def generate_reaction(outdir, name, phases, reactions, db):
 
-    if(db=="slb"):
+    if(db=="ber"):
         return
 
     dbfile = os.path.join(os.path.pardir, 'database', 'tcg_'+db+'_database.tar.gz')

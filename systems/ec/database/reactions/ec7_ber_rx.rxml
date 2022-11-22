@@ -99,6 +99,16 @@
       </rank>
     </parameter>
   </global_parameters>
+  <reaction name="Orth_Pyro">
+    <reactant name="Orth_Orth" phase="Orthopyroxene_ber_ph" endmember="Orthoenstatite_ber_em"/>
+    <product name="Pyro_Garn" phase="Garnet_ber_ph" endmember="Pyrope_ber_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">Orth_Pyro = (
+Piecewise((exp(-T0/T)*A[0, 0]*Phi[1, 0]/(R*T), A[0, 0] &gt;= 0),
+(exp(-T0/T)*A[0, 0]*Phi[2, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
   <reaction name="AnorOrth_DiopPyroB_Qu">
     <reactant name="Anor_Plag" phase="Plagioclase_ber_ph" endmember="Anorthite_ber_em"/>
     <reactant name="Orth_Orth" phase="Orthopyroxene_ber_ph" endmember="Orthoenstatite_ber_em"/>
@@ -107,8 +117,8 @@
     <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">AnorOrth_DiopPyroB_Qu = (
-Piecewise((exp(-T0/T)*A[0, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[0, 0] &gt;=
-0), (exp(-T0/T)*A[0, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
+Piecewise((exp(-T0/T)*A[1, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[1, 0] &gt;=
+0), (exp(-T0/T)*A[1, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
@@ -120,8 +130,8 @@ Piecewise((exp(-T0/T)*A[0, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[0, 0] &gt;=
     <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">AnorFerr_HedeAlmaB_Qu = (
-Piecewise((exp(-T0/T)*A[1, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[1, 0] &gt;=
-0), (exp(-T0/T)*A[1, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
+Piecewise((exp(-T0/T)*A[2, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[2, 0] &gt;=
+0), (exp(-T0/T)*A[2, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
@@ -133,8 +143,8 @@ Piecewise((exp(-T0/T)*A[1, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[1, 0] &gt;=
     <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">AlbiOrth_JadePyroB_Qu = (
-Piecewise((exp(-T0/T)*A[2, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[2, 0] &gt;=
-0), (exp(-T0/T)*A[2, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
+Piecewise((exp(-T0/T)*A[3, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[3, 0] &gt;=
+0), (exp(-T0/T)*A[3, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
@@ -146,19 +156,23 @@ Piecewise((exp(-T0/T)*A[2, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[2, 0] &gt;=
     <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">AlbiFerr_JadeAlmaB_Qu = (
-Piecewise((exp(-T0/T)*A[3, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[3, 0] &gt;=
-0), (exp(-T0/T)*A[3, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
+Piecewise((exp(-T0/T)*A[4, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[4, 0] &gt;=
+0), (exp(-T0/T)*A[4, 0]*Phi[0, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
-  <reaction name="Albi_JadeB_Qu">
-    <reactant name="Albi_Plag" phase="Plagioclase_ber_ph" endmember="Albite_ber_em"/>
-    <product name="Jade_Clin" phase="Clinopyroxene_ber_ph" endmember="Jadeite_ber_em"/>
-    <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
+  <reaction name="AnorFerrB_Qu_GrosPyroSpin">
+    <reactant name="Anor_Plag" phase="Plagioclase_ber_ph" endmember="Anorthite_ber_em"/>
+    <reactant name="Ferr_Orth" phase="Orthopyroxene_ber_ph" endmember="Ferrosilite_ber_em"/>
+    <reactant name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
+    <product name="Gros_Garn" phase="Garnet_ber_ph" endmember="Grossular_ber_em"/>
+    <product name="Pyro_Garn" phase="Garnet_ber_ph" endmember="Pyrope_ber_em"/>
+    <product name="Spin_Spin" phase="Spinel_ber_ph" endmember="Spinel_ber_em"/>
     <expression>
-      <string_value type="code" language="python" lines="20">Albi_JadeB_Qu = (
-Piecewise((exp(-T0/T)*A[4, 0]*Phi[3, 0]/(R*T), A[4, 0] &gt;= 0),
-(exp(-T0/T)*A[4, 0]*Phi[0, 0]*Phi[4, 0]/(R*T), True))
+      <string_value type="code" language="python" lines="20">AnorFerrB_Qu_GrosPyroSpin = (
+Piecewise((exp(-T0/T)*A[5, 0]*Phi[1, 0]*Phi[3, 0]*Phi[4, 0]/(R*T),
+A[5, 0] &gt;= 0), (exp(-T0/T)*A[5, 0]*Phi[2, 0]**2*Phi[9, 0]/(R*T),
+True))
 )</string_value>
     </expression>
   </reaction>
@@ -170,8 +184,8 @@ Piecewise((exp(-T0/T)*A[4, 0]*Phi[3, 0]/(R*T), A[4, 0] &gt;= 0),
     <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">AnorOrth_DiopKyanB_Qu = (
-Piecewise((exp(-T0/T)*A[5, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[5, 0] &gt;=
-0), (exp(-T0/T)*A[5, 0]*Phi[0, 0]*Phi[4, 0]*Phi[5, 0]/(R*T), True))
+Piecewise((exp(-T0/T)*A[6, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[6, 0] &gt;=
+0), (exp(-T0/T)*A[6, 0]*Phi[0, 0]*Phi[4, 0]*Phi[5, 0]/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
@@ -183,8 +197,8 @@ Piecewise((exp(-T0/T)*A[5, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[5, 0] &gt;=
     <product name="B_Qu_Quar" phase="Quartz_ber_ph" endmember="B_Quartz_ber_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">AnorFerr_HedeKyanB_Qu = (
-Piecewise((exp(-T0/T)*A[6, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[6, 0] &gt;=
-0), (exp(-T0/T)*A[6, 0]*Phi[0, 0]*Phi[4, 0]*Phi[5, 0]/(R*T), True))
+Piecewise((exp(-T0/T)*A[7, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[7, 0] &gt;=
+0), (exp(-T0/T)*A[7, 0]*Phi[0, 0]*Phi[4, 0]*Phi[5, 0]/(R*T), True))
 )</string_value>
     </expression>
   </reaction>

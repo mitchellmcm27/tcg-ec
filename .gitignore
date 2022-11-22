@@ -1,8 +1,8 @@
 ## added manually
 .DS_Store
 *.pickle
-**/*.build/*
-**/install/*
+**/*.build/
+**/install/
 **/database/phases/
 **/database/endmembers/
 

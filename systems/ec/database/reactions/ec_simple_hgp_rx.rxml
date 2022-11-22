@@ -1,0 +1,216 @@
+<?xml version='1.0' encoding='utf-8'?>
+<reaction_options>
+  <name name="ec_simple_hgp_rx"/>
+  <database>
+    <string_value lines="1">file://../database/tcg_hgp_database.tar.gz</string_value>
+  </database>
+  <reference>
+    <string_value lines="1">generate_reactions</string_value>
+  </reference>
+  <phase name="di_hgp_ph"/>
+  <phase name="hed_hgp_ph"/>
+  <phase name="en_hgp_ph"/>
+  <phase name="fs_hgp_ph"/>
+  <phase name="q_hgp_ph"/>
+  <phase name="ab_hgp_ph"/>
+  <phase name="an_hgp_ph"/>
+  <phase name="py_hgp_ph"/>
+  <phase name="gr_hgp_ph"/>
+  <phase name="alm_hgp_ph"/>
+  <phase name="ky_hgp_ph"/>
+  <phase name="cats_hgp_ph"/>
+  <phase name="mgts_hgp_ph"/>
+  <phase name="jd_hgp_ph"/>
+  <reaction_rate name="R">
+    <variable name="T">
+      <rank name="Scalar"/>
+      <units>K</units>
+    </variable>
+    <variable name="P">
+      <rank name="Scalar"/>
+      <units>bar</units>
+    </variable>
+    <variable name="C">
+      <rank name="Matrix">
+        <n_rows>N</n_rows>
+        <n_cols>Kmax</n_cols>
+      </rank>
+      <units>None</units>
+    </variable>
+    <variable name="Phi">
+      <rank name="Vector">
+        <size>N</size>
+      </rank>
+      <units>%</units>
+    </variable>
+    <function name="A">
+      <type name="external">
+        <rank name="Vector">
+          <size>J</size>
+        </rank>
+        <variable name="T">
+          <rank name="Scalar"/>
+          <units>K</units>
+        </variable>
+        <variable name="P">
+          <rank name="Scalar"/>
+          <units>bar</units>
+        </variable>
+        <variable name="C">
+          <rank name="Matrix">
+            <n_rows>N</n_rows>
+            <n_cols>Kmax</n_cols>
+          </rank>
+          <units>None</units>
+        </variable>
+      </type>
+    </function>
+    <function name="rho">
+      <type name="external">
+        <rank name="Vector">
+          <size>J</size>
+        </rank>
+        <variable name="T">
+          <rank name="Scalar"/>
+          <units>K</units>
+        </variable>
+        <variable name="P">
+          <rank name="Scalar"/>
+          <units>bar</units>
+        </variable>
+      </type>
+    </function>
+  </reaction_rate>
+  <global_parameters>
+    <parameter name="T0">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">2000</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+    <parameter name="R">
+      <rank name="Scalar">
+        <value>
+          <real_value rank="0">8.31446261815324</real_value>
+        </value>
+        <units>
+          <string_value lines="1">'J/mol/K'</string_value>
+        </units>
+      </rank>
+    </parameter>
+  </global_parameters>
+  <reaction name="an_hen_h_di_hmgtsq_hg">
+    <reactant name="an_h_an_h" phase="an_hgp_ph" endmember="an_hgp_em"/>
+    <reactant name="en_h_en_h" phase="en_hgp_ph" endmember="en_hgp_em"/>
+    <product name="di_h_di_h" phase="di_hgp_ph" endmember="di_hgp_em"/>
+    <product name="mgts_mgts" phase="mgts_hgp_ph" endmember="mgts_hgp_em"/>
+    <product name="q_hg_q_hg" phase="q_hgp_ph" endmember="q_hgp_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">an_hen_h_di_hmgtsq_hg = (
+Piecewise((exp(-T0/T)*A[0, 0]*Phi[2, 0]*Phi[6, 0]/(R*T), A[0, 0] &gt;=
+0), (exp(-T0/T)*A[0, 0]*Phi[0, 0]*Phi[4, 0]*Phi[12, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="an_h_catsq_hg">
+    <reactant name="an_h_an_h" phase="an_hgp_ph" endmember="an_hgp_em"/>
+    <product name="cats_cats" phase="cats_hgp_ph" endmember="cats_hgp_em"/>
+    <product name="q_hg_q_hg" phase="q_hgp_ph" endmember="q_hgp_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">an_h_catsq_hg = (
+Piecewise((exp(-T0/T)*A[1, 0]*Phi[6, 0]/(R*T), A[1, 0] &gt;= 0),
+(exp(-T0/T)*A[1, 0]*Phi[4, 0]*Phi[11, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="en_han_h_py_hdi_hq_hg">
+    <reactant name="en_h_en_h" phase="en_hgp_ph" endmember="en_hgp_em"/>
+    <reactant name="an_h_an_h" phase="an_hgp_ph" endmember="an_hgp_em"/>
+    <product name="py_h_py_h" phase="py_hgp_ph" endmember="py_hgp_em"/>
+    <product name="di_h_di_h" phase="di_hgp_ph" endmember="di_hgp_em"/>
+    <product name="q_hg_q_hg" phase="q_hgp_ph" endmember="q_hgp_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">en_han_h_py_hdi_hq_hg = (
+Piecewise((exp(-T0/T)*A[2, 0]*Phi[2, 0]*Phi[6, 0]/(R*T), A[2, 0] &gt;=
+0), (exp(-T0/T)*A[2, 0]*Phi[0, 0]*Phi[4, 0]*Phi[7, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="fs_han_h_alm_hed_q_hg">
+    <reactant name="fs_h_fs_h" phase="fs_hgp_ph" endmember="fs_hgp_em"/>
+    <reactant name="an_h_an_h" phase="an_hgp_ph" endmember="an_hgp_em"/>
+    <product name="alm__alm_" phase="alm_hgp_ph" endmember="alm_hgp_em"/>
+    <product name="hed__hed_" phase="hed_hgp_ph" endmember="hed_hgp_em"/>
+    <product name="q_hg_q_hg" phase="q_hgp_ph" endmember="q_hgp_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">fs_han_h_alm_hed_q_hg = (
+Piecewise((exp(-T0/T)*A[3, 0]*Phi[3, 0]*Phi[6, 0]/(R*T), A[3, 0] &gt;=
+0), (exp(-T0/T)*A[3, 0]*Phi[1, 0]*Phi[4, 0]*Phi[9, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="en_han_h_py_hgr_hq_hg">
+    <reactant name="en_h_en_h" phase="en_hgp_ph" endmember="en_hgp_em"/>
+    <reactant name="an_h_an_h" phase="an_hgp_ph" endmember="an_hgp_em"/>
+    <product name="py_h_py_h" phase="py_hgp_ph" endmember="py_hgp_em"/>
+    <product name="gr_h_gr_h" phase="gr_hgp_ph" endmember="gr_hgp_em"/>
+    <product name="q_hg_q_hg" phase="q_hgp_ph" endmember="q_hgp_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">en_han_h_py_hgr_hq_hg = (
+Piecewise((exp(-T0/T)*A[4, 0]*Phi[2, 0]*Phi[6, 0]/(R*T), A[4, 0] &gt;=
+0), (exp(-T0/T)*A[4, 0]*Phi[4, 0]*Phi[7, 0]*Phi[8, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="fs_han_h_alm_gr_hq_hg">
+    <reactant name="fs_h_fs_h" phase="fs_hgp_ph" endmember="fs_hgp_em"/>
+    <reactant name="an_h_an_h" phase="an_hgp_ph" endmember="an_hgp_em"/>
+    <product name="alm__alm_" phase="alm_hgp_ph" endmember="alm_hgp_em"/>
+    <product name="gr_h_gr_h" phase="gr_hgp_ph" endmember="gr_hgp_em"/>
+    <product name="q_hg_q_hg" phase="q_hgp_ph" endmember="q_hgp_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">fs_han_h_alm_gr_hq_hg = (
+Piecewise((exp(-T0/T)*A[5, 0]*Phi[3, 0]*Phi[6, 0]/(R*T), A[5, 0] &gt;=
+0), (exp(-T0/T)*A[5, 0]*Phi[4, 0]*Phi[8, 0]*Phi[9, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="en_hmgts_py_h">
+    <reactant name="en_h_en_h" phase="en_hgp_ph" endmember="en_hgp_em"/>
+    <reactant name="mgts_mgts" phase="mgts_hgp_ph" endmember="mgts_hgp_em"/>
+    <product name="py_h_py_h" phase="py_hgp_ph" endmember="py_hgp_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">en_hmgts_py_h = (
+Piecewise((exp(-T0/T)*A[6, 0]*Phi[2, 0]*Phi[12, 0]/(R*T), A[6, 0] &gt;=
+0), (exp(-T0/T)*A[6, 0]*Phi[7, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="catsen_h_gr_hpy_h">
+    <reactant name="cats_cats" phase="cats_hgp_ph" endmember="cats_hgp_em"/>
+    <reactant name="en_h_en_h" phase="en_hgp_ph" endmember="en_hgp_em"/>
+    <product name="gr_h_gr_h" phase="gr_hgp_ph" endmember="gr_hgp_em"/>
+    <product name="py_h_py_h" phase="py_hgp_ph" endmember="py_hgp_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">catsen_h_gr_hpy_h = (
+Piecewise((exp(-T0/T)*A[7, 0]*Phi[2, 0]*Phi[11, 0]/(R*T), A[7, 0] &gt;=
+0), (exp(-T0/T)*A[7, 0]*Phi[7, 0]*Phi[8, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+  <reaction name="ab_h_jd_hq_hg">
+    <reactant name="ab_h_ab_h" phase="ab_hgp_ph" endmember="ab_hgp_em"/>
+    <product name="jd_h_jd_h" phase="jd_hgp_ph" endmember="jd_hgp_em"/>
+    <product name="q_hg_q_hg" phase="q_hgp_ph" endmember="q_hgp_em"/>
+    <expression>
+      <string_value type="code" language="python" lines="20">ab_h_jd_hq_hg = (
+Piecewise((exp(-T0/T)*A[8, 0]*Phi[5, 0]/(R*T), A[8, 0] &gt;= 0),
+(exp(-T0/T)*A[8, 0]*Phi[4, 0]*Phi[13, 0]/(R*T), True))
+)</string_value>
+    </expression>
+  </reaction>
+</reaction_options>

@@ -306,7 +306,6 @@ class PDEquilibrateGridDiagnostics:
 
         cmap = plt.get_cmap('bwr')
         s = self.scatter(ax,self.grid.xgrid[self.phaseis>=0],self.grid.ygrid[self.phaseis>=0],rhogrid[self.phaseis>=0],cmap)
-        s.set_clim(28.5,34.9)
         fig.colorbar(s,ax=axi)
         
         self.plot_phase_labels(ax)

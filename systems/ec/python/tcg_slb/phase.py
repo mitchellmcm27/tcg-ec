@@ -216,3 +216,4 @@ class SLBPhase:
         self.set_model_values()
         filename = self.model.to_xml(path=outdir)
         return filename
+
