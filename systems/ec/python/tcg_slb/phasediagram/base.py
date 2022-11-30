@@ -703,6 +703,12 @@ class PDReactiveGridDiagnostics:
     def scatter(self,ax,x,y,c,cmap=plt.get_cmap('Paired'),norm=None):
         s = ax.scatter(x,y,c=c,s=100,alpha=0.75,cmap=cmap,norm=norm)
         return s
+
+    @update
+    def contour(self,ax,x,y,c,cmap=plt.get_cmap('jet'),levels=np.arange(10.),norm=None):
+        s = ax.contourf(x,y,c,levels=levels,alpha=0.75,cmap=cmap,norm=norm)
+        ax.contour(x,y,c,levels=levels,alpha=0.75,cmap=cmap,norm=norm)
+        return s
     
     @update
     def plot_phase_labels(self, ax):
@@ -737,9 +743,9 @@ class PDReactiveGridDiagnostics:
         
         self.plot_phase_labels(ax)
         return s
-
+    
     @update
-    def plot_rho2(self):
+    def plot_rho_contours(self):
         
         rhogrid = np.empty(self.grid.ygrid.shape)
         for i,P in enumerate(self.grid.y_range):
@@ -752,15 +758,14 @@ class PDReactiveGridDiagnostics:
         axi = fig.add_subplot(1,1,1)
         ax = self.setup_axes(axi)
 
-        cmap = plt.get_cmap('bwr')
-        s = self.scatter(ax,self.grid.ygrid[self.phaseis>=0],self.grid.xgrid[self.phaseis>=0],np.transpose(rhogrid[self.phaseis>=0]),cmap)
+        cmap = plt.get_cmap('jet')
+        levels = np.arange(28.,34.,0.2)
+        s = self.contour(ax,self.grid.xgrid,self.grid.ygrid,rhogrid,cmap,levels)
         fig.colorbar(s,location='left',ax=axi)
         
         self.plot_phase_labels(ax)
         return s
 
-        
-    
     @update
     def plot_mindt(self):
         mindtgrid = np.empty(self.grid.ygrid.shape)
