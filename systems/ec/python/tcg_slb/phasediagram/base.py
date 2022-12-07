@@ -585,11 +585,14 @@ class PDReactiveGrid:
 
         # loop through x,y ranges (passed in as args)
 
+        Da = kwargs.pop('Da', 1.0)
+        
         for i,y in enumerate(self.y_range):
             for j,x in enumerate(self.x_range):
 
                 ode = self.odecls(rxn)
                 vals = [x,y]
+                _Da = Da if np.isscalar(Da) or Da is None else Da[i][j]
 
                 # loop through axix-related args
                 # pick up values of T, p, etc. (whatever the axes actually are)
@@ -625,8 +628,9 @@ class PDReactiveGrid:
                     # initial composition, set m to 1
                     mi0[self.i0] = 1.0
                 
+
                 # solve the ODE at the specific p, T, etc.
-                ode.solve(T,GPa2Bar(p),mi0,Cik0,end,**kwargs)
+                ode.solve(T,GPa2Bar(p),mi0,Cik0,end,Da=_Da,**kwargs)
                 
                 # populate the grid cell with the inputs
                 self.Tgrid[i][j]    = T
@@ -722,16 +726,20 @@ class PDReactiveGridDiagnostics:
                 ax.text(np.mean(fxgrid[indices]), np.mean(fygrid[indices]),ph,\
                         backgroundcolor='white',fontsize=12)
 
-        
     @update
-    def plot_rho(self):
-        
+    def rhogrid(self):
         rhogrid = np.empty(self.grid.ygrid.shape)
         for i,P in enumerate(self.grid.y_range):
             for j,x in enumerate(self.grid.x_range):
                 ode = self.reconstruct_ode(i,j)
                 if ode.sol is not None:
                     rhogrid[i][j] = ode.final_rho()
+        return rhogrid
+
+    @update
+    def plot_rho(self):
+        
+        rhogrid = self.rhogrid()
         
         fig = plt.figure(figsize=(12,14))
         axi = fig.add_subplot(1,1,1)

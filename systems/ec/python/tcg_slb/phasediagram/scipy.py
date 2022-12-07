@@ -5,14 +5,10 @@ import time
 
 from ..base import *
 from .base import BasePDReactiveODE
+from scipy.integrate import solve_ivp
 
 SCIPY_AVAIL = True
-try: 
-    from scipy.integrate import solve_ivp
-    print("scipy available")
-except ImportError:
-    print("scipy not vailable")
-    SCIPY_AVAIL = False
+
 
 class ScipyPDReactiveODE(BasePDReactiveODE):
 
@@ -45,7 +41,3 @@ class ScipyPDReactiveODE(BasePDReactiveODE):
         #   self.sol = None
         #  self.excstr = repr(e)
 
-if not SCIPY_AVAIL:
-    class ScipyPDReactiveODE(BasePDReactiveODE):
-        def __init__(self,rxn):
-            raise Exception("scipy integrate not available")
