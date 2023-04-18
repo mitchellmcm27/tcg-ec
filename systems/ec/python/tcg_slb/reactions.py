@@ -54,8 +54,8 @@ class SLBReactions:
         S0p = self.availability(reactants)
         S0m = self.availability(products)
         
-        reaction = sym.Piecewise((rp*S0p*self.A[self.j]/self.R/self.T,self.A[self.j]>=0),\
-                                 (rm*S0m*self.A[self.j]/self.R/self.T,self.A[self.j]<0),\
+        reaction = sym.Piecewise((rp*S0p*self.A[self.j]/self.R/self.T, self.A[self.j]>=0),\
+                                 (rm*S0m*self.A[self.j]/self.R/self.T, self.A[self.j]<0),\
                                  (0,True))
         reactantl = self.reactantlist(reactants)
         productl  = self.reactantlist(products)

@@ -17,7 +17,7 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 def generate_reactions(outdir):
 
-    phases = ['Clinopyroxene', 'Orthopyroxene', 'Quartz', 'Feldspar', 'Garnet','Kyanite']
+    phases = ['Clinopyroxene', 'Orthopyroxene', 'Quartz', 'Feldspar', 'Garnet','Kyanite','Olivine','Nepheline','Spinel']
 
     # what about the following SLB phases:
         # spinel
@@ -51,6 +51,17 @@ def generate_reactions(outdir):
 
     ky = ['Kyanite', 'Kyanite']
 
+
+    ###
+
+    fo = ['Olivine','Forsterite']
+    fa = ['Olivine','Fayalite']
+    mgsp = ['Spinel','MgSpinel']
+    hc = ['Spinel','Hercynite']
+    neph = ['Nepheline','Nepheline']
+    
+    #mag = ['Ferropericlase','Magnetite']
+
     reactions = [
         # plag +- opx <=> grt
         ([an,oEn],[di,mgts,qz]),
@@ -70,10 +81,60 @@ def generate_reactions(outdir):
         ([cats, oEn], [gs, pyp]),
 
         # albite <=> jadeite + quartz
-        ([ab], [jd, qz])
+        ([ab], [jd, qz]),
+
+        ### Mafic
+
+        # ol + qtz <=> opx
+        ([fo, qz], [oEn]),
+        ([fa, qz], [fs]),
+
+        # ol + opx <=> cpx
+        ([fo, oEn], [cEn]),
+        ([fo, oEn, an], [hed,cats]),
+        # iron?
+
+
+        # ol + ru <=> ilm + opx
+        # (no Ti)
+
+        # ortho-clino-enstatite
+        ([oEn],[cEn]),
+
+        # ([fo,an], [di, cats, oEn, mgts]),
+        ([fo,an], [di, cats, mgts]),
+        ([fo,an], [di, cats, oEn]),
+        ([fo,an], [di, oEn, mgts]),
+        ([fo,an], [cats, oEn, mgts]),
+
+        ([fo,an], [di,oEn, mgsp]),
+
+        #([pyp,gs,fo],[mgsp,oEn,di]),
+        ([gs,fo],[mgsp,oEn,di]),
+        ([pyp,fo],[mgsp,oEn,di]),
+
+        ([fo,an], [gs,pyp]),
+        ([fa,an], [gs,alm]),
+        ([mgsp,an,oEn], [gs,pyp]),
+        ([hc,an,fs], [gs,alm]),
+        ([ab,oEn,mgsp], [jd,pyp]),
+        ([ab,fs,hc], [jd,alm]),
+        ([an], [gs,ky,qz]),
+
+        # ([ab,mag,di],[]),
+        # ([jd,mag,oEn,qz],[]),
+
+        # Nepheline - NaAlSiO4
+
+        #([neph, fo],[jd,pyp]),
+        #([neph, fa],[jd,alm]),
+
+        #([neph, di],[jd,gs]),
+        #([neph, hed],[jd,pyp]),
+
     ]
 
-    generate_reaction(outdir, 'ec_simple_slb', phases, reactions)
+    generate_reaction(outdir, 'eclogitization', phases, reactions)
 
 def generate_reaction(outdir, name, phases, reactions):
 
@@ -87,7 +148,7 @@ def generate_reaction(outdir, name, phases, reactions):
 
     name = name+"_slb_rx"
     phases = [ph+"_slb_ph" for ph in phases]
-    
+    print(phases)
     rxn = SLBReactions(name, len(reactions), phases, dbpath, reference)
     for reaction in reactions:
         reactants = [[[ph+"_slb_ph", em+"_slb_em"] for ph, em in reaction[i]] for i in range(2)]

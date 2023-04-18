@@ -42,7 +42,7 @@ class BasePDReactiveODE:
  
         self.rxn = rxn
         self.I = len(self.rxn.phases())
-        self.Kis = [len(self.rxn.phases()[i].endmembers()) for i in range(self.I)]
+        self.Kis = [len(self.rxn.phases()[i].endmembers()) for i in range(self.I)] # list, num EMs in each phase
         self.K = sum(self.Kis)
         self.J = len(self.rxn.nu())
         
