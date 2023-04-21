@@ -767,7 +767,7 @@ class PDReactiveGridDiagnostics:
         ax = self.setup_axes(axi)
 
         cmap = plt.get_cmap('jet')
-        levels = np.arange(28.,34.,0.2)
+        levels = np.arange(28.,38.,0.2)
         s = self.contour(ax,self.grid.xgrid,self.grid.ygrid,rhogrid,cmap,levels)
         fig.colorbar(s,location='left',ax=axi)
         

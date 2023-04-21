@@ -126,6 +126,7 @@ def generate_reactions(outdir):
 
         # Nepheline - NaAlSiO4
 
+        #([ab, neph], [jd]),
         #([neph, fo],[jd,pyp]),
         #([neph, fa],[jd,alm]),
 
