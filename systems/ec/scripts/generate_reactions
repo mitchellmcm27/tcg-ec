@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 
 import os, sys
-import pandas as pd
-import ast
-import numpy as np
-import sympy as sym
-from collections import OrderedDict
-from thermocodegen.coder import coder
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'python'))
 from tcg_slb.reactions import SLBReactions
@@ -98,9 +92,6 @@ def generate_reactions(outdir):
         # ol + ru <=> ilm + opx
         # (no Ti)
 
-        # ortho-clino-enstatite
-        ([oEn],[cEn]),
-
         # ([fo,an], [di, cats, oEn, mgts]),
         ([fo,an], [di, cats, mgts]),
         ([fo,an], [di, cats, oEn]),
@@ -135,7 +126,46 @@ def generate_reactions(outdir):
 
     ]
 
-    generate_reaction(outdir, 'eclogitization', phases, reactions)
+    #generate_reaction(outdir, 'eclogitization_olivine', phases, reactions)
+
+    reactions = [
+
+        # plag <=> Cpx + qtz
+        ([an],[cats,qz]),
+        ([ab], [jd, qz]),
+
+        # an <=> gs + ky + qz
+        ([an], [gs,ky,qz]),
+
+        # Plag + Opx <=> Grt + qz
+        ([an, oEn],[pyp, gs, qz]),
+        ([an, fs],[alm, gs, qz]),
+
+        # plag + opx <=> cpx + opx + qz
+        ([an,oEn],[di, mgts, qz]),
+
+        # plag + opx <=> grt + cpx + qz
+        ([an, oEn],[pyp, di, qz]),
+        ([an, fs],[alm, hed, qz]),
+        ([an, mgts],[pyp,gs,qz]),
+
+        # Al-opx/cpx + Al-cpx/opx <=> Grt
+        ([oEn, mgts], [pyp]),
+        ([oEn, cats], [gs, pyp]),
+        
+        # Plag + opx + Sp <=> Grt
+        ([an,mgsp,oEn], [gs,pyp]),
+        ([an,fs,hc], [gs,alm]),
+        ([ab,oEn,mgsp], [jd,pyp]),
+        ([ab,fs,hc], [jd,alm]),
+
+        # Cpx + plag = grt + qz
+        ([di,an],[gs,pyp,qz]),
+        ([hed,an],[gs,alm,qz]),
+        ([cats,an],[gs,qz]),
+    ]
+
+    generate_reaction(outdir, 'eclogitization_crustal', phases, reactions)
 
 def generate_reaction(outdir, name, phases, reactions):
 
