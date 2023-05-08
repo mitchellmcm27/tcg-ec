@@ -1,0 +1,30 @@
+{
+"compositions":[
+    {
+        "name": "Monzodioritic gneiss 0669.Eclogite",
+        "GPa": 1.95,
+        "x(Cpx)": 25.6,
+        "j(Cpx)": 52.6,
+        "x(Grt)": 63.5,
+        "z(Grt)":25.3,
+        "x(Opx)":-1,
+        "y(Opx)":-1,
+        "Na(Kfs)":30.9,
+        "Ca(Kfs)":1.1,
+        "Ca(Pl)":12.1,
+        "K(Pl)":9.2,
+        "Cpx":56,
+        "Bt":0,
+        "Grt":14,
+        "Ms":0.5,
+        "Opx":0,
+        "Kfs":13,
+        "Ky":9,
+        "Pl":0,
+        "Mag":0,
+        "Ilm":0,
+        "Rt":1,
+        "Qtz":7
+    }
+]    
+}

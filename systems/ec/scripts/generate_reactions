@@ -1,74 +1,77 @@
 #!/usr/bin/env python3
 
-import os, sys
 
+import os
+import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'python'))
 from tcg_slb.reactions import SLBReactions
+
 
 reference = "generate_reactions"
 
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
+
 def generate_reactions(outdir):
 
-    phases = ['Clinopyroxene', 'Orthopyroxene', 'Quartz', 'Feldspar', 'Garnet','Kyanite','Olivine','Nepheline','Spinel']
+    phases = ['Clinopyroxene', 'Orthopyroxene', 'Quartz', 'Feldspar',
+              'Garnet', 'Kyanite', 'Olivine', 'Nepheline', 'Spinel']
 
     # what about the following SLB phases:
-        # spinel
-        # coesite
-        # stishovite
-        # wuestite--periclase SS (magnesiowuestite)? (FeO-MgO)
+    # spinel
+    # coesite
+    # stishovite
+    # wuestite--periclase SS (magnesiowuestite)? (FeO-MgO)
 
     # it would also be easy(?) to add pure-endmember phases from the HGP database
 
     an = ['Feldspar', 'Anorthite']
-    ab = ['Feldspar','Albite']
+    ab = ['Feldspar', 'Albite']
 
     fs = ['Orthopyroxene', 'Ferrosilite']
     oEn = ['Orthopyroxene', 'Enstatite']
-    mgts = ['Orthopyroxene','MgTschermaks']
+    mgts = ['Orthopyroxene', 'MgTschermaks']
     oDi = ['Orthopyroxene', 'OrthoDiopside']
 
     hed = ['Clinopyroxene', 'Hedenbergite']
     di = ['Clinopyroxene', 'Diopside']
-    jd = ['Clinopyroxene','Jadeite']
-    cats = ['Clinopyroxene','CaTschermaks']
-    cEn = ['Clinopyroxene','Clinoenstatite']
+    jd = ['Clinopyroxene', 'Jadeite']
+    cats = ['Clinopyroxene', 'CaTschermaks']
+    cEn = ['Clinopyroxene', 'Clinoenstatite']
 
     alm = ['Garnet', 'Almandine']
     pyp = ['Garnet', 'Pyrope']
     gs = ['Garnet', 'Grossular']
-    mgmaj = ['Garnet','MgMajorite']
-    namaj = ['Garnet','NaMajorite']
+    mgmaj = ['Garnet', 'MgMajorite']
+    namaj = ['Garnet', 'NaMajorite']
 
     qz = ['Quartz', 'Quartz']
 
     ky = ['Kyanite', 'Kyanite']
 
-
     ###
 
-    fo = ['Olivine','Forsterite']
-    fa = ['Olivine','Fayalite']
-    mgsp = ['Spinel','MgSpinel']
-    hc = ['Spinel','Hercynite']
-    neph = ['Nepheline','Nepheline']
-    
-    #mag = ['Ferropericlase','Magnetite']
+    fo = ['Olivine', 'Forsterite']
+    fa = ['Olivine', 'Fayalite']
+    mgsp = ['Spinel', 'MgSpinel']
+    hc = ['Spinel', 'Hercynite']
+    neph = ['Nepheline', 'Nepheline']
+
+    # mag = ['Ferropericlase','Magnetite']
 
     reactions = [
         # plag +- opx <=> grt
-        ([an,oEn],[di,mgts,qz]),
-        ([an],[cats,qz]),
+        ([an, oEn], [di, mgts, qz]),
+        ([an], [cats, qz]),
 
         # plag + opx <=> grt + cpx + qz
         # ([oEn, fs, an],[pyp, alm, di, hed, qz]),
-         ([oEn, an],[pyp, di, qz]),
-         ([fs, an],[alm, hed, qz]),
+        ([oEn, an], [pyp, di, qz]),
+        ([fs, an], [alm, hed, qz]),
 
         # ([oEn, fs, an],[pyp, alm, gs, qz]),
-        ([oEn, an],[pyp, gs, qz]),
-        ([fs, an],[alm, gs, qz]),
+        ([oEn, an], [pyp, gs, qz]),
+        ([fs, an], [alm, gs, qz]),
 
         # Al-opx/cpx + Al-cpx/opx <=> grt
         ([oEn, mgts], [pyp]),
@@ -77,7 +80,7 @@ def generate_reactions(outdir):
         # albite <=> jadeite + quartz
         ([ab], [jd, qz]),
 
-        ### Mafic
+        # Mafic
 
         # ol + qtz <=> opx
         ([fo, qz], [oEn]),
@@ -85,7 +88,7 @@ def generate_reactions(outdir):
 
         # ol + opx <=> cpx
         ([fo, oEn], [cEn]),
-        ([fo, oEn, an], [hed,cats]),
+        ([fo, oEn, an], [hed, cats]),
         # iron?
 
 
@@ -93,83 +96,513 @@ def generate_reactions(outdir):
         # (no Ti)
 
         # ([fo,an], [di, cats, oEn, mgts]),
-        ([fo,an], [di, cats, mgts]),
-        ([fo,an], [di, cats, oEn]),
-        ([fo,an], [di, oEn, mgts]),
-        ([fo,an], [cats, oEn, mgts]),
+        ([fo, an], [di, cats, mgts]),
+        ([fo, an], [di, cats, oEn]),
+        ([fo, an], [di, oEn, mgts]),
+        ([fo, an], [cats, oEn, mgts]),
 
-        ([fo,an], [di,oEn, mgsp]),
+        ([fo, an], [di, oEn, mgsp]),
 
-        #([pyp,gs,fo],[mgsp,oEn,di]),
-        ([gs,fo],[mgsp,oEn,di]),
-        ([pyp,fo],[mgsp,oEn,di]),
+        # ([pyp,gs,fo],[mgsp,oEn,di]),
+        ([gs, fo], [mgsp, oEn, di]),
+        ([pyp, fo], [mgsp, oEn, di]),
 
-        ([fo,an], [gs,pyp]),
-        ([fa,an], [gs,alm]),
-        ([mgsp,an,oEn], [gs,pyp]),
-        ([hc,an,fs], [gs,alm]),
-        ([ab,oEn,mgsp], [jd,pyp]),
-        ([ab,fs,hc], [jd,alm]),
-        ([an], [gs,ky,qz]),
+        ([fo, an], [gs, pyp]),
+        ([fa, an], [gs, alm]),
+        ([mgsp, an, oEn], [gs, pyp]),
+        ([hc, an, fs], [gs, alm]),
+        ([ab, oEn, mgsp], [jd, pyp]),
+        ([ab, fs, hc], [jd, alm]),
+        ([an], [gs, ky, qz]),
 
         # ([ab,mag,di],[]),
         # ([jd,mag,oEn,qz],[]),
 
         # Nepheline - NaAlSiO4
 
-        #([ab, neph], [jd]),
-        #([neph, fo],[jd,pyp]),
-        #([neph, fa],[jd,alm]),
+        # ([ab, neph], [jd]),
+        # ([neph, fo],[jd,pyp]),
+        # ([neph, fa],[jd,alm]),
 
-        #([neph, di],[jd,gs]),
-        #([neph, hed],[jd,pyp]),
+        # ([neph, di],[jd,gs]),
+        # ([neph, hed],[jd,pyp]),
 
     ]
 
-    #generate_reaction(outdir, 'eclogitization_olivine', phases, reactions)
+    generate_reaction(
+        outdir,
+        'eclogitization_crustal',
+        [
+            'Clinopyroxene', 
+            'Orthopyroxene', 
+            'Quartz', 
+            'Feldspar',
+            'Garnet', 
+            'Kyanite', 
+            'Olivine', 
+            'Nepheline', 
+            'Spinel'
+        ], 
+        [
+            # plag <=> Cpx + qtz
+            ([an], [cats, qz]),
+            ([ab], [jd, qz]),
+            # an <=> gs + ky + qz
+            ([an], [gs, ky, qz]),
+            # Plag + Opx <=> Grt + qz
+            ([an, oEn], [pyp, gs, qz]),
+            ([an, fs], [alm, gs, qz]),
+            # plag + opx <=> cpx + opx + qz
+            ([an, oEn], [di, mgts, qz]),
+            # plag + opx <=> grt + cpx + qz
+            ([an, oEn], [pyp, di, qz]),
+            ([an, fs], [alm, hed, qz]),
+            ([an, mgts], [pyp, gs, qz]),
+            # Al-opx/cpx + Al-cpx/opx <=> Grt
+            ([oEn, mgts], [pyp]),
+            ([oEn, cats], [gs, pyp]),
+            # Plag + opx + Sp <=> Grt
+            ([an, mgsp, oEn], [gs, pyp]),
+            ([an, fs, hc], [gs, alm]),
+            ([ab, oEn, mgsp], [jd, pyp]),
+            ([ab, fs, hc], [jd, alm]),
+            # Cpx + plag = grt + qz
+            ([di, an], [gs, pyp, qz]),
+            ([hed, an], [gs, alm, qz]),
+            ([cats, an], [gs, qz]),
+        ])
 
-    reactions = [
+    generate_reaction(
+        outdir,
+        'eclogitization_simple',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+        ],
+        [
+            # Plag <=> Cpx + qtz
+            ([an], [cats, qz]),
+            ([ab], [jd, qz]),
+            # Plag + Opx <=> Grt + qz
+            ([an, oEn], [pyp, gs, qz]),
+            ([an, fs], [alm, gs, qz]),
+            # Plag + Opx <=> Grt + Cpx + qz
+            ([an, oEn], [pyp, di, qz]),
+            ([an, fs], [alm, hed, qz]),
+            ([an, mgts], [pyp, gs, qz]),
+            # Plag + Opx <=> Cpx + Opx + qz
+            ([an, oEn], [di, mgts, qz]),
+            # Plag + Cpx <=> Grt + qz
+            ([di, an], [gs, pyp, qz]),
+            ([hed, an], [gs, alm, qz]),
+            ([cats, an], [gs, qz]),
+            # Al-opx/cpx + Al-cpx/opx <=> Grt
+            ([oEn, mgts], [pyp]),
+            ([oEn, cats], [gs, pyp]),
+        ])
 
-        # plag <=> Cpx + qtz
-        ([an],[cats,qz]),
-        ([ab], [jd, qz]),
+    generate_reaction(
+        outdir,
+        'eclogitization_agu',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+            ([an], [cats, qz]), 
+            ([an, oEn], [di, mgts, qz]), 
+            ([an, oEn], [pyp, di, qz]), 
+            ([an, oEn], [pyp, gs, qz]),
+            ([an, fs], [alm, hed, qz]),
+            ([an, fs], [alm, gs, qz]),
+            ([oEn, mgts], [pyp]),
+            ([oEn, cats], [gs, pyp]),
+            ([ab], [jd, qz]),
 
-        # an <=> gs + ky + qz
-        ([an], [gs,ky,qz]),
+            #([an, mgts], [pyp, gs, qz]),
+            #([di, an], [gs, pyp, qz]),
+            #([hed, an], [gs, alm, qz]),
+            #([cats, an], [gs, qz]),
+        ])
 
-        # Plag + Opx <=> Grt + qz
-        ([an, oEn],[pyp, gs, qz]),
-        ([an, fs],[alm, gs, qz]),
+    generate_reaction(
+        outdir,
+        'eclogitization_agu2',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+            ([an], [cats, qz]), 
+            ([an, oEn], [di, mgts, qz]), 
+            ([an, oEn], [pyp, di, qz]), 
+            ([an, oEn], [pyp, gs, qz]),
+            ([an, fs], [alm, hed, qz]),
+            ([an, fs], [alm, gs, qz]),
+            ([oEn, mgts], [pyp]),
+            ([oEn, cats], [gs, pyp]),
+            ([ab], [jd, qz]),
 
-        # plag + opx <=> cpx + opx + qz
-        ([an,oEn],[di, mgts, qz]),
+            # added to 'agu' to make 'agu2'
+            # adds ferrosilite endmember to Opx+Tshermaks => Grt
+            ([fs, mgts], [pyp, alm]), 
+            ([fs, cats], [gs, pyp, alm]), 
+            ([an, mgts], [pyp, gs, qz]),
+            ([di, an], [gs, pyp, qz]), 
+            ([hed, an], [gs, alm, qz]),
+            ([cats, an], [gs, qz]),
+        ])
+    
+    generate_reaction(
+        outdir,
+        'eclogitization_agu3',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+            ([an], [cats, qz]), 
+            ([an, oEn], [di, mgts, qz]), 
+            ([an, oEn], [pyp, di, qz]), 
+            ([an, oEn], [pyp, gs, qz]),
+            ([an, fs], [alm, hed, qz]),
+            ([an, fs], [alm, gs, qz]),
+            ([oEn, mgts], [pyp]),
+            ([oEn, cats], [gs, pyp]),
+            ([ab], [jd, qz]),
 
-        # plag + opx <=> grt + cpx + qz
-        ([an, oEn],[pyp, di, qz]),
-        ([an, fs],[alm, hed, qz]),
-        ([an, mgts],[pyp,gs,qz]),
+     
+            ([fs, mgts], [pyp, alm]), 
+            ([fs, cats], [gs, pyp, alm]), 
+            ([an, mgts], [pyp, gs, qz]),
+            ([di, an], [gs, pyp, qz]), 
+            ([hed, an], [gs, alm, qz]),
+            ([cats, an], [gs, qz]),
 
-        # Al-opx/cpx + Al-cpx/opx <=> Grt
-        ([oEn, mgts], [pyp]),
-        ([oEn, cats], [gs, pyp]),
-        
-        # Plag + opx + Sp <=> Grt
-        ([an,mgsp,oEn], [gs,pyp]),
-        ([an,fs,hc], [gs,alm]),
-        ([ab,oEn,mgsp], [jd,pyp]),
-        ([ab,fs,hc], [jd,alm]),
+            # added to 'agu2' to make 'agu3'
+            # These look wrong, too much CPX produced at high pressures
+            ([di, cats], [gs, pyp]),
+            ([hed, cats], [gs, alm]),
+            ([di, mgts], [gs, pyp]),
+            ([hed, mgts], [gs, alm, pyp]),
+        ])
+    
+    generate_reaction(
+        outdir,
+        'eclogitization_agu4',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+            ([an], [cats, qz]),
 
-        # Cpx + plag = grt + qz
-        ([di,an],[gs,pyp,qz]),
-        ([hed,an],[gs,alm,qz]),
-        ([cats,an],[gs,qz]),
-    ]
+            # Pl + Opx = Cpx + Gt Qz 
+            ([an, oEn], [di, mgts, qz]), 
+            ([an, oEn], [pyp, di, qz]),
+            ([an, oEn], [pyp, gs, qz]),
+            ([an, fs], [alm, hed, qz]),
+            ([an, fs], [alm, gs, qz]),
+            ([ab], [jd, qz]),
 
-    generate_reaction(outdir, 'eclogitization_crustal', phases, reactions)
+            # Opx = Gt
+            ([oEn, mgts], [pyp]),
+            ([oEn, cats], [gs, pyp]),
+     
+            ([fs, mgts], [pyp, alm]), 
+            ([fs, cats], [gs, pyp, alm]), 
+            ([an, mgts], [pyp, gs, qz]),
+            ([di, an], [gs, pyp, qz]), 
+            ([hed, an], [gs, alm, qz]),
+            ([cats, an], [gs, qz]),
+
+   
+            # These look wrong, too much CPX produced at high pressures
+            ([di, cats], [gs, pyp]),
+            ([hed, cats], [gs, alm]),
+            ([di, mgts], [gs, pyp]),
+            ([hed, mgts], [gs, alm, pyp]),
+
+            # added to agu3 to make agu4
+            # Na(2)Al(2)Si(4)O(12) + 2SiO2 = 2NaAlSi3O8
+            #([namaj, qz],[ab]),
+            # Mg(4)Si(4)O(12) = 2Mg(2)Si(2)O(6)
+            #([mgmaj], [oEn]),
+
+            # formation of kyanite
+            # Plg + Gt = Cpx + ky
+            ([an], [ky, gs, qz]),
+
+            # Gt = Cpx + Qz + Ky
+            ([gs, pyp, qz], [di, ky]),
+            ([gs, alm, qz], [hed, ky]),
+
+            # Cpx + qz = Gt + ky
+            ([cats, qz], [gs, ky]),
+            ([mgts, qz], [pyp, ky])
+        ])
+
+    
+    generate_reaction(
+        outdir,
+        'eclogitization_agu5',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+
+            # AGU 1
+
+            # plag + opx => gt + cpx
+            ([an], [cats, qz]), # Paria et al (paragraph 2, cites Herzberg 1978), GR67b
+            ([an, oEn], [di, mgts, qz]), # Green & Ringwood 1967 (a) - GR67a
+            ([an, oEn], [pyp, di, qz]),  # GR67c, Paria et al (B)
+            ([an, oEn], [pyp, gs, qz]), # GR67d
+            ([an, fs], [alm, hed, qz]), # Paria et al (A), GR67c
+            ([an, fs], [alm, gs, qz]),  # GR67d
+
+            ([oEn, mgts], [pyp]), # Paria et al (paragraph 2, cites RWood 1974), GR67e
+            ([oEn, cats], [gs, pyp]), # GR67f
+            ([ab], [jd, qz]), # Paria et al (paragraph 2, Reinsch 1977 cited in Newton 1983), GR67g
+
+            # Starting over from AGU1
+
+            # problems: Cpx needs to => Plag at HighT+LowP
+            #         : Gt => Cpx, Qz, Ky at moderate T,P
+
+            # From AGU4
+            # Gt = Cpx + Qz + Ky
+            ([gs, pyp, qz], [di, ky]),
+            ([gs, alm, qz], [hed, ky]),
+            # formation of kyanite
+            # Plg + Gt = Cpx + ky
+            ([an], [ky, gs, qz]),  # Koziol et al 1988 (paragraph 1), GR67o
+
+            # AGU3 was bad?
+            
+            # From AGU2
+            # allows breakdown of plag without Opx present
+            # Opx + Tsch = Grt
+            ([fs, mgts], [pyp, alm]), # analagous to oEn + mgs => pyp
+            ([fs, cats], [gs, pyp, alm]),  # analogous to oEn + cats => gs + pyp
+            # Cpx + Plg = Grt + Qtz
+            ([an, mgts], [pyp, gs, qz]), # MgTs is technically Opx
+            ([di, an], [gs, pyp, qz]), 
+            ([hed, an], [gs, alm, qz]),
+            ([cats, an], [gs, qz]),
+        ])
+    
+    generate_reaction(
+        outdir,
+        'eclogitization_agu6',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+            # Spinel, from Green & Ringwood 1967
+            #([mgsp, an, oEn],[gs, pyp]),
+            #([hc, an, fs], [gs, alm]),
+            #([ab, oEn, mgsp],[jd, pyp]),
+            #([ab, fs, hc],[jd, alm]),
+
+            # AGU 1
+
+            # plag + opx => gt + cpx
+            ([an], [cats, qz]), # Paria et al (paragraph 2, cites Herzberg 1978), GR67b
+            ([oEn, mgts], [pyp]), # Paria et al (paragraph 2, cites RWood 1974), GR67e
+            ([oEn, cats], [gs, pyp]), # GR67f
+            ([ab], [jd, qz]), # Paria et al (paragraph 2, Reinsch 1977 cited in Newton 1983), GR67g
+
+            ([an, fs], [alm, hed, qz]), # Paria et al (A), GR67c
+            ([an, fs], [alm, gs, qz]), # GR67d
+
+            ([an, oEn], [di, mgts, qz]), # Green & Ringwood 1967 (a) - GR67a
+            ([an, oEn], [pyp, di, qz]), # GR67c, Paria et al (B)
+            ([an, oEn], [pyp, gs, qz]), # GR67d
+            
+            # problems: Cpx needs to => Plag at HighT+LowP
+            #         : Gt => Cpx, Qz, Ky at moderate T,P
+
+            # From AGU4 - formation of kyanite
+            # Gt + Qz = Cpx + Ky
+            ([gs, pyp, qz], [di, ky]),
+            ([gs, alm, qz], [hed, ky]),
+            # Plg = ky + Gt + qz
+            ([an], [ky, gs, qz]), # Koziol et al 1988 (paragraph 1), GR67o
+
+            # From AGU2 - Formation of garnet
+            # prevents appearance of Opx at high pressures
+            # Opx + Tsch = Grt
+            ([fs, mgts], [pyp, alm]), # analagous to oEn + mgs => pyp
+            ([fs, cats], [gs, pyp, alm]), # analogous to oEn + cats => gs + pyp
+            # Cpx + Plg = Grt + Qtz
+            # allows breakdown of plag without Opx present
+            ([an, mgts], [pyp, gs, qz]), # MgTs is technically Opx
+            ([an, di], [gs, pyp, qz]),
+            ([an, hed], [gs, alm, qz]),
+            ([an, cats], [gs, qz]),
+
+            # Mary Granite - Williams et al. 2014
+            # 2 Opx + Ca-rich Pl → Grt + Cpx + Na-rich Pl + Qz
+          
+            # Added for AGU 6
+            # Clinoenstatite - increases at high T
+            #     => Mg2Si2O6
+            ([oEn], [cEn]),
+            ([di], [oDi]),           
+        ])
+    
+    generate_reaction(
+        outdir,
+        'eclogitization_agu7',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+            # Spinel, from Green & Ringwood 1967
+            #([mgsp, an, oEn],[gs, pyp]),
+            #([hc, an, fs], [gs, alm]),
+            #([ab, oEn, mgsp],[jd, pyp]),
+            #([ab, fs, hc],[jd, alm]),
+
+            # AGU 1
+
+            # plag + opx => gt + cpx
+            ([an], [cats, qz]), # Paria et al (paragraph 2, cites Herzberg 1978), GR67b
+            ([oEn, mgts], [pyp]), # Paria et al (paragraph 2, cites RWood 1974), GR67e
+            ([oEn, cats], [gs, pyp]), # GR67f
+            ([ab], [jd, qz]), # Paria et al (paragraph 2, Reinsch 1977 cited in Newton 1983), GR67g
+
+            ([an, fs], [alm, hed, qz]), # Paria et al (A), GR67c
+            ([an, fs], [alm, gs, qz]), # GR67d
+
+            ([an, oEn], [di, mgts, qz]), # Green & Ringwood 1967 (a) - GR67a
+            ([an, oEn], [pyp, di, qz]), # GR67c, Paria et al (B)
+            ([an, oEn], [pyp, gs, qz]), # GR67d
+            
+            # problems: Cpx needs to => Plag at HighT+LowP
+            #         : Gt => Cpx, Qz, Ky at moderate T,P
+
+            # From AGU4 - formation of kyanite
+            # Gt + Qz = Cpx + Ky
+            ([gs, pyp, qz], [di, ky]),
+            ([gs, alm, qz], [hed, ky]),
+            # Plg = ky + Gt + qz
+            ([an], [ky, gs, qz]), # Koziol et al 1988 (paragraph 1), GR67o
+
+            # From AGU2 - Formation of garnet
+            # prevents appearance of Opx at high pressures
+            # Opx + Tsch = Grt
+            ([fs, mgts], [pyp, alm]), # analagous to oEn + mgs => pyp
+            ([fs, cats], [gs, pyp, alm]), # analogous to oEn + cats => gs + pyp
+            # Cpx + Plg = Grt + Qtz
+            # allows breakdown of plag without Opx present
+            ([an, mgts], [pyp, gs, qz]), # MgTs is technically Opx
+            ([an, di], [gs, pyp, qz]),
+            ([an, hed], [gs, alm, qz]),
+            ([an, cats], [gs, qz]),
+
+            # Mary Granite - Williams et al. 2014
+            # 2 Opx + Ca-rich Pl → Grt + Cpx + Na-rich Pl + Qz
+          
+            # Added for AGU 6
+            # Clinoenstatite - increases at high T
+            #     => Mg2Si2O6
+            ([oEn], [cEn]),
+            ([di], [oDi]),
+
+            # Garnet went into clinoenstatite etc...
+            ([cEn, mgts], [pyp]), # Paria et al (paragraph 2, cites RWood 1974), GR67e
+            ([cEn, cats], [gs, pyp]), # GR67f
+            ([an, cEn], [di, mgts, qz]), # Green & Ringwood 1967 (a) - GR67a
+            ([an, cEn], [pyp, di, qz]), # GR67c, Paria et al (B)
+            ([an, cEn], [pyp, gs, qz]), # GR67d
+            ([an, oEn], [oDi, mgts, qz]), # Green & Ringwood 1967 (a) - GR67a
+            ([an, oEn], [pyp, oDi, qz]), # GR67c, Paria et al (B)
+            ([gs, pyp, qz], [oDi, ky]),
+            ([an, oDi], [gs, pyp, qz]),
+        ])
+
+    generate_reaction(
+        outdir,
+        'eclogitization_agu8',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+            # Start from AGU 5
+            
+            # AGU 1
+            ([an], [cats, qz]), 
+            ([an, oEn], [di, mgts, qz]), 
+            ([an, oEn], [pyp, di, qz]), 
+            ([an, oEn], [pyp, gs, qz]),
+            ([an, fs], [alm, hed, qz]),
+            ([an, fs], [alm, gs, qz]),
+
+            ([oEn, mgts], [pyp]),
+            ([oEn, cats], [gs, pyp]),
+            ([ab], [jd, qz]),
+
+            # From AGU4
+            #([gs, pyp, qz], [di, ky]), # take out for 8
+            #([gs, alm, qz], [hed, ky]), # take out for 8
+            ([an], [ky, gs, qz]),
+
+            # AGU3 was bad?
+            
+            # From AGU2
+            ([fs, mgts], [pyp, alm]), 
+            ([fs, cats], [gs, pyp, alm]),
+            ([an, mgts], [pyp, gs, qz]),
+            ([di, an], [gs, pyp, qz]), 
+            ([hed, an], [gs, alm, qz]),
+            ([cats, an], [gs, qz]),
+        ])
 
 def generate_reaction(outdir, name, phases, reactions):
 
-    dbfile = os.path.join(os.path.pardir, 'database', 'tcg_slb_database.tar.gz')
+    dbfile = os.path.join(os.path.pardir, 'database',
+                          'tcg_slb_database.tar.gz')
     dbpath = "file://{}".format(dbfile)
 
     try:
@@ -182,21 +615,22 @@ def generate_reaction(outdir, name, phases, reactions):
     print(phases)
     rxn = SLBReactions(name, len(reactions), phases, dbpath, reference)
     for reaction in reactions:
-        reactants = [[[ph+"_slb_ph", em+"_slb_em"] for ph, em in reaction[i]] for i in range(2)]
+        reactants = [[[ph+"_slb_ph", em+"_slb_em"]
+                      for ph, em in reaction[i]] for i in range(2)]
         rxn.add_reaction(*reactants)
     rxn.tofile(outdir)
+
 
 if __name__ == "__main__":
     import argparse
     import os
 
-    parser = argparse.ArgumentParser( \
-                           description="""Generate rxmls for a given thermodynamic database.""")
-    parser.add_argument('-o', '--outdir', action='store', metavar='outdir', 
+    parser = argparse.ArgumentParser(
+        description="""Generate rxmls for a given thermodynamic database.""")
+    parser.add_argument('-o', '--outdir', action='store', metavar='outdir',
                         default=os.path.join(os.path.pardir, 'database', 'reactions'), type=str, required=False,
                         help='Output directory for rxml files (defaults to ../database/reactions relative to script).')
 
     args = parser.parse_args()
     print(args.outdir)
     generate_reactions(args.outdir)
-

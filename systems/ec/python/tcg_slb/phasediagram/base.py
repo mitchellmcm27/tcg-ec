@@ -516,6 +516,7 @@ class BasePDReactiveODE:
 
         #for ik in range(self.K): axes[5].plot(t,gamma_ik[:,ik],ls=ls,color=colors[len(colors)%(ik+1)])
         for ik in range(self.K): axes[5].plot(t,gamma_ik[:,ik],ls=ls)
+        print(gamma_ik[0,:])
 
 
 #########################################################################
@@ -767,7 +768,7 @@ class PDReactiveGridDiagnostics:
         ax = self.setup_axes(axi)
 
         cmap = plt.get_cmap('jet')
-        levels = np.arange(28.,38.,0.2)
+        levels = np.arange(25.,38.,0.1)
         s = self.contour(ax,self.grid.xgrid,self.grid.ygrid,rhogrid,cmap,levels)
         fig.colorbar(s,location='left',ax=axi)
         
@@ -931,3 +932,329 @@ class PDReactiveGridDiagnostics:
         fig.canvas.mpl_connect("motion_notify_event", hover)
         fig.canvas.mpl_connect("button_press_event", click)
 
+class PDReactiveProfile:
+    """A class that contains a 1d profile of reactive odes.
+    
+    It has been specially constructed to avoid saving the reaction object, which cannot be pickled, hence a lot of output is stored in nested lists."""
+    odelcs = None
+    
+    i0  = None
+
+    ax_args = None
+
+    x_range = None
+    y_range = None
+
+    end = None
+
+    Tgrid    = None
+    pgrid    = None
+    mi0grid  = None
+    Cik0grid = None
+
+    solgrid = None
+    outgrid = None
+    errgrid = None
+    excgrid = None
+    stimegrid = None
+    
+    kwargs = None
+    
+    def solve(self,rxn,odecls,i0,ax_args,x_range,y_range,end,**kwargs):
+
+        assert(len(x_range)==len(y_range))
+
+        # save args to class properties
+        self.odecls = odecls
+        self.i0 = i0
+        self.ax_args
+        self.x_range = x_range
+        self.y_range = y_range
+        self.end = end
+        self.kwargs = kwargs
+
+        # parse kwargs, 
+        # removing ones that we can't later pass to the ODE as kwargs
+        T = kwargs.pop('T', None)
+        p = kwargs.pop('p', None)
+        Cik0 = kwargs.pop('Cik0', None)
+        mi0 = kwargs.pop('mi0', None)
+        
+        # initialize needed grids
+        self.Tgrid     = [None for i in range(len(self.x_range))]
+        self.pgrid     = [None for i in range(len(self.x_range))]
+        self.mi0grid   = [None for i in range(len(self.x_range))]
+        self.Cik0grid  = [None for i in range(len(self.x_range))]
+        self.solgrid   = [dict for i in range(len(self.x_range))]
+        self.outgrid   = [''   for i in range(len(self.x_range))]
+        self.errgrid   = [''   for i in range(len(self.x_range))]
+        self.excgrid   = [''   for i in range(len(self.x_range))]
+        self.stimegrid = [None for i in range(len(self.x_range))]
+
+        # loop through x,y ranges (passed in as args)
+
+        Da = kwargs.pop('Da', 1.0)
+        
+        for i,y in enumerate(self.y_range):
+            x = self.x_range[i]
+            ode = self.odecls(rxn)
+            vals = [x,y]
+            _Da = Da if np.isscalar(Da) or Da is None else Da[i]
+
+            # loop through axix-related args
+            # pick up values of T, p, etc. (whatever the axes actually are)
+
+            for axis_index, arg in enumerate(ax_args):
+                if arg == 'T': 
+                    T = vals[axis_index]
+                if arg == 'p':
+                    p = vals[axis_index]
+                if arg in ['Xi0k0', 'Ci0k0']:
+                    if arg=='Xi0k0':
+                        phase0 = rxn.phases()[self.i0]
+                        Xi0k0 = vals[axis_index]
+                        Xi0 = np.zeros(ode.Kis[self.i0])
+                        Xi0[0] = Xi0k0
+                        Xi0[1:] = (1.-Xi0k0)/(ode.Kis[self.i0]-1)
+                        Ci0k0 = phase0.x_to_c(Xi0)[0]
+                    else:
+                        Ci0k0 = vals[axis_index]
+                    Cik0 = np.zeros(ode.K)
+                    for ip in range(ode.I):
+                        if ode.Kis[ip] == 1:
+                                Cik0[sum(ode.Kis[:ip])] = 1.
+                        else:
+                                Cik0[sum(ode.Kis[:ip])] = Ci0k0
+                                Cik0[sum(ode.Kis[:ip])+1:sum(ode.Kis[:ip+1])][:] = (1.-Ci0k0)/(ode.Kis[ip]-1.)
+                
+            if mi0 is None:
+                # initial conditions
+                # m = mole fraction?, set all to zero
+                mi0 = np.zeros(ode.I)
+
+                # initial composition, set m to 1
+                mi0[self.i0] = 1.0
+            
+
+            # solve the ODE at the specific p, T, etc.
+            ode.solve(T,GPa2Bar(p),mi0,Cik0,end,Da=_Da,**kwargs)
+            
+            # populate the grid cell with the inputs
+            self.Tgrid[i]    = T
+            self.pgrid[i]    = p
+            self.mi0grid[i]  = mi0
+            self.Cik0grid[i] = Cik0
+
+            # populate the grid cell with solution/outputs
+            self.solgrid[i] = ode.sol
+            self.outgrid[i] = ode.stdout
+            self.errgrid[i] = ode.stderr
+            self.excgrid[i] = ode.excstr
+            self.stimegrid[i] = ode.stime
+
+class PDReactiveProfileDiagnostics:
+    phasenames = None
+    phasestrs = None
+    uniquestrs = None
+    phaseis = None
+    
+    def __init__(self, rxn, grid):
+        self.rxn  = rxn
+        self.grid = grid
+        
+    def reconstruct_ode(self,i):
+        T      = self.grid.Tgrid[i]
+        p      = self.grid.pgrid[i]
+        mi0    = self.grid.mi0grid[i]
+        Cik0   = self.grid.Cik0grid[i]
+
+        sol    = self.grid.solgrid[i]
+        stdout = self.grid.outgrid[i]
+        stderr = self.grid.errgrid[i]
+        excstr = self.grid.excgrid[i]
+        stime  = self.grid.stimegrid[i]
+
+        ode = self.grid.odecls(self.rxn)
+        ode.set_initial_params(T,p,mi0,Cik0,sol=sol,stdout=stdout,stderr=stderr,excstr=excstr,stime=stime)
+
+        return ode
+
+    def phase_diagnostics(self):
+        self.phasenames = [[] for i in range(len(self.grid.y_range))]
+        self.phasestrs = ['' for i in range(len(self.grid.y_range))]
+        for i,P in enumerate(self.grid.y_range):
+            x=self.grid.x_range[i]
+            ode = self.reconstruct_ode(i)
+            if ode.sol is not None:
+                odephasenames, phaseabbrev = ode.final_phases(1.e-2)
+                self.phasenames[i] = odephasenames.tolist()
+                self.phasestrs[i] = '+'.join(phaseabbrev)
+        
+        # a set of unique strings representing the phase combinations present across the phase diagram
+        self.uniquestrs = sorted(list(set([phstr for phstrl in self.phasestrs for phstr in phstrl if phstr != ''])))
+        
+        def index(ls,v):
+            try:
+                i = ls.index(v)
+            except ValueError:
+                i = -1
+            return i
+
+
+        # an index into the uniquestr list to give a grid showing which phases are present where
+        self.phaseis = np.asarray([[index(self.uniquestrs,phstr) for phstr in phasestrr]  for phasestrr in self.phasestrs])
+
+    def update(func):
+        def update_decorator(self, *args, **kwargs):
+            if self.phaseis is None: self.phase_diagnostics()
+            return func(self, *args, **kwargs)
+        return update_decorator
+
+    @update
+    def scatter(self,ax,x,y,c,cmap=plt.get_cmap('Paired'),norm=None):
+        s = ax.scatter(x,y,c=c,s=100,alpha=0.75,cmap=cmap,norm=norm)
+        return s
+
+    @update
+    def line(self,ax,x,y):
+        s = ax.plot(x,y)
+        return s
+
+    @update
+    def rho_range(self):
+        rho_range = np.empty(self.grid.x_range.shape)
+        for i,T in enumerate(self.grid.x_range):
+            ode = self.reconstruct_ode(i)
+            if ode.sol is not None:
+                rho_range[i] = ode.final_rho()
+        return rho_range
+
+    @update
+    def plot_rho(self):
+        
+        rho_range = self.rho_range()
+        
+        fig = plt.figure(figsize=(12,14))
+        axi = fig.add_subplot(1,1,1)
+        ax = self.setup_axes(axi)
+
+        cmap = plt.get_cmap('bwr')
+        s = self.scatter(ax,self.grid.x_range[self.phaseis>=0],rho_range[self.phaseis>=0],cmap)
+        fig.colorbar(s,location='left',ax=axi)
+        
+        self.plot_phase_labels(ax)
+        return s
+    
+    @update
+    def plot_rho_contours(self):
+        
+        rho = np.empty(self.grid.x_range.shape)
+        for i,x in enumerate(self.grid.x_range):
+            ode = self.reconstruct_ode(i)
+            if ode.sol is not None:
+                rho[i] = ode.final_rho()
+        
+        fig = plt.figure(figsize=(12,14))
+        axi = fig.add_subplot(1,1,1)
+        ax = self.setup_axes(axi)
+
+        s = self.line(ax,self.grid.x_range,rho)
+     
+        return s
+
+    @update
+    def plot_mindt(self):
+        mindt_range = np.empty(self.grid.x_range.shape)
+        for i,T in enumerate(self.grid.x_range):
+            ode = self.reconstruct_ode(i)
+            if ode.sol is not None:
+                mindt_range[i] = (ode.sol.t[1:]-ode.sol.t[:-1]).min()
+    
+        fig = plt.figure(figsize=(12,14))
+        axi = fig.add_subplot(1,1,1)
+        ax = self.setup_axes(axi)
+
+        cmap = plt.get_cmap('bwr')
+        s = self.scatter(ax,self.grid.x_range[self.phaseis>=0],mindt_range[self.phaseis>=0],cmap,norm=mpl.colors.LogNorm())
+        fig.colorbar(s,location='left',ax=axi)
+
+        self.plot_phase_labels(ax)
+    
+    @update
+    def plot_ndt(self):
+        ndt_range = np.empty(self.grid.x_range.shape)
+        for i,T in enumerate(self.grid.x_range):
+            ode = self.reconstruct_ode(i)
+            if ode.sol is not None:
+                ndt_range[i] = len(ode.sol.t)
+        
+        fig = plt.figure(figsize=(12,14))
+        axi = fig.add_subplot(1,1,1)
+        ax = self.setup_axes(axi)
+
+        cmap = plt.get_cmap('bwr')
+        s = self.scatter(ax,self.grid.x_range[self.phaseis>=0],ndt_range[self.phaseis>=0],cmap)#,norm=mpl.colors.LogNorm())
+        fig.colorbar(s,location='left',ax=axi)
+
+        self.plot_phase_labels(ax)
+    
+    @update
+    def plot_stime(self):
+        fig = plt.figure(figsize=(12,14))
+        axi = fig.add_subplot(1,1,1)
+        ax = self.setup_axes(axi)
+
+        cmap = plt.get_cmap('bwr')
+        s = self.scatter(ax,self.grid.x_range[self.phaseis>=0],np.asarray(self.grid.stimegrid)[self.phaseis>=0],cmap)#,norm=mpl.colors.LogNorm())
+        fig.colorbar(s,location='left',ax=axi)
+
+        self.plot_phase_labels(ax)
+
+    
+    def setup_axes(self,axi):
+        return axi
+    
+    @update
+    def plot_phases(self):
+        I = len(self.rxn.phases())
+        mi1_range = np.empty(self.grid.x_range.shape+(I,))
+        for i,T in enumerate(self.grid.x_range):
+            ode = self.reconstruct_ode(i)
+            if ode.sol is not None:
+                mi1_range[i] = ode.sol.y[:ode.I,-1]
+
+        fig = plt.figure(figsize=(12,12))
+        axi = fig.add_subplot(1,1,1)
+        ax = self.setup_axes(axi)
+        for i in range(I):     
+            s = self.line(ax,self.grid.x_range,mi1_range[:,i])
+        ax.legend([ph.name() for ph in self.rxn.phases()])
+    
+    def plot_modes_of_all_phases(self):
+        I = len(self.rxn.phases())
+        phi1_range = np.empty(self.grid.x_range.shape+(I,))
+        for i,T in enumerate(self.grid.x_range):
+            p = self.grid.y_range[i]
+            ode = self.reconstruct_ode(i)
+            if ode.sol is not None:
+                Cik = ode.sol.y[ode.I:ode.I+ode.K,-1]
+                mi = ode.sol.y[:ode.I,-1] # -1 = final time step
+                C = ode.reshapeC(Cik)
+                Cs = ode.regularizeC(C)
+                rhoi = self.rxn.rho(T, p, Cs)
+                v = mi/rhoi
+                rho  = 1./v.sum()
+                phi1_range[i] = rho*mi/rhoi
+
+        fig = plt.figure(figsize=(12,12))
+        axi = fig.add_subplot(1,1,1)
+        ax = self.setup_axes(axi)
+        for i in range(I):     
+            self.line(ax,self.grid.x_range,phi1_range[:,i])
+   
+    def plot_path(self):
+        fig = plt.figure(figsize=(12,12))
+        axi = fig.add_subplot(1,1,1)
+        ax = self.setup_axes(axi)
+        ax.plot(self.grid.x_range,self.grid.y_range)            
+            

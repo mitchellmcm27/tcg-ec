@@ -1,1 +1,1 @@
-FROM mitchellmcm27/thermoengine:latest
+FROM registry.gitlab.com/enki-portal/thermoengine:master
