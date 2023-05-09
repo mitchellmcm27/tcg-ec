@@ -33,7 +33,7 @@ class EcModel():
     bdfdiag = None
     ode = None
 
-    def __init__(self, referenceName, rxnName, Tmin=773., Tmax=1273., nT=60, nP=60, Pmin=0.5, Pmax=2.5, Cik0=None, mi0=None, phii0=None, Xik0=None, T0=None, P0=None, domain="grid"):
+    def __init__(self, referenceName, rxnName, Tmin=773., Tmax=1273., nT=60, nP=60, Pmin=0.5, Pmax=2.5, Cik0=None, mi0=None, phii0=None, Xik0=None, T0=None, P0=None, domain="grid", **kwargs):
         self.referenceName = referenceName
         self.rxnName = rxnName
 

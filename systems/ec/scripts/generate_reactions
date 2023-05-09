@@ -598,7 +598,62 @@ def generate_reactions(outdir):
             ([hed, an], [gs, alm, qz]),
             ([cats, an], [gs, qz]),
         ])
+    generate_reaction(
+        outdir,
+        'eclogitization_agu9',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
 
+            # Start with AGU 5
+
+            # AGU 1
+            # plag + opx => gt + cpx
+            ([an], [cats, qz]), # Paria et al (paragraph 2, cites Herzberg 1978), GR67b
+            ([an, oEn], [di, mgts, qz]), # Green & Ringwood 1967 (a) - GR67a
+            ([an, oEn], [pyp, di, qz]),  # GR67c, Paria et al (B)
+            ([an, oEn], [pyp, gs, qz]), # GR67d
+            ([an, fs], [alm, hed, qz]), # Paria et al (A), GR67c
+            ([an, fs], [alm, gs, qz]),  # GR67d
+
+            ([oEn, mgts], [pyp]), # Paria et al (paragraph 2, cites RWood 1974), GR67e
+            ([oEn, cats], [gs, pyp]), # GR67f
+            ([ab], [jd, qz]), # Paria et al (paragraph 2, Reinsch 1977 cited in Newton 1983), GR67g
+
+            # Starting over from AGU1
+
+            # problems: Cpx needs to => Plag at HighT+LowP
+            #         : Gt => Cpx, Qz, Ky at moderate T,P
+
+            # From AGU4
+            # Gt = Cpx + Qz + Ky
+            ([gs, pyp, qz], [di, ky]),
+            ([gs, alm, qz], [hed, ky]),
+            # formation of kyanite
+            # Plg + Gt = Cpx + ky
+
+            # remove because it's redundant?
+            # ([an], [ky, gs, qz]),  # Koziol et al 1988 (paragraph 1), GR67o
+
+            # AGU3 was bad?
+            
+            # From AGU2
+            # allows breakdown of plag without Opx present
+            # Opx + Tsch = Grt
+            ([fs, mgts], [pyp, alm]), # analagous to oEn + mgs => pyp
+            ([fs, cats], [gs, pyp, alm]),  # analogous to oEn + cats => gs + pyp
+            # Cpx + Plg = Grt + Qtz
+            ([an, mgts], [pyp, gs, qz]), # MgTs is technically Opx
+            ([di, an], [gs, pyp, qz]), 
+            ([hed, an], [gs, alm, qz]),
+            ([cats, an], [gs, qz]),
+        ])
 def generate_reaction(outdir, name, phases, reactions):
 
     dbfile = os.path.join(os.path.pardir, 'database',

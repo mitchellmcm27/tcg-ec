@@ -4,57 +4,38 @@ from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
 from pathlib import Path
 from tcg_slb.base import *
-from tcg_slb.phasediagram.base import PDReactiveGrid, PDReactiveProfile, PDReactiveGridDiagnostics, PDReactiveProfileDiagnostics
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 from multiprocessing import Pool
+import multiprocessing as mp
 
-reference= 'eclogitization_hacker2015_md_xenolith_py_multi'
+### ------------ INPUTS -------------------
+reference = 'parallel_pd_hacker2015_md_xenolith_py_multi'
 
-### INPUTS
-
-''' multiprocessing
- Break the domain up into blocks for each cpu
-
-         ncols
- +----+----+----+----+
- | 1  | 2  | 3  | 4  | 
- |    |    |    |    | 
- +----+----+----+----+ n
- | 5  | 6  | 7  | 8  | r 
- |    |    |    |    | o
- +----+----+----+----+ w
- | 9  | 10 | 11 | 12 | s
- |    |    |    |    |
- +----+----+----+----+
-
-'''
-
-# number of y-dir blocks
-nrows = 6 
-# number of x-dir blocks
-ncols = 6 
-# total number of processes to use
-nblocks = nrows*ncols
-
-n = 5 # number of computational nodes per dimension per block (nxn grid)
+# number of nodes in each dimension
+nP = 30
+nT = 30
 
 # end time of reactions
-end_t = 1e5
+end_t = 1e4
 
 # which reaction to use
 rxnName = 'eclogitization_agu5_slb_rx'
 
-phasetol = 1.e-2
+# only phases greater than this fraction will be plotted
+phasetol = 2.e-2 # 1.e-2
 
 # Damkhoeler number
-Da = 1.0
+Da = 1.0 # 1.0
+# regularization parameter for compositions
+eps = 1.e-2 # 1.e-2
 
 Pmin, Pmax = [0.5, 2.5]
 Tmin, Tmax = [773., 1273.]
 
-###
+# number of processes
+processes = 20 # mp.cpu_count()
 
-## Setup
+# ------------------------------------------
 
 outputPath = Path("figs",reference,rxnName)
 outputPath.mkdir(parents=True, exist_ok=True)
@@ -77,11 +58,8 @@ ems = [
     'Kyanite'
 ]
 
-
-rowcol = [[row, col] for row in range(nrows) for col in range(ncols)]
-
-T_range = np.linspace(Tmin, Tmax, ncols*n)
-P_range = np.linspace(Pmin, Pmax, nrows*n)
+T_range = np.linspace(Tmin, Tmax, nT)
+P_range = np.linspace(Pmin, Pmax, nP)
 
 mi0 = [
     0.1470, # cpx
@@ -91,6 +69,7 @@ mi0 = [
     0.0, # garnet
     0.0, # kyanite
 ]
+
 #Pl     ab: 0.40023, an: 0.59977
 #Cpx    jd: 0.05313, di: 0.59033, hed: 0.30271, cen: 0.04393, cts: 0.00990
 #Opx    odi: 0.03959, en: 0.51220, fs: 0.42014, ts: 0.02807
@@ -99,16 +78,27 @@ Xik0=[
     [0.51220, 0.42014, 0.02807, 0.03959], # en, fs, *mgts, *oDi
     [1.], # quartz
     [0.59977, 0.40023], # an, ab
-    [0.3, 0.3, 0.4, 0., 0.], # py, alm, gr, *mgmaj, *namaj
+    [0.39681, 0.42983, 0.17322, 0., 0.], # py, alm, gr, *mgmaj, *namaj
     [1.], # kyanite
 ]
 
+print(Xik0[0][2])
 # move cEn to oEn
 Xik0[1][1] += Xik0[0][2]
 Xik0[0][2] = 0.0
+print(Xik0[0][2])
+
 # move oDi to di
 Xik0[0][0] += Xik0[1][3]
 Xik0[1][3] = 0.0
+
+# regularize 3-component garnet
+g3 = (1-(Xik0[4][0]+Xik0[4][1]+Xik0[4][2]))/3.0
+Xik0[4][0] += g3
+Xik0[4][1] += g3
+Xik0[4][2] += g3
+Xik0[4][3] = 0.0
+Xik0[4][4] = 0.0
 
 rxn = EcModel.get_reaction(rxnName)
 
@@ -119,85 +109,29 @@ Cik0 = x2c(rxn, Xik0)
 
 P_final, T_final  = np.meshgrid(P_range, T_range, indexing='ij')
 rho_final = np.zeros(P_final.shape)
-phases_final = [['' for j in range(ncols*n)] for i in range(nrows*n)]
-
-## Solving
+phases_final = [['' for j in range(nT)] for i in range(nP)]
 
 # function to run in parallel
-def task(rowcol):
-    row, col = rowcol
-
-    t0, t1 = [col*n, (col+1)*n]
-    p0, p1 = [row*n, (row+1)*n]
-
-    #block-level grid solve
-    #bdfgrid = PDReactiveGrid()
-
-    Tgrid = np.zeros((n,n))
-    Pgrid = np.zeros((n,n))
-    rhogrid = np.zeros((n,n))
-    phasegrid = [['' for j in range(n)] for i in range(n)]
-
-    for i,p in enumerate(np.linspace(p0,p1,n)):
-        for j,T in enumerate(np.linspace(t0,t1,n)):
-            ode = ScipyPDReactiveODE(rxn)
-            ode.solve(T,GPa2Bar(p),mi0,Cik0,end_t,Da=Da)
-            Tgrid[i,j] = T
-            Pgrid[i,j] = p
-            odephasenames, phaseabbrev = ode.final_phases(phasetol)
-            phasegrid[i][j] = '+'.join(phaseabbrev)
-            rhogrid[i,j] = ode.final_rho()
-
-    #bdfgrid.solve(
-    #    rxn, 
-    #    ScipyPDReactiveODE, 
-    #    2, # i0 - doesn't matter because we pass Cik0
-    #    ['T', 'p'], # [x, y] type for calculation
-    #    T_range[t0:t1], 
-    #    P_range[p0:p1],
-    #    end_t,
-    #    Cik0=Cik0, 
-    #    mi0=mi0
-    #)
-    # bdfdiag = PDReactiveGridDiagnostics(rxn, bdfgrid)
-
-    # outputs
-    #rhogrid = bdfdiag.rhogrid()
-    #if bdfdiag.phaseis is None: bdfdiag.phase_diagnostics()
-    #phasegrid = bdfdiag.phasestrs.copy()
-
-    #print('{}_{}'.format(reference, row*ncols + col))
-
-    #del bdfdiag
-    #del bdfgrid
-    return rhogrid, phasegrid
-    
+def task(args):
+    i, j = args
+    P = P_range[i]
+    T = T_range[j]
+    ode = ScipyPDReactiveODE(rxn)
+    ode.solve(T,GPa2Bar(P),mi0,Cik0,end_t,Da=Da,eps=eps,rtol=1.e-4,atol=1.e-8)
+    odephasenames, phaseabbrev = ode.final_phases(phasetol)
+    phases = '+'.join(phaseabbrev)
+    rho = ode.final_rho()
+    return rho, phases, i, j
 
 # Map blocks to block-level calculations
-with Pool(maxtasksperchild=1) as pool:
+with Pool(processes,maxtasksperchild=12) as pool:
     # blocks until all finished
-    sols = pool.map(task, rowcol)
+    arglist = [[i,j] for i,P in enumerate(P_range) for j,T in enumerate(T_range)]
+    sols = pool.map(task, arglist)
 
-# Solving finished
-
-## Plotting
-
-
-# loop through CPU blocks to copy outputs into big arrays
-for i, rc in enumerate(rowcol):
-    row, col = rc
-    output = sols[i]
-
-    rho, phases = output
-    r0, r1 = [n*row, n*(row+1)]
-    c0, c1= [n*col, n*(col+1)]
-
-    # copy into numpy arrays
-    rho_final[r0:r1,c0:c1] = rho
-    # copy into the python list, loop over each point
-    for i in range(n):
-        for j in range(n):
-            phases_final[r0+j][c0+i] = phases[j][i]
+for rho, phases, i , j in sols:
+    rho_final[i][j] = rho
+    phases_final[i][j] = phases
 
 fig = plt.figure(figsize=(12,14))
 
@@ -210,25 +144,17 @@ axi.contour(T_final,P_final,rho_final,levels=levels,alpha=0.75,cmap=cmap)
 plt.clim([25.,38.])
 plt.xlim([Tmin, Tmax])
 plt.ylim([Pmin,Pmax])
-
-try:
-    plt.colorbar(mappable=s, location='left')
-except:
-    pass
-
+plt.colorbar(mappable=s, location='left')
 plt.savefig(Path(outputPath,'density.png'))
 
 # a set of unique strings representing the phase combinations present across the phase diagram
 uniquestrs = sorted(list(set([phstr for phstrl in phases_final for phstr in phstrl if phstr != ''])))
-
 def index(ls,v):
     try:
         i = ls.index(v)
     except ValueError:
         i = -1
     return i
-
-print(phases_final[0][:])
 # an index into the uniquestr list to give a grid showing which phases are present where
 phaseis_final = np.asarray([[index(uniquestrs,phstr) for phstr in phasestrr]  for phasestrr in phases_final])
 
@@ -237,14 +163,8 @@ axes = fig.subplot_mosaic([['A',[['1','2'],['3','4'],['5','6']]]])
 axi = axes['A']
 raxes = [axes[repr(i)] for i in range(1,7)]
 for axis in raxes: axis.set_visible(False)
-
-#jgrid, igrid = np.meshgrid(range(len(self.grid.x_range)), range(len(self.grid.y_range)))
 scs = []
-sis = []
-sjs = []
 for i,ph in enumerate(uniquestrs):
-    sis.append(P_final[phaseis_final==i])
-    sjs.append(T_final[phaseis_final==i])
     scs.append(axi.scatter(T_final[phaseis_final==i],P_final[phaseis_final==i],alpha=0.5,label=ph,s=50))
 fig.legend(handles=scs,loc='center left')
 plt.savefig(Path(outputPath,'phases.png'))

@@ -5,7 +5,6 @@
 **/install/
 **/database/phases/
 **/database/endmembers/
-*.png
 
 ### CMake ###
 CMakeLists.txt.user
