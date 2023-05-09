@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+
+import os
+from pathlib import Path
+import re
+import csv
+
+file_path =  Path("database","data","stx21ver.dat")
+
+result = []
+
+'''
+aperov   EoS = 6 | Al_1Al_1O_3            Al-Perovskite                           
+AL2O3(1)
+G0 = -1517728.63 S0 = -5 V0 = -2.4944
+c1 = 2424000 c2 = 4.1 c3 = 858.26509 c4 = 1.54222 c5 = 0.84088 c6 = 2.27510
+m0 = 1691996.2 m1 = 1.55703
+end
+'''
+with open(file_path, 'r') as file:
+
+    contents = file.read()
+    sections = re.split(r'^end', contents, flags=re.MULTILINE)
+
+    fieldnames = []
+    for section in sections[3:-2]:
+        lines = []
+
+        line0 = section.strip().split("\n")[0]
+        print(line0)
+        split = re.split(r'\s+',line0)
+        abbrev=split[0]
+        eos=split[3]
+        formula=split[5]
+        name=split[6]
+
+        # Na_1Al_1Si_3O_8
+        formula = re.sub(r'_([\d]{1,2})',r'(\1)',formula)
+        print(formula)
+        for line in section.strip().split("\n")[1:]:
+            l = re.split(r'\|',line,1)
+            content=l[0]
+            if(content):
+                lines.append(content)
+
+        data = " ".join(lines[2:])
+        vals = re.split(r'\s+',data)
+        vals = [s for s in vals if s!='=']
+        varnames = [s for i,s in enumerate(vals) if not i%2]
+        varvals = [s for i,s in enumerate(vals) if i%2]
+
+        valsdict = {k:float(v) for k, v in zip(varnames,varvals)}
+        valsdict['abbrev'] = abbrev
+        valsdict['formula'] = formula
+        valsdict['name'] = name
+        valsdict['eos'] = eos
+        fieldnames.extend(list(valsdict.keys()))
+        result.append(valsdict)
+fieldnames = list(set(fieldnames))
+fieldnames = sorted(fieldnames, key=str.casefold)
+print(fieldnames)
+with open(Path("database","data","stx21ver.csv"), 'w') as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(result)
