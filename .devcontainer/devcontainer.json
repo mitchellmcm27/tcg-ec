@@ -16,11 +16,21 @@
 	// "postCreateCommand": "apt-get update && apt-get install -y curl",
 
 	// Uncomment when using a ptrace-based debugger like C++, Go, and Rust
-	"runArgs": ["--security-opt", "seccomp=unconfined", "--privileged"]
+	"runArgs": ["--security-opt", "seccomp=unconfined", "--privileged"],
 
 	// Uncomment to use the Docker CLI from inside the container. See https://aka.ms/vscode-remote/samples/docker-from-docker.
 	// "mounts": [ "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" ],
+	
 
 	// Uncomment to connect as a non-root user if you've added one. See https://aka.ms/vscode-remote/containers/non-root.
 	// "remoteUser": "vscode"
+	
+	//"mounts": [
+	//	"source=D:/documents/developer/tcg-ec/systems/ec/notebooks,target=workspaces/tcg-ec/systems/ec/notebooks,type=volume",
+	//	"source=D:/documents/developer/tcg-ec/systems/ec/python,target=workspaces/tcg-ec/systems/ec/python,type=volume",
+	//	"source=D:/documents/developer/tcg-ec/systems/ec/scripts,target=workspaces/tcg-ec/systems/ec/scripts,type=volume",
+	//	"source=D:/documents/developer/tcg-ec/systems/ec/scripts,target=workspaces/tcg-ec/systems/ec/scripts,type=volume",
+	//	"source=D:/documents/developer/tcg-ec/systems/ec/database/data,target=workspaces/tcg-ec/systems/ec/database/data,type=volume",
+	//	"source=D:/documents/developer/tcg-ec/systems/ec/database/params.csv,target=workspaces/tcg-ec/systems/ec/database/params.csv,type=volume"
+	//]
 }

@@ -19,6 +19,13 @@ class SLBPhase:
     
     dsyms = None
     Wsarr = None
+
+    # Added - mitchell
+    # The 2021 dataset has the ability for Wij to be a function of pressure
+    # Wij + W_Pij*P
+    # added another arry for the W_Ps
+    W_Psarr = None
+
     m = None
     C = None
     
@@ -41,6 +48,10 @@ class SLBPhase:
         d     = kwargs.get('d', [])
         # interaction weights (nc x nc)
         W     = kwargs.get('W', [])
+
+        # Added - mitchell - W terms for volume, allows W as fn of pressure
+        W_V   = kwargs.get('W_V', [])
+
         sites = kwargs.get('sites', [])
         TC0   = kwargs.get('TC0', None)
         VD    = kwargs.get('VD', None)
@@ -76,16 +87,39 @@ class SLBPhase:
         self.dsyms = [sym.symbols('d_{}'.format(i), real=True) for i in range(len(d))]
         Wname = []
         Wsyms = []
+
+        # Added - mitchell
+        W_Vname = []
+        W_Vsyms = []
+
         self.Wsarr = []
         if len(W) > 0:
             Wname = ['W_{}{}'.format(i,j) for j in range(2,self.nc+1) for i in range(1,j)]
+
+            #added
+            W_Vname = ['W_V_{}{}'.format(i,j) for j in range(2,self.nc+1) for i in range(1,j)]
+
             Wsyms = [sym.symbols('W_{}{}'.format(i,j), real=True) for j in range(2,self.nc+1) for i in range(1,j)]
+
+            #added
+            W_Vsyms = [sym.symbols('W_V_{}{}'.format(i,j), real=True) for j in range(2,self.nc+1) for i in range(1,j)]
+            
             self.Wsarr = [[0 for j in range(self.nc)] for i in range(self.nc)]
+
+            #added
+            self.W_Vsarr = [[0 for j in range(self.nc)] for i in range(self.nc)]
+
             k = 0
             for i in range(1,self.nc):
                 for j in range(i):
                     self.Wsarr[i][j] = Wsyms[k]
                     self.Wsarr[j][i] = Wsyms[k]
+
+                    #added
+                    self.W_Vsarr[i][j] = W_Vsyms[k]
+                    #added
+                    self.W_Vsarr[j][i] = W_Vsyms[k]
+                    
                     k = k + 1
         
         if TC0 is not None and not numpy.isnan(numpy.sum(TC0)):
@@ -106,13 +140,16 @@ class SLBPhase:
         
         self.param_strs = ['R', 'T_r']+\
                           ['d_{}'.format(i) for i in range(len(d))]+\
-                          Wname
+                          Wname\
+                          + W_Vname # added
         self.param_unit = ['J/K/mol', 'K']+\
                           ['']*len(d)+\
-                          ['J/mol']*len(Wsyms)
+                          ['J/mol']*len(Wsyms)\
+                          + ['J/mol/bar']*len(W_Vsyms) # added
         self.param_syms = [self.Rsym, self.Trsym]+\
                           self.dsyms+\
-                          Wsyms
+                          Wsyms\
+                          + W_Vsyms # added
         if self.TC0 is not None:
             self.param_strs += ['T_C0_{}'.format(i) for i in range(len(self.TC0))]
             self.param_strs += ['V_D_{}'.format(i) for i in range(len(self.VD))]
@@ -128,6 +165,10 @@ class SLBPhase:
                            'T_r' : T_r}
         self.param_vals.update(dict([('d_{}'.format(i),d[i]) for i in range(len(d))]))
         self.param_vals.update(dict([(Wname[i],W[i]) for i in range(len(W))]))
+        
+        # added - mitchell
+        self.param_vals.update(dict([(W_Vname[i],W_V[i]) for i in range(len(W_V))]))
+
         if self.TC0 is not None:
             self.param_vals.update(dict([('T_C0_{}'.format(i),self.TC0[i]) for i in range(len(self.TC0))]))
             self.param_vals.update(dict([('V_D_{}'.format(i),self.VD[i]) for i in range(len(self.VD))]))
@@ -159,9 +200,12 @@ class SLBPhase:
     def G_excess_default(self):
         if len(self.Wsarr)==0: return 0
         W = sym.Matrix(self.Wsarr)
+        W_V = sym.Matrix(self.W_Vsarr)
         for i in range(self.nc):
             for j in range(self.nc):
-                W[i,j] = W[i,j]/(self.dsyms[i] + self.dsyms[j])
+                # modified to add the W_V term, which is multiplied by pressure
+                W[i,j] = (W[i,j]+ W_V[i,j]*self.P)/(self.dsyms[i] + self.dsyms[j])
+                # W[i,j] = W[i,j]/(self.dsyms[i] + self.dsyms[j])
         Xdsum = sum([self.X[i]*self.dsyms[i] for i in range(self.nc)])
         Phi = sym.diag(*self.dsyms)*self.X/Xdsum
         G_excess = self.nT*Xdsum*Phi.T*W*Phi

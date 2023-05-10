@@ -10,7 +10,7 @@ from tcg_slb.endmember import SLBEndmember
 def generate_endmembers(outdir):
   reference= 'generate_endmembers' 
 
-  df = pd.read_csv(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'slb_endmembers.csv'), skipinitialspace=True)
+  df = pd.read_csv(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'stx21ver.csv'), skipinitialspace=True)
 
   try:
       os.mkdir(outdir)

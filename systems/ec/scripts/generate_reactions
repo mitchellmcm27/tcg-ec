@@ -418,6 +418,60 @@ def generate_reactions(outdir):
     
     generate_reaction(
         outdir,
+        'eclogitization_agu5',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+
+            # AGU 1
+
+            # plag + opx => gt + cpx
+            ([an], [cats, qz]), # Paria et al (paragraph 2, cites Herzberg 1978), GR67b
+            ([an, oEn], [di, mgts, qz]), # Green & Ringwood 1967 (a) - GR67a
+            ([an, oEn], [pyp, di, qz]),  # GR67c, Paria et al (B)
+            ([an, oEn], [pyp, gs, qz]), # GR67d
+            ([an, fs], [alm, hed, qz]), # Paria et al (A), GR67c
+            ([an, fs], [alm, gs, qz]),  # GR67d
+
+            ([oEn, mgts], [pyp]), # Paria et al (paragraph 2, cites RWood 1974), GR67e
+            ([oEn, cats], [gs, pyp]), # GR67f
+            ([ab], [jd, qz]), # Paria et al (paragraph 2, Reinsch 1977 cited in Newton 1983), GR67g
+
+            # Starting over from AGU1
+
+            # problems: Cpx needs to => Plag at HighT+LowP
+            #         : Gt => Cpx, Qz, Ky at moderate T,P
+
+            # From AGU4
+            # Gt = Cpx + Qz + Ky
+            ([gs, pyp, qz], [di, ky]),
+            ([gs, alm, qz], [hed, ky]),
+            # formation of kyanite
+            # Plg + Gt = Cpx + ky
+            ([an], [ky, gs, qz]),  # Koziol et al 1988 (paragraph 1), GR67o
+
+            # AGU3 was bad?
+            
+            # From AGU2
+            # allows breakdown of plag without Opx present
+            # Opx + Tsch = Grt
+            ([fs, mgts], [pyp, alm]), # analagous to oEn + mgs => pyp
+            ([fs, cats], [gs, pyp, alm]),  # analogous to oEn + cats => gs + pyp
+            # Cpx + Plg = Grt + Qtz
+            ([an, mgts], [pyp, gs, qz]), # MgTs is technically Opx
+            ([di, an], [gs, pyp, qz]), 
+            ([hed, an], [gs, alm, qz]),
+            ([cats, an], [gs, qz]),
+        ], database="tcg_stx21_database.tar.gz")
+    
+    generate_reaction(
+        outdir,
         'eclogitization_agu6',
         [
             'Clinopyroxene',
@@ -584,8 +638,8 @@ def generate_reactions(outdir):
             ([ab], [jd, qz]),
 
             # From AGU4
-            #([gs, pyp, qz], [di, ky]), # take out for 8
-            #([gs, alm, qz], [hed, ky]), # take out for 8
+            #([gs, pyp, qz], [di, ky]), # remove for AGU 8
+            #([gs, alm, qz], [hed, ky]), # remove for AGU 8
             ([an], [ky, gs, qz]),
 
             # AGU3 was bad?
@@ -633,13 +687,19 @@ def generate_reactions(outdir):
 
             # From AGU4
             # Gt = Cpx + Qz + Ky
-            ([gs, pyp, qz], [di, ky]),
-            ([gs, alm, qz], [hed, ky]),
+            ([gs, pyp, qz], [di, ky]), # Green 67 xi
+            ([gs, alm, qz], [hed, ky]), # Green 67 xi
             # formation of kyanite
             # Plg + Gt = Cpx + ky
 
-            # remove because it's redundant?
-            # ([an], [ky, gs, qz]),  # Koziol et al 1988 (paragraph 1), GR67o
+            ([an], [ky, gs, qz]),  # Koziol et al 1988 (paragraph 1), GR67o, Eckert et al. 1991 A
+
+            # Added for AGU 9
+            # an+Opx = Cpx + Ky
+            # ([an,oEn],[di,ky]), # redundant, Green 67
+            # ([an,fs],[hed,ky]), # redundant, Green 67
+            ([oEn, ky], [pyp, qz]), # Green 67 x
+            ([fs, ky], [alm, qz]), # Green 67 x
 
             # AGU3 was bad?
             
@@ -650,14 +710,13 @@ def generate_reactions(outdir):
             ([fs, cats], [gs, pyp, alm]),  # analogous to oEn + cats => gs + pyp
             # Cpx + Plg = Grt + Qtz
             ([an, mgts], [pyp, gs, qz]), # MgTs is technically Opx
-            ([di, an], [gs, pyp, qz]), 
+            ([di, an], [gs, pyp, qz]), #  Eckert et al. 1991 B
             ([hed, an], [gs, alm, qz]),
             ([cats, an], [gs, qz]),
         ])
-def generate_reaction(outdir, name, phases, reactions):
+def generate_reaction(outdir, name, phases, reactions, database='tcg_slb_database.tar.gz'):
 
-    dbfile = os.path.join(os.path.pardir, 'database',
-                          'tcg_slb_database.tar.gz')
+    dbfile = os.path.join(os.path.pardir, 'database', database)
     dbpath = "file://{}".format(dbfile)
 
     try:
@@ -665,7 +724,8 @@ def generate_reaction(outdir, name, phases, reactions):
     except FileExistsError:
         pass
 
-    name = name+"_slb_rx"
+    db = 'slb' if (database=='tcg_slb_database.tar.gz') else 'stx21'
+    name = name+"_"+db+"_rx"
     phases = [ph+"_slb_ph" for ph in phases]
     print(phases)
     rxn = SLBReactions(name, len(reactions), phases, dbpath, reference)

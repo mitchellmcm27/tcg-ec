@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <reaction_options>
-  <name name="eclogitization_agu9_slb_rx"/>
+  <name name="eclogitization_agu5_stx21_rx"/>
   <database>
-    <string_value lines="1">file://../database/tcg_slb_database.tar.gz</string_value>
+    <string_value lines="1">file://../database/tcg_stx21_database.tar.gz</string_value>
   </database>
   <reference>
     <string_value lines="1">generate_reactions</string_value>
@@ -243,30 +243,6 @@ Piecewise((exp(-T0/T)*A[11, 0]*Phi[3, 0]/(R*T), A[11, 0] &gt;= 0),
 )</string_value>
     </expression>
   </reaction>
-  <reaction name="EnstKyan_PyroQuar">
-    <reactant name="Enst_Orth" phase="Orthopyroxene_slb_ph" endmember="Enstatite_slb_em"/>
-    <reactant name="Kyan_Kyan" phase="Kyanite_slb_ph" endmember="Kyanite_slb_em"/>
-    <product name="Pyro_Garn" phase="Garnet_slb_ph" endmember="Pyrope_slb_em"/>
-    <product name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
-    <expression>
-      <string_value type="code" language="python" lines="20">EnstKyan_PyroQuar = (
-Piecewise((exp(-T0/T)*A[12, 0]*Phi[1, 0]*Phi[5, 0]/(R*T), A[12, 0] &gt;=
-0), (exp(-T0/T)*A[12, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
-)</string_value>
-    </expression>
-  </reaction>
-  <reaction name="FerrKyan_AlmaQuar">
-    <reactant name="Ferr_Orth" phase="Orthopyroxene_slb_ph" endmember="Ferrosilite_slb_em"/>
-    <reactant name="Kyan_Kyan" phase="Kyanite_slb_ph" endmember="Kyanite_slb_em"/>
-    <product name="Alma_Garn" phase="Garnet_slb_ph" endmember="Almandine_slb_em"/>
-    <product name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
-    <expression>
-      <string_value type="code" language="python" lines="20">FerrKyan_AlmaQuar = (
-Piecewise((exp(-T0/T)*A[13, 0]*Phi[1, 0]*Phi[5, 0]/(R*T), A[13, 0] &gt;=
-0), (exp(-T0/T)*A[13, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
-)</string_value>
-    </expression>
-  </reaction>
   <reaction name="FerrMgTs_PyroAlma">
     <reactant name="Ferr_Orth" phase="Orthopyroxene_slb_ph" endmember="Ferrosilite_slb_em"/>
     <reactant name="MgTs_Orth" phase="Orthopyroxene_slb_ph" endmember="MgTschermaks_slb_em"/>
@@ -274,8 +250,8 @@ Piecewise((exp(-T0/T)*A[13, 0]*Phi[1, 0]*Phi[5, 0]/(R*T), A[13, 0] &gt;=
     <product name="Alma_Garn" phase="Garnet_slb_ph" endmember="Almandine_slb_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">FerrMgTs_PyroAlma = (
-Piecewise((exp(-T0/T)*A[14, 0]*Phi[1, 0]**2/(R*T), A[14, 0] &gt;= 0),
-(exp(-T0/T)*A[14, 0]*Phi[4, 0]**2/(R*T), True))
+Piecewise((exp(-T0/T)*A[12, 0]*Phi[1, 0]**2/(R*T), A[12, 0] &gt;= 0),
+(exp(-T0/T)*A[12, 0]*Phi[4, 0]**2/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
@@ -287,8 +263,8 @@ Piecewise((exp(-T0/T)*A[14, 0]*Phi[1, 0]**2/(R*T), A[14, 0] &gt;= 0),
     <product name="Alma_Garn" phase="Garnet_slb_ph" endmember="Almandine_slb_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">FerrCaTs_GrosPyroAlma = (
-Piecewise((exp(-T0/T)*A[15, 0]*Phi[0, 0]*Phi[1, 0]/(R*T), A[15, 0] &gt;=
-0), (exp(-T0/T)*A[15, 0]*Phi[4, 0]**3/(R*T), True))
+Piecewise((exp(-T0/T)*A[13, 0]*Phi[0, 0]*Phi[1, 0]/(R*T), A[13, 0] &gt;=
+0), (exp(-T0/T)*A[13, 0]*Phi[4, 0]**3/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
@@ -300,8 +276,8 @@ Piecewise((exp(-T0/T)*A[15, 0]*Phi[0, 0]*Phi[1, 0]/(R*T), A[15, 0] &gt;=
     <product name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">AnorMgTs_PyroGrosQuar = (
-Piecewise((exp(-T0/T)*A[16, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[16, 0] &gt;=
-0), (exp(-T0/T)*A[16, 0]*Phi[2, 0]*Phi[4, 0]**2/(R*T), True))
+Piecewise((exp(-T0/T)*A[14, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[14, 0] &gt;=
+0), (exp(-T0/T)*A[14, 0]*Phi[2, 0]*Phi[4, 0]**2/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
@@ -313,8 +289,8 @@ Piecewise((exp(-T0/T)*A[16, 0]*Phi[1, 0]*Phi[3, 0]/(R*T), A[16, 0] &gt;=
     <product name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">DiopAnor_GrosPyroQuar = (
-Piecewise((exp(-T0/T)*A[17, 0]*Phi[0, 0]*Phi[3, 0]/(R*T), A[17, 0] &gt;=
-0), (exp(-T0/T)*A[17, 0]*Phi[2, 0]*Phi[4, 0]**2/(R*T), True))
+Piecewise((exp(-T0/T)*A[15, 0]*Phi[0, 0]*Phi[3, 0]/(R*T), A[15, 0] &gt;=
+0), (exp(-T0/T)*A[15, 0]*Phi[2, 0]*Phi[4, 0]**2/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
@@ -326,8 +302,8 @@ Piecewise((exp(-T0/T)*A[17, 0]*Phi[0, 0]*Phi[3, 0]/(R*T), A[17, 0] &gt;=
     <product name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">HedeAnor_GrosAlmaQuar = (
-Piecewise((exp(-T0/T)*A[18, 0]*Phi[0, 0]*Phi[3, 0]/(R*T), A[18, 0] &gt;=
-0), (exp(-T0/T)*A[18, 0]*Phi[2, 0]*Phi[4, 0]**2/(R*T), True))
+Piecewise((exp(-T0/T)*A[16, 0]*Phi[0, 0]*Phi[3, 0]/(R*T), A[16, 0] &gt;=
+0), (exp(-T0/T)*A[16, 0]*Phi[2, 0]*Phi[4, 0]**2/(R*T), True))
 )</string_value>
     </expression>
   </reaction>
@@ -338,8 +314,8 @@ Piecewise((exp(-T0/T)*A[18, 0]*Phi[0, 0]*Phi[3, 0]/(R*T), A[18, 0] &gt;=
     <product name="Quar_Quar" phase="Quartz_slb_ph" endmember="Quartz_slb_em"/>
     <expression>
       <string_value type="code" language="python" lines="20">CaTsAnor_GrosQuar = (
-Piecewise((exp(-T0/T)*A[19, 0]*Phi[0, 0]*Phi[3, 0]/(R*T), A[19, 0] &gt;=
-0), (exp(-T0/T)*A[19, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
+Piecewise((exp(-T0/T)*A[17, 0]*Phi[0, 0]*Phi[3, 0]/(R*T), A[17, 0] &gt;=
+0), (exp(-T0/T)*A[17, 0]*Phi[2, 0]*Phi[4, 0]/(R*T), True))
 )</string_value>
     </expression>
   </reaction>

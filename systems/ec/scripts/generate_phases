@@ -16,8 +16,8 @@ def generate_phases(outdir):
           return ast.literal_eval(val)
       except (ValueError, SyntaxError) as e:
           return None
-  converter = dict([(h,literal_return) for h in ['endmember_names','conversion_strs','X','d','W','sites','TC0','VD','SD']])
-  df = pd.read_csv(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'slb_phases.csv'),skipinitialspace=True,converters=converter)
+  converter = dict([(h,literal_return) for h in ['endmember_names','conversion_strs','X','d','W','sites','TC0','VD','SD','W_V']])
+  df = pd.read_csv(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', 'stx21_phases.csv'),skipinitialspace=True,converters=converter)
 
   try:
       os.mkdir(outdir)
@@ -26,6 +26,7 @@ def generate_phases(outdir):
 
   for i, row in df.iterrows():
       values_dict = row.to_dict()
+      print(values_dict)
       name = values_dict.pop('name').replace('-','_')+'_slb_ph'
       abbrev = values_dict.pop('abbrev')
       endmember_names = values_dict.pop('endmember_names')
