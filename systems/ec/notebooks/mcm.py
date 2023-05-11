@@ -98,6 +98,7 @@ class EcModel():
             return self.rxn, grid, ode, bdfdiag
         elif self.domain=="profile" and self.T is not None and self.P is not None:
             grid = self.solve_reaction_profile(reload=reload, save=save, end_t=end_t, **kwargs)
+            print("done solving profile")
             self.grid = grid
             if(plot):
                 bdfdiag = self.plot_reaction_profile(grid, plot_phases=plot_phases)
@@ -254,6 +255,7 @@ class EcModel():
         return bdfdiag
 
     def plot_reaction_profile(self, bdfgrid, plot_phases=True, figure_background=None):
+        print("plot profile")
         import matplotlib.pyplot as plt
 
         figure_xlim = [self.T[0], self.T[-1]]
@@ -269,11 +271,15 @@ class EcModel():
                 # return the modified student
                 return pdrgd
         
+        print("Decorate")
         bdfdiag = decorate(PDReactiveProfileDiagnostics)(self.rxn, bdfgrid)
 
+        print("plot_rho_contours")
         s2 = bdfdiag.plot_rho_contours()
 
         if plot_phases:
+            print("plot_phases")
             bdfdiag.plot_phases()
+        print("plot_path")
         bdfdiag.plot_path()
         return bdfdiag

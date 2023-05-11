@@ -26,12 +26,13 @@ def generate_phases(outdir):
 
   for i, row in df.iterrows():
       values_dict = row.to_dict()
-      print(values_dict)
+   
       name = values_dict.pop('name').replace('-','_')+'_slb_ph'
       abbrev = values_dict.pop('abbrev')
       endmember_names = values_dict.pop('endmember_names')
       endmember_names = [em+'_slb_em' for em in endmember_names]
       phase = SLBPhase(name, abbrev, reference, endmember_names, **values_dict)
+      print(values_dict)
       print(phase.tofile(outdir))
 
 if __name__ == "__main__":

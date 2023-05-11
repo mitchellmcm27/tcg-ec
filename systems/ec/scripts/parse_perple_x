@@ -54,7 +54,7 @@ lookup = {
 'ky':['Kyanite', 'Al(2)Si(1)O(5)'],
 'neph':['Nepheline', 'Na(1)Al(1)Si(1)O(4)'],
 'anao':['AlphaNaO2', 'Na(2)Al(2)O(4)'],
-'cor':['Corundum', 'AL(2)O(3)'],
+'cor':['Corundum', 'Al(2)O(3)'],
 'crst':['Cristobalite','Si(1)O(2)'],
 'fnal':['FeNAL', 'Na(1)Fe(2)Al(5)Si(1)O(12)'],
 'mnal':['MgNAL', 'Na(1)Mg(2)Al(5)Si(1)O(12)'],
@@ -126,10 +126,10 @@ def parse_file(file_path):
 
             if(valsdict.get('n',False)):
                 valsdict['n'] *= -1
-            if(valsdict.get('Vr',False)):
-                valsdict['Vr'] *= -1
-            if(valsdict.get('V0',False)):
-                valsdict['V0'] *= -1
+            if(valsdict.get('V_r',False)):
+                valsdict['V_r'] *= -1
+            if(valsdict.get('v0',False)):
+                valsdict['v0'] *= -1
 
 
             fieldnames.extend(list(valsdict.keys()))

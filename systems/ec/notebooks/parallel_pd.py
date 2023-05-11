@@ -12,22 +12,22 @@ import multiprocessing as mp
 reference = 'parallel_pd_hacker2015_md_xenolith_py_multi'
 
 # number of nodes in each dimension
-nP = 30
-nT = 30
+nP = 300
+nT = 300
 
 # end time of reactions
-end_t = 1e4
+end_t = 5e3
 
 # which reaction to use
-rxnName = 'eclogitization_agu5_slb_rx'
+rxnName = 'eclogitization_agu5_stx21_rx'
 
 # only phases greater than this fraction will be plotted
-phasetol = 2.e-2 # 1.e-2
+phasetol = 1.e-3 # 1.e-2
 
 # Damkhoeler number
 Da = 1.0 # 1.0
 # regularization parameter for compositions
-eps = 1.e-2 # 1.e-2
+eps = 1.e-3 # 1.e-2
 
 Pmin, Pmax = [0.5, 2.5]
 Tmin, Tmax = [773., 1273.]
