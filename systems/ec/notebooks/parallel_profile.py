@@ -6,11 +6,12 @@ from pathlib import Path
 from tcg_slb.base import *
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 from multiprocessing import Pool
-import multiprocessing as mp
-
-reference= 'parallel_profile_hacker2015_md_xenolith'
+import importlib
 
 ### ------------ INPUTS -------------------
+reference= 'parallel_profile'
+composition = 'hacker_2015_md_xenolith'
+rxnName = 'eclogitization_agu5_stx21_rx'
 
 # number of x-nodes
 nT = 100
@@ -37,102 +38,46 @@ processes = 20 # mp.cpu_count()
 
 # ------------------------------------------
 
-# Perple_X output...
-''' Stixrude 2021
+mod = importlib.import_module("compositions."+composition)
+Cik0, Xik0, mi0, phii0, phase_names, endmember_names = [getattr(mod,a,None) for a in ['Cik0', 'Xik0', 'mi0','phii0', 'phase_names', 'endmember_names']]
 
-Stable phases at:
-                             T(K)     =  1273.00
-                             P(bar)   =  5000.00
+outputPath = Path("figs",reference,composition,rxnName)
+outputPath.mkdir(parents=True, exist_ok=True)
 
-Phase Compositions (molar  proportions):
-                   wt %      vol %     mol %     mol        NA2O     MGO      AL2O3    SIO2     CAO      FEO
- Pl                55.60     61.47     50.34    0.201      0.20011  0.00000  0.79989  2.40023  0.59977  0.00000
- Cpx               14.70     13.10     16.10    0.643E-01  0.02656  0.67820  0.03646  1.99010  0.90294  0.30271
- Opx               29.20     24.85     31.52    0.126      0.00000  1.09205  0.02807  1.97193  0.03959  0.84029
- qtz                0.50      0.58      2.04    0.816E-02  0.00000  0.00000  0.00000  1.00000  0.00000  0.00000
-
-Phase speciation (molar proportions):
-
- Pl                ab: 0.40023, an: 0.59977
- Cpx               jd: 0.05313, di: 0.59033, hed: 0.30271, cen: 0.04393, cts: 0.00990
- Opx               odi: 0.03959, en: 0.51220, fs: 0.42014, ts: 0.02807
-
- 
-'''
-
-
-phase_list = [
-    'Clinopyroxene',
-    'Orthopyroxene',
-    'Quartz',
-    'Feldspar', 
-    'Garnet', 
-    'Kyanite',
-]
-
-em_list = [
-    'Diopside', 'Hedenbergite', 'Clinoenstatite', 'CaTschermaks', 'Jadeite',
-    'Enstatite', 'Ferrosilite', 'MgTschermaks', 'OrthoDiopside',
-    'Quartz',
-    'Anorthite','Albite',
-    'Pyrope', 'Almandine', 'Grossular', 'MgMajorite', 'NaMajorite',
-    'Kyanite'
-]
-
-# mass fractions of the phases
-## Grt-Opx-Cpx granulite
-## given as volume fractions
-phii0 = [
-    0.1310, # cpx
-    0.2485, # opx
-    0.00580, # quartz
-    0.6147, # plag
-    0.0, # garnet
-    0.0, # kyanite
- ]
-
-mi0 = [
-    0.1470,
-    0.2920,
-    0.0050,
-    0.5560,
-    0.0,
-    0.0
-]
-
-Xik0 = [
-    [0.59033, 0.30271, 0.04393, 0.00990, 0.05313], # di, hed, *cEn, *cats, jd
-    [0.51220, 0.42014, 0.02807, 0.03959], # en, fs, *mgts, *oDi
-    [1.], # quartz
-    [0.59977, 0.40023], # an, ab
-    [0.39681, 0.42983, 0.17322, 0.0000, 0.0000], # py, alm, gr, *mgmaj, *namaj
-    [1.], # kyanite
-]
-
-# move cEn to oEn
-Xik0[1][1] += Xik0[0][2]
-Xik0[0][2] = 0.0
-# move oDi to di
-Xik0[0][0] += Xik0[1][3]
-Xik0[1][3] = 0.0
-
-# regularize 3-component garnet
-g3 = (1-(Xik0[4][0]+Xik0[4][1]+Xik0[4][2]))/3.0
-Xik0[4][0] += g3
-Xik0[4][1] += g3
-Xik0[4][2] += g3
-Xik0[4][3] = 0.0
-Xik0[4][4] = 0.0
+T_range = np.linspace(Tmin, Tmax, nT)
+P_range = np.linspace(Pmin, Pmax, nT)
 
 rxn = EcModel.get_reaction(rxnName)
 
 def x2c(rxn, Xik0):
     return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
+def phi2m(rxn, phii0, Cik0, T=900.,p=10000.):
+    '''Converts phase modes in volume fraction to mass fraction given an intial EM composition in mass fractions.'''    
 
-Cik0 = x2c(rxn, Xik0)
+    densities = []
+    C = rxn.zero_C()
+    Ki = 0
+    for i,ph in enumerate(rxn.phases()):
+        n = len(ph.endmembers())
+        C[i] = Cik0[Ki:Ki+n]
+        Ki = Ki+n
 
-T_range = np.linspace(Tmin, Tmax, nT)
-P_range = np.linspace(Pmin, Pmax, nT)
+    C = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
+    C = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
+
+
+    densities = [ph.rho(T, p, C[i]) for i,ph in enumerate(rxn.phases())]
+    
+    #print(densities)
+    mass = np.sum(np.asarray(densities) * np.asarray(phii0))
+    #print(mass)
+    
+    mi0 = np.asarray([v*densities[i]/mass for (i, v) in enumerate(phii0)])
+
+    return mi0
+
+Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
+mi0 = phi2m(rxn, phii0, Cik0) if mi0 is None else mi0
 
 I = len(rxn.phases())
 Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
@@ -147,7 +92,9 @@ Cik_final = np.empty(T_range.shape+(K,))
 def task(i):
     P = P_range[i]
     T = T_range[i]
-    end = 1e2 if(P>2.25) and (T<800) else end_t
+    # top-left corner is very slow, decrease end_t
+    end = end_t/100. if(P>2.25) and (T<800) else end_t
+
     ode = ScipyPDReactiveODE(rxn)
     ode.solve(T,GPa2Bar(P),mi0,Cik0,end,Da=Da,eps=eps)
     odephasenames, phaseabbrev = ode.final_phases(phasetol)
@@ -179,7 +126,7 @@ for rho, phases, phi, mi, Cik, i in sols:
 fig = plt.figure(figsize=(12,14))
 
 plt.plot(P_range,rho_final)
-plt.show(block=False)
+plt.savefig(Path(outputPath,'density.png'))
 
 fig = plt.figure(figsize=(12,12))
 axi = fig.add_subplot(1,1,1)
@@ -190,8 +137,8 @@ plt.ylim([0.005, 0.615])
 plt.xlim([Tmin,Tmax])
 plt.xticks([873, 973, 1073, 1173, 1273])
 plt.yticks([0.005,0.123,0.246,0.369,0.492,0.615])
-plt.legend(phase_list)
-plt.show(block=False)
+plt.legend(phase_names)
+plt.savefig(Path(outputPath,'phases.png'))
 
 fig = plt.figure(figsize=(12,12))
 axi = fig.add_subplot(1,1,1)
@@ -208,8 +155,8 @@ line_style_by_endmember = {
     'Ferrosilite':"-.", 
     'MgTschermaks':"-.", 
     'OrthoDiopside':"-.",
-    "Anorthite": "--",
-    "Albite": "--",
+    "Anorthite": "-",
+    "Albite": "-",
     'Pyrope': "--", 
     'Almandine':"--", 
     'Grossular':"--", 
@@ -218,16 +165,14 @@ line_style_by_endmember = {
     }
 
 for k in range(K):
-    name = em_list[k]
+    name = endmember_names[k]
     line_style = line_style_by_endmember[name]
     plt.plot(T_range,Cik_final[:,k], line_style)
 
 plt.ylim([0,1])
 plt.xlim([Tmin,Tmax])
-plt.legend(em_list)
-plt.show(block=False)
-
-plt.show()
+plt.legend(endmember_names)
+plt.savefig(Path(outputPath,'endmembers.png'))
 
 
 
