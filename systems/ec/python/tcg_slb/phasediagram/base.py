@@ -54,6 +54,7 @@ class BasePDReactiveODE:
         self.p     = p
         self.mi0   = mi0
         self.Cik0  = Cik0
+
         C  = self.reshapeC(self.Cik0)
         Cs = self.regularizeC(C)
 
@@ -131,7 +132,7 @@ class BasePDReactiveODE:
 #     { 
 #       values[i] = rhoi[i];
 #     }
-#   }
+#   }   
         rhoi = np.asarray(self.rxn.rho(T, p, Cs))
         return rhoi
         
@@ -669,7 +670,7 @@ class PDReactiveGridDiagnostics:
         stime  = self.grid.stimegrid[i][j]
 
         ode = self.grid.odecls(self.rxn)
-        ode.set_initial_params(T,p,mi0,Cik0,sol=sol,stdout=stdout,stderr=stderr,excstr=excstr,stime=stime)
+        ode.set_initial_params(T,GPa2Bar(p),mi0,Cik0,sol=sol,stdout=stdout,stderr=stderr,excstr=excstr,stime=stime)
 
         return ode
 
@@ -755,7 +756,6 @@ class PDReactiveGridDiagnostics:
     
     @update
     def plot_rho_contours(self):
-        
         rhogrid = np.empty(self.grid.ygrid.shape)
         for i,P in enumerate(self.grid.y_range):
             for j,x in enumerate(self.grid.x_range):
@@ -1075,8 +1075,9 @@ class PDReactiveProfileDiagnostics:
         stime  = self.grid.stimegrid[i]
 
         ode = self.grid.odecls(self.rxn)
-        ode.set_initial_params(T,p,mi0,Cik0,sol=sol,stdout=stdout,stderr=stderr,excstr=excstr,stime=stime)
 
+        # Mitchell: convert p to from GPa to bar here to avoid exception when set_initial_params eventually calculates volume
+        ode.set_initial_params(T,GPa2Bar(p),mi0,Cik0,sol=sol,stdout=stdout,stderr=stderr,excstr=excstr,stime=stime)
         return ode
 
     def phase_diagnostics(self):
@@ -1147,7 +1148,7 @@ class PDReactiveProfileDiagnostics:
     
     @update
     def plot_rho_contours(self):
-        
+
         rho = np.empty(self.grid.x_range.shape)
         for i,x in enumerate(self.grid.x_range):
             ode = self.reconstruct_ode(i)
@@ -1233,15 +1234,14 @@ class PDReactiveProfileDiagnostics:
     def plot_modes_of_all_phases(self):
         I = len(self.rxn.phases())
         phi1_range = np.empty(self.grid.x_range.shape+(I,))
-        for i,T in enumerate(self.grid.x_range):
-            p = self.grid.y_range[i]
+        for i in range(len(self.grid.x_range)):
             ode = self.reconstruct_ode(i)
             if ode.sol is not None:
                 Cik = ode.sol.y[ode.I:ode.I+ode.K,-1]
                 mi = ode.sol.y[:ode.I,-1] # -1 = final time step
                 C = ode.reshapeC(Cik)
                 Cs = ode.regularizeC(C)
-                rhoi = self.rxn.rho(T, p, Cs)
+                rhoi = self.rxn.rho(ode.T, ode.p, Cs)
                 v = mi/rhoi
                 rho  = 1./v.sum()
                 phi1_range[i] = rho*mi/rhoi

@@ -714,6 +714,7 @@ def generate_reactions(outdir):
             ([hed, an], [gs, alm, qz]),
             ([cats, an], [gs, qz]),
         ])
+    
 def generate_reaction(outdir, name, phases, reactions, database='tcg_slb_database.tar.gz'):
 
     dbfile = os.path.join(os.path.pardir, 'database', database)

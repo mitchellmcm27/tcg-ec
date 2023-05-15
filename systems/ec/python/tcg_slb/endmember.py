@@ -26,6 +26,7 @@ class TCGEndmember:
 
         self.T = self.model.get_symbol_for_t()
         self.V = self.model.get_symbol_for_v()
+ 
         self.T_r = self.model.get_symbol_for_tr()
         self.V_r = self.model.get_symbol_for_vr()
         self.P = self.model.get_symbol_for_p()
@@ -63,6 +64,7 @@ class TCGEndmember:
     def set_model_values(self):
         values_dict = self.model.get_values()
         values_dict.update(self.values_dict())
+        print(values_dict)
         self.model.set_values(values_dict)
     
     def tofile(self,outdir):
@@ -78,14 +80,19 @@ class SLBEndmember(TCGEndmember):
 
         super().__init__(name,formula,reference,'TV')
 
+        # Mitchell - changed some units to match SLB table
+        # a0 should be J/mol instead of J/m
+        # R should be J/K-mol instead of J/K-m
+        #
+
         self.param_strs = [ 'a0', 'n', 'v0', \
                             'k00', 'k0p', 'theta0', \
                             'gamma0', 'q', 'r_Fe', \
                             'R' ]
-        self.param_unit = [ 'J/m', '', 'J/bar-m',\
+        self.param_unit = [ 'J/mol', '', 'cm^3/mol/10',\
                             'bar', '', 'K', \
                             '', '', '', \
-                            'J/K-m' ]
+                            'J/K/mol' ]
 
         symdict = dict( ( p, sym.symbols(p,real=True) ) for p in self.param_strs )
         self.syms = types.SimpleNamespace(**symdict)
@@ -124,6 +131,11 @@ class SLBEndmember(TCGEndmember):
         return A_quasi
     
     def A_mag_default(self):
+
+        # FIXME: For Cian - Is it correct to mutliply by R here?
+        # SLB 2011, Eq 27: 
+        # Math: \mathcal{F}_{mag} = -T  \sum r_i \ln(2S_i+1)
+
         A_mag = -self.syms.R*self.T*self.syms.r_Fe*sym.log(5)
         return A_mag
     

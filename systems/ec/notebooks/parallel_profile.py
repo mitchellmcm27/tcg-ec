@@ -1,5 +1,41 @@
 from mcm import EcModel
+import numpy as np
+from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
+from pathlib import Path
+from tcg_slb.base import *
+from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
+from multiprocessing import Pool
+import multiprocessing as mp
+
 reference= 'parallel_profile_hacker2015_md_xenolith'
+
+### ------------ INPUTS -------------------
+
+# number of x-nodes
+nT = 100
+
+# end time of reactions
+end_t = 1e6
+
+# which reaction to use
+rxnName = 'eclogitization_agu5_stx21_rx'
+
+# only phases greater than this fraction will be plotted
+phasetol = 1.e-3 # 1.e-2
+
+# Damkhoeler number
+Da = 1.0 # 1.0
+# regularization parameter for compositions
+eps = 1.e-3 # 1.e-2
+
+Pmin, Pmax = [2.5, 0.5]
+Tmin, Tmax = [773., 1273.]
+
+# number of processes
+processes = 20 # mp.cpu_count()
+
+# ------------------------------------------
 
 # Perple_X output...
 ''' Stixrude 2021
@@ -25,7 +61,7 @@ Phase speciation (molar proportions):
 '''
 
 
-phases = [
+phase_list = [
     'Clinopyroxene',
     'Orthopyroxene',
     'Quartz',
@@ -34,7 +70,7 @@ phases = [
     'Kyanite',
 ]
 
-ems = [
+em_list = [
     'Diopside', 'Hedenbergite', 'Clinoenstatite', 'CaTschermaks', 'Jadeite',
     'Enstatite', 'Ferrosilite', 'MgTschermaks', 'OrthoDiopside',
     'Quartz',
@@ -88,29 +124,113 @@ Xik0[4][2] += g3
 Xik0[4][3] = 0.0
 Xik0[4][4] = 0.0
 
+rxn = EcModel.get_reaction(rxnName)
 
-model = EcModel(
-    reference,
-    "eclogitization_agu5_stx21_rx",
-    domain="profile",
-    mi0=mi0,
-    Xik0=Xik0,
-    P0=0.5,
-    T0=1273,
-    Pmin=0.5,
-    Pmax=2.5,
-    Tmin=1273,
-    Tmax=773,
-    nP=5,
-    nT=5
-)
+def x2c(rxn, Xik0):
+    return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
 
-model.run(reload=False,save=False,end_t=1e3,eps=1.e-3)
+Cik0 = x2c(rxn, Xik0)
 
-import matplotlib.pyplot as plt
-model.bdfdiag.plot_modes_of_all_phases()
+T_range = np.linspace(Tmin, Tmax, nT)
+P_range = np.linspace(Pmin, Pmax, nT)
+
+I = len(rxn.phases())
+Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
+K = sum(Kis)
+
+rho_final = np.zeros(T_range.shape)
+phases_final = ['' for i in range(nT)]
+phi_final = np.empty(T_range.shape+(I,))
+Cik_final = np.empty(T_range.shape+(K,))
+
+# function to run in parallel
+def task(i):
+    P = P_range[i]
+    T = T_range[i]
+    end = 1e2 if(P>2.25) and (T<800) else end_t
+    ode = ScipyPDReactiveODE(rxn)
+    ode.solve(T,GPa2Bar(P),mi0,Cik0,end,Da=Da,eps=eps)
+    odephasenames, phaseabbrev = ode.final_phases(phasetol)
+    phases = '+'.join(phaseabbrev)
+    rho = ode.final_rho()
+
+    Cik = ode.sol.y[ode.I:ode.I+ode.K,-1]
+    mi = ode.sol.y[:ode.I,-1] # -1 = final time step
+    C = ode.reshapeC(Cik)
+    Cs = ode.regularizeC(C)
+    Cik_reg = [c for arr in Cs for c in arr]
+    rhoi = rxn.rho(T, GPa2Bar(P), Cs)
+    v = mi/rhoi
+    vi  = 1./v.sum()
+    phi = vi*mi/rhoi
+    print("({},{})".format(T,P))
+    return rho, phases, phi, mi, Cik_reg, i
+
+# Map blocks to block-level calculations
+with Pool(processes,maxtasksperchild=12) as pool:
+    # blocks until all finished
+    sols = pool.map(task, range(len(T_range)))
+
+for rho, phases, phi, mi, Cik, i in sols:
+    rho_final[i] = rho
+    phases_final[i] = phases
+    phi_final[i,:] = phi
+    Cik_final[i,:] = Cik
+fig = plt.figure(figsize=(12,14))
+
+plt.plot(P_range,rho_final)
+plt.show(block=False)
+
+fig = plt.figure(figsize=(12,12))
+axi = fig.add_subplot(1,1,1)
+for i, phase in enumerate(rxn.phases()):    
+    plt.plot(T_range,phi_final[:,i],':' if i>9 else '-')
+
 plt.ylim([0.005, 0.615])
-plt.xlim([773,1273])
+plt.xlim([Tmin,Tmax])
 plt.xticks([873, 973, 1073, 1173, 1273])
 plt.yticks([0.005,0.123,0.246,0.369,0.492,0.615])
+plt.legend(phase_list)
+plt.show(block=False)
+
+fig = plt.figure(figsize=(12,12))
+axi = fig.add_subplot(1,1,1)
+
+line_style_by_endmember = {
+    "Quartz": "-",
+    "Kyanite": "-",
+    "Diopside": ":",
+    "Hedenbergite": ":",
+    "Jadeite": ":",
+    "CaTschermaks": ":",
+    "Clinoenstatite": ":",
+    'Enstatite':"-.", 
+    'Ferrosilite':"-.", 
+    'MgTschermaks':"-.", 
+    'OrthoDiopside':"-.",
+    "Anorthite": "--",
+    "Albite": "--",
+    'Pyrope': "--", 
+    'Almandine':"--", 
+    'Grossular':"--", 
+    'MgMajorite':"--", 
+    'NaMajorite':"--",
+    }
+
+for k in range(K):
+    name = em_list[k]
+    line_style = line_style_by_endmember[name]
+    plt.plot(T_range,Cik_final[:,k], line_style)
+
+plt.ylim([0,1])
+plt.xlim([Tmin,Tmax])
+plt.legend(em_list)
+plt.show(block=False)
+
 plt.show()
+
+
+
+
+    
+

@@ -1,25 +1,28 @@
+import os, sys
 from mcm import EcModel
 import numpy as np
 from matplotlib import pyplot as plt
-import matplotlib.pyplot as plt
+import matplotlib as mpl
 from pathlib import Path
 from tcg_slb.base import *
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 from multiprocessing import Pool
 import multiprocessing as mp
+import importlib
 
 ### ------------ INPUTS -------------------
-reference = 'parallel_pd_hacker2015_md_xenolith_py_multi'
+reference = 'parallel_pd'
+composition = 'hacker_2003_morb'
+rxnName = 'eclogitization_agu5_stx21_rx'
 
 # number of nodes in each dimension
 nP = 30
 nT = 30
 
 # end time of reactions
-end_t = 1e5
+end_t = 1e4
 
 # which reaction to use
-rxnName = 'eclogitization_agu5_stx21_rx'
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-2 # 1.e-2
@@ -34,81 +37,57 @@ Tmin, Tmax = [773., 1273.]
 
 # number of processes
 processes = 20 # mp.cpu_count()
-
 # ------------------------------------------
 
-outputPath = Path("figs",reference,rxnName)
+importPath = Path("compositions", composition)
+print(importPath.absolute())
+mod = importlib.import_module("compositions."+composition)
+
+Cik0, Xik0, mi0, phii0, phase_names, endmember_names = [getattr(mod,a,None) for a in ['Cik0', 'Xik0', 'mi0','phii0', 'phase_names', 'endmember_names']]
+
+outputPath = Path("figs",reference,composition,rxnName)
 outputPath.mkdir(parents=True, exist_ok=True)
-
-phases = [
-    'Clinopyroxene',
-    'Orthopyroxene',
-    'Quartz',
-    'Feldspar', 
-    'Garnet', 
-    'Kyanite',
-]
-
-ems = [
-    'Diopside', 'Hedenbergite', 'Clinoenstatite', 'CaTschermaks', 'Jadeite',
-    'Enstatite', 'Ferrosilite', 'MgTschermaks', 'OrthoDiopside',
-    'Quartz',
-    'Anorthite','Albite',
-    'Pyrope', 'Almandine', 'Grossular', 'MgMajorite', 'NaMajorite',
-    'Kyanite'
-]
 
 T_range = np.linspace(Tmin, Tmax, nT)
 P_range = np.linspace(Pmin, Pmax, nP)
 
-mi0 = [
-    0.1470, # cpx
-    0.2920, # opx
-    0.0050, # quartz
-    0.5560, # plag
-    0.0, # garnet
-    0.0, # kyanite
-]
-
-#Pl     ab: 0.40023, an: 0.59977
-#Cpx    jd: 0.05313, di: 0.59033, hed: 0.30271, cen: 0.04393, cts: 0.00990
-#Opx    odi: 0.03959, en: 0.51220, fs: 0.42014, ts: 0.02807
-Xik0=[
-    [0.59033, 0.30271, 0.04393,  0.00990, 0.05313], # di, hed, *cEn, *cats, jd
-    [0.51220, 0.42014, 0.02807, 0.03959], # en, fs, *mgts, *oDi
-    [1.], # quartz
-    [0.59977, 0.40023], # an, ab
-    [0.39681, 0.42983, 0.17322, 0., 0.], # py, alm, gr, *mgmaj, *namaj
-    [1.], # kyanite
-]
-
-print(Xik0[0][2])
-# move cEn to oEn
-Xik0[1][1] += Xik0[0][2]
-Xik0[0][2] = 0.0
-print(Xik0[0][2])
-
-# move oDi to di
-Xik0[0][0] += Xik0[1][3]
-Xik0[1][3] = 0.0
-
-# regularize 3-component garnet
-g3 = (1-(Xik0[4][0]+Xik0[4][1]+Xik0[4][2]))/3.0
-Xik0[4][0] += g3
-Xik0[4][1] += g3
-Xik0[4][2] += g3
-Xik0[4][3] = 0.0
-Xik0[4][4] = 0.0
 
 rxn = EcModel.get_reaction(rxnName)
 
 def x2c(rxn, Xik0):
     return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
+def phi2m(rxn, phii0, Cik0, T=900.,p=10000.):
+    '''Converts phase modes in volume fraction to mass fraction given an intial EM composition in mass fractions.'''    
+  
+    densities = []
+    C = rxn.zero_C()
+    Ki = 0
+    for i,ph in enumerate(rxn.phases()):
+        n = len(ph.endmembers())
+        C[i] = Cik0[Ki:Ki+n]
+        Ki = Ki+n
+   
+    C = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
+    C = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
+ 
 
-Cik0 = x2c(rxn, Xik0)
+    densities = [ph.rho(T, p, C[i]) for i,ph in enumerate(rxn.phases())]
+    
+    #print(densities)
+    mass = np.sum(np.asarray(densities) * np.asarray(phii0))
+    #print(mass)
+    
+    mi0 = np.asarray([v*densities[i]/mass for (i, v) in enumerate(phii0)])
+
+    return mi0
+
+Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
+
+mi0 = phi2m(rxn, phii0, Cik0) if mi0 is None else mi0
 
 P_final, T_final  = np.meshgrid(P_range, T_range, indexing='ij')
 rho_final = np.zeros(P_final.shape)
+stime_final = np.zeros(P_final.shape)
 phases_final = [['' for j in range(nT)] for i in range(nP)]
 
 # function to run in parallel
@@ -121,7 +100,8 @@ def task(args):
     odephasenames, phaseabbrev = ode.final_phases(phasetol)
     phases = '+'.join(phaseabbrev)
     rho = ode.final_rho()
-    return rho, phases, i, j
+    stime = ode.stime
+    return rho, phases, stime, i, j
 
 # Map blocks to block-level calculations
 with Pool(processes,maxtasksperchild=12) as pool:
@@ -129,18 +109,26 @@ with Pool(processes,maxtasksperchild=12) as pool:
     arglist = [[i,j] for i,P in enumerate(P_range) for j,T in enumerate(T_range)]
     sols = pool.map(task, arglist)
 
-for rho, phases, i , j in sols:
+for rho, phases, stime, i , j in sols:
     rho_final[i][j] = rho
     phases_final[i][j] = phases
+    stime_final[i][j] = stime
 
 fig = plt.figure(figsize=(12,14))
 
 axi = fig.add_subplot(1,1,1)
 cmap = plt.get_cmap('jet')
+
 levels = np.arange(25.,38.,0.1)
+
 plt.scatter(T_final,P_final,c=rho_final,s=100,alpha=0.75,cmap=cmap)
 s = axi.contourf(T_final,P_final,rho_final,levels=levels,alpha=0.75,cmap=cmap)
-axi.contour(T_final,P_final,rho_final,levels=levels,alpha=0.75,cmap=cmap)
+cs = axi.contour(T_final,P_final,rho_final,levels=levels,alpha=0.75,cmap=cmap)
+
+# bold the 3,330 kg/m3 contour
+cs.collections[78].set_linewidth(3)        
+cs.collections[78].set_color('black')
+
 plt.clim([25.,38.])
 plt.xlim([Tmin, Tmax])
 plt.ylim([Pmin,Pmax])
@@ -158,15 +146,20 @@ def index(ls,v):
 # an index into the uniquestr list to give a grid showing which phases are present where
 phaseis_final = np.asarray([[index(uniquestrs,phstr) for phstr in phasestrr]  for phasestrr in phases_final])
 
-fig = plt.figure(figsize=(24,14))
-axes = fig.subplot_mosaic([['A',[['1','2'],['3','4'],['5','6']]]])
-axi = axes['A']
-raxes = [axes[repr(i)] for i in range(1,7)]
-for axis in raxes: axis.set_visible(False)
+fig = plt.figure(figsize=(12,14))
+axi = fig.add_subplot(1,1,1)
 scs = []
 for i,ph in enumerate(uniquestrs):
     scs.append(axi.scatter(T_final[phaseis_final==i],P_final[phaseis_final==i],alpha=0.5,label=ph,s=50))
 fig.legend(handles=scs,loc='center left')
 plt.savefig(Path(outputPath,'phases.png'))
 
+# Soln time
+
+fig = plt.figure(figsize=(12,14))
+axi = fig.add_subplot(1,1,1)
+cmap = plt.get_cmap('bwr')
+s = plt.scatter(T_final,P_final,c=stime_final,s=100,alpha=0.75,cmap=cmap,norm=mpl.colors.LogNorm())
+fig.colorbar(s,location='left',ax=axi)
+plt.savefig(Path(outputPath,'stime.png'))
 

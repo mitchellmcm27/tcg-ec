@@ -23,6 +23,7 @@ def generate_endmembers(outdir):
       name = values_dict.pop('name').replace('-','_')+'_slb_em'
       formula = values_dict.pop('formula')
       em = SLBEndmember(name,formula,reference,**values_dict)
+      print(em.param_unit)
       print(em.tofile(outdir))
 
 if __name__ == "__main__":

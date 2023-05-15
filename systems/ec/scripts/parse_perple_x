@@ -38,6 +38,7 @@ lookup = {
 'namj':['NaMajorite', 'Na(2)Al(2)Si(4)O(12)'],
 'qtz':['Quartz','Si(1)O(2)'],
 'coes':['Coesite','Si(1)O(2)'],
+'coe':['Coesite','Si(1)O(2)'],
 'st':['Stishovite', 'Si(1)O(2)'],
 'seif':['Seifertite', 'Si(1)O(2)'],
 'perov':['MgPerovskite', 'Mg(1)Si(1)O(3)'],
@@ -58,7 +59,10 @@ lookup = {
 'crst':['Cristobalite','Si(1)O(2)'],
 'fnal':['FeNAL', 'Na(1)Fe(2)Al(5)Si(1)O(12)'],
 'mnal':['MgNAL', 'Na(1)Mg(2)Al(5)Si(1)O(12)'],
-'nnal':['NaNAL', 'Na(3)Al(3)Si(3)O(12)']
+'nnal':['NaNAL', 'Na(3)Al(3)Si(3)O(12)'],
+'cfs': ['ClinoFerrosilite','Fe(2)Fe(2)Si(4)O(12)'],
+'jmaj': ['JdMajorite','Na(2)Al(2)Si(4)O(12)'],
+'q': ['Quartz','Si(1)O(2)']
 }
 
 def parse_file(file_path):
@@ -104,11 +108,8 @@ def parse_file(file_path):
       
             d1 = {k:float(v) for k, v in zip(varnames,varvals)}
             valsdict = {}
-            valsdict['abbrev'] = abbrev
+            valsdict['name']    = name
             valsdict['formula'] = formula
-            valsdict['name'] = name
-            valsdict['eos'] = eos
-
             valsdict['a0']     =  d1.get('G0',None)
             valsdict['n']      =  d1.get('S0',None)
             valsdict['v0']     =  d1.get('V0',None)
@@ -124,21 +125,22 @@ def parse_file(file_path):
             valsdict['VD']     =  d1.get('t3',None)
             valsdict['SD']     =  d1.get('t2',None)
 
-            if(valsdict.get('n',False)):
+            if(valsdict.get('n', False)):
                 valsdict['n'] *= -1
-            if(valsdict.get('V_r',False)):
+            if(valsdict.get('V_r', False)):
                 valsdict['V_r'] *= -1
-            if(valsdict.get('v0',False)):
+            if(valsdict.get('v0', False)):
                 valsdict['v0'] *= -1
 
+            valsdict['abbrev'] = abbrev
+            valsdict['eos'] = eos
 
-            fieldnames.extend(list(valsdict.keys()))
             result.append(valsdict)
-    fieldnames = list(set(fieldnames))
-    fieldnames = sorted(fieldnames, key=str.casefold)
+    
 
     output = Path(re.sub(r'\.dat$','.csv',file_path))
 
+    fieldnames = ['name','formula','a0','n','v0','k00','k0p','theta0' ,'gamma0','q'  ,'refS' ,'T_r'  ,'V_r','TC0','VD','SD','abbrev','eos']
     with open(output, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
