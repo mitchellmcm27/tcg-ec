@@ -10,7 +10,7 @@ import importlib
 
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
-composition = 'hacker_2015_md_xenolith'
+composition = 'vrabec_2012_kyanite_eclogite'
 rxnName = 'eclogitization_agu5_stx21_rx'
 
 # number of x-nodes
@@ -65,13 +65,8 @@ def phi2m(rxn, phii0, Cik0, T=900.,p=10000.):
     C = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
     C = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
 
-
     densities = [ph.rho(T, p, C[i]) for i,ph in enumerate(rxn.phases())]
-    
-    #print(densities)
     mass = np.sum(np.asarray(densities) * np.asarray(phii0))
-    #print(mass)
-    
     mi0 = np.asarray([v*densities[i]/mass for (i, v) in enumerate(phii0)])
 
     return mi0
@@ -133,10 +128,10 @@ axi = fig.add_subplot(1,1,1)
 for i, phase in enumerate(rxn.phases()):    
     plt.plot(T_range,phi_final[:,i],':' if i>9 else '-')
 
-plt.ylim([0.005, 0.615])
+#plt.ylim([0.005, 0.615])
 plt.xlim([Tmin,Tmax])
 plt.xticks([873, 973, 1073, 1173, 1273])
-plt.yticks([0.005,0.123,0.246,0.369,0.492,0.615])
+#plt.yticks([0.005,0.123,0.246,0.369,0.492,0.615])
 plt.legend(phase_names)
 plt.savefig(Path(outputPath,'phases.png'))
 
