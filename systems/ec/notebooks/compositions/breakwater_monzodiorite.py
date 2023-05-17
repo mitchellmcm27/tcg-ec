@@ -64,7 +64,6 @@ Xik0 = [
 
 Xik0[1][1] += Xik0[0][2]
 Xik0[0][2] = 0.0
-print(Xik0[0][2])
 
 # move oDi to di
 Xik0[0][0] += Xik0[1][3]

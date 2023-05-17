@@ -40,7 +40,7 @@ mi0 = [
     0.5544, # cpx
     0.0000, # opx
     0.0386, # quartz
-    0.3019, # plag
+    0.0000, # plag
     0.3232, # garnet
     0.0838, # kyanite
 ]
