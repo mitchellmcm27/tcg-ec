@@ -16,19 +16,23 @@ cm = 1e-2
 
 ### ------------ INPUTS -------------------
 reference= 'parallel_experiment'
-composition = 'hacker_2015_md_xenolith'
+composition = 'hacker_2003_morb'
 rxnName = 'eclogitization_agu5_stx21_rx'
 
 # which reaction to use
 rxnName = 'eclogitization_agu5_stx21_rx'
 
 # only phases greater than this fraction will be plotted
-phasetol = 1.e-3 # 1.e-2
+phasetol = 1.e-2 # 1.e-2
 
 # Damkhoeler number
 Da = 1.0 # 1.0
 # regularization parameter for compositions
-eps = 1.e-3 # 1.e-2
+eps = 1.e-5 # 1.e-2
+# these numbers seem to work very well with eps = 1e-5??
+rtol = 1.e-5 # relative tolerance, default 1e-5
+atol = 1.e-9 # absolute tolerance, default 1e-9
+max_steps = 1e4
 
 depth_step_size = 10. # meters
 moho_i = 30. # km
@@ -54,6 +58,20 @@ processes = 20 # mp.cpu_count()
 
 # ------------------------------------------
 
+# ============= Parse arguments for CLI =============
+
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("composition")
+    args = parser.parse_args()
+
+    if args.composition is not None:
+        composition = args.composition
+
+#====================================================
+
 # Damkhoeler
 Da = [r/mass_tranport_rate for r in reaction_rate]
 
@@ -66,9 +84,6 @@ print("total t = {} Myr".format(end_t * len(depth_km)/1e6))
 
 mod = importlib.import_module("compositions."+composition)
 Cik0, Xik0, mi0, phii0, phase_names, endmember_names = [getattr(mod,a,None) for a in ['Cik0', 'Xik0', 'mi0','phii0', 'phase_names', 'endmember_names']]
-
-outputPath = Path("figs",reference,composition,rxnName)
-outputPath.mkdir(parents=True, exist_ok=True)
 
 rxn = EcModel.get_reaction(rxnName)
 
@@ -121,7 +136,7 @@ def run_experiment(Da):
         T = T_range[i]
         ode = ScipyPDReactiveODE(rxn)
 
-        ode.solve(T,GPa2Bar(P),mi1,Cik1,end_t,Da=Da,eps=eps)
+        ode.solve(T,GPa2Bar(P),mi1,Cik1,end_t,Da=Da,eps=eps,method="BDF_mcm",max_steps=max_steps)
         odephasenames, phaseabbrev = ode.final_phases(phasetol)
         phases = '+'.join(phaseabbrev)
         rho = ode.final_rho()
@@ -155,7 +170,7 @@ def equilibrate(i):
     T = T_range[i]
     ode = ScipyPDReactiveODE(rxn)
 
-    ode.solve(T,GPa2Bar(P),_mi0,_Cik0,1e5,Da=1,eps=eps)
+    ode.solve(T,GPa2Bar(P),_mi0,_Cik0,1e5,Da=1,eps=eps,method="BDF_mcm",max_steps=max_steps)
     odephasenames, phaseabbrev = ode.final_phases(phasetol)
     phases = '+'.join(phaseabbrev)
     rho = ode.final_rho()
@@ -177,6 +192,9 @@ def equilibrate(i):
 with Pool(processes) as pool:
     sols = pool.map(run_experiment, Da)
 
+outputPath = Path("figs",reference,composition,rxnName)
+outputPath.mkdir(parents=True, exist_ok=True)
+
 # plot 
 fig = plt.figure(figsize=(12,14))
 plt.gca().invert_yaxis()
@@ -187,7 +205,6 @@ plt.gca().set_prop_cycle(plt.cycler('color', colormap(np.linspace(0, 1, n))))
 
 for rho, phases, phi, Cik, _Da in sols:
     plt.plot(rho/10, depth_km)
-plt.show(block=False)
 
 # run for equilibrium
 with Pool(processes,maxtasksperchild=12) as pool:
@@ -213,5 +230,6 @@ plt.ylabel('Depth (km)')
 plt.xlabel('Density')
 #plt.xlim([2.9,3.6])
 fig.suptitle('$R_m=${:.1f} km/Myr, $T_m=${:.0f}-{:.0f} °C, $d_m=${:.0f}-{:.0f} km, {}'.format(descent_rate_kmMyr,T_moho_i, T_moho_f, moho_i,moho_f,composition),y=0.9)
-plt.show()
+
+plt.savefig(Path(outputPath,"{}.{}".format("densities", "pdf")))
 
