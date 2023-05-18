@@ -25,8 +25,6 @@ rxnName = 'eclogitization_agu5_stx21_rx'
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-2 # 1.e-2
 
-# Damkhoeler number
-Da = 1.0 # 1.0
 # regularization parameter for compositions
 eps = 1.e-5 # 1.e-2
 # these numbers seem to work very well with eps = 1e-5??
@@ -44,13 +42,16 @@ T_moho_i = 800.
 T_moho_f = 900.
 T_range = T_moho_i + (depth_km - depth_km[0])/(depth_km[-1] - depth_km[0])*(T_moho_f - T_moho_i) + 273.# K - increases by 100 deg? 
 
-descent_rate_kmMyr = 1.0 # km/Myr or mm/yr
-descent_rate = descent_rate_kmMyr*mm/yr  # = 1 mm per year in m/s
-avg_density = 3000 # kg/m3
-mass_tranport_rate = descent_rate * avg_density # kg/m2/s
+shortening_rate_kmMyr = 5.0 # km/Myr = mm/yr
+L0 = 100. # km
+z0 = moho_i # km
+descent_rate_kmMyr = z0/L0 * shortening_rate_kmMyr # mm/yr
+descent_rate = descent_rate_kmMyr*mm/yr  # = m/yr
+avg_density = 2800 # kg/m3, assumes a linear increase in density from 2600 at the surface to 3000 at the moho
+mass_tranport_rate = descent_rate * avg_density # kg/m2/yr
 print("mass transport rate = {} kg/m2/yr".format(mass_tranport_rate))
 reaction_rate_g =  [1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3] # g/cm2/yr
-reaction_rate = [r * g/cm/cm/yr for r in reaction_rate_g]# kg/m2/s
+reaction_rate = [r * g/cm/cm/yr for r in reaction_rate_g]# kg/m2/yr
 print("rxn rate = {} kg/m2/yr".format(reaction_rate))
 
 # number of processes
