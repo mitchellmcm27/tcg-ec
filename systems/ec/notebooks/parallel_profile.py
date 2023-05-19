@@ -28,7 +28,11 @@ phasetol = 1.e-3 # 1.e-2
 # Damkhoeler number
 Da = 1.0 # 1.0
 # regularization parameter for compositions
-eps = 1.e-3 # 1.e-2
+eps = 1.e-5 # 1.e-2
+# these numbers seem to work very well with eps = 1e-5??
+rtol = 1.e-5 # relative tolerance, default 1e-5
+atol = 1.e-9 # absolute tolerance, default 1e-9
+max_steps = 4e3
 
 Pmin, Pmax = [2.5, 0.5]
 Tmin, Tmax = [773., 1273.]
@@ -91,7 +95,7 @@ def task(i):
     end = end_t/100. if(P>2.25) and (T<800) else end_t
 
     ode = ScipyPDReactiveODE(rxn)
-    ode.solve(T,GPa2Bar(P),mi0,Cik0,end,Da=Da,eps=eps)
+    ode.solve(T,GPa2Bar(P),mi0,Cik0,end,Da=Da,eps=eps,method="BDF_mcm",max_steps=max_steps)
     odephasenames, phaseabbrev = ode.final_phases(phasetol)
     phases = '+'.join(phaseabbrev)
     rho = ode.final_rho()
