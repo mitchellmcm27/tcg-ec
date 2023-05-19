@@ -36,7 +36,7 @@ Da = 1.0 # Damkhoeler num, default 1.0
 
 # regularization parameter for compositions
 # sets the minimum value for Cik
-eps = 1.e-5 # default, 1.e-2
+eps = 1.e-2 # default, 1.e-2
 
 Pmin, Pmax = [0.5, 2.5] # Gpa
 Tmin, Tmax = [773., 1273.] # K

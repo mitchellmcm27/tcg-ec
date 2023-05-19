@@ -16,12 +16,6 @@ endmember_names = [
     'Kyanite'
 ]
 
-# mass fractions of the phases
-
-# Hacker and Abers 2003 Garnet Granulite
-# except they gave it in vol%, still need to convert to wt%
-
-## Grt-Opx-Cpx granulite
 phii0 = [
     0.47, # cpx
     0.17, # opx
@@ -32,9 +26,6 @@ phii0 = [
  ]
 
 
-# Cik0 = mass fractions
-# Xik0 = mol fractions
-# note: * = thermodynamic endmember, set to zero
 xCpx = 0.265 # Fe/(Fe+Mg)
 jCpx = 0.115 # Na/(Ca+Na)
 xGrt = 0.637 # Fe/(Fe+Mg)
