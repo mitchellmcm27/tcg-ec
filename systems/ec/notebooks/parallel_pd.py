@@ -28,7 +28,7 @@ end_t = 1e5
 # defaults to infinity, which can exhaust memory if solver doesn't converge
 max_steps = 4e3
 
-# these numbers seem to work very well with eps = 1e-5??
+# TODO: these numbers seem to work very well with eps = 1e-5??
 rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
 
@@ -36,7 +36,7 @@ Da = 1.0 # Damkhoeler num, default 1.0
 
 # regularization parameter for compositions
 # sets the minimum value for Cik
-eps = 1.e-2 # default, 1.e-2
+eps = 1.e-5 # default, 1.e-2
 
 Pmin, Pmax = [0.5, 2.5] # Gpa
 Tmin, Tmax = [773., 1273.] # K
