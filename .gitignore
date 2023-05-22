@@ -5,6 +5,7 @@
 **/install/
 **/database/phases/
 **/database/endmembers/
+**/database/reactions/
 **/notebooks/*.png
 
 ### CMake ###
