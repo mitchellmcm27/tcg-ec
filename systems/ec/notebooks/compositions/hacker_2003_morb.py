@@ -27,8 +27,8 @@ phii0 = [
     ]
 
 
-    # mass fractions of the end-members
-    # given in volume percent, assume constant density among EMs?
+# mass fractions of the end-members
+# given in volume percent, assume constant density among EMs?
 Cik0= [
         0.28, 0.61, 0., 0., 0.11, # di, hed, *cEn, *cats, jd
         0.5, 0.5, 0., 0., # en, fs, *mats, *oDi

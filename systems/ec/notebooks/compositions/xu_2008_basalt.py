@@ -45,10 +45,6 @@ mi0 = [
     0.0838, # kyanite
 ]
 
-
-#Pl     ab: 0.40023, an: 0.59977
-#Cpx    jd: 0.05313, di: 0.59033, hed: 0.30271, cen: 0.04393, cts: 0.00990
-#Opx    odi: 0.03959, en: 0.51220, fs: 0.42014, ts: 0.02807
 Xik0=[
     [0.56831, 0.12053, 0.01178, 0.02393, 0.27545], # di, hed, *cEn, *cats, jd
     [1., 0., 0., 0.], # en, fs, *mgts, *oDi
@@ -57,20 +53,3 @@ Xik0=[
     [0.41790, 0.38657, 0.19518, 0.00019, 0.00016], # py, alm, gr, *mgmaj, *namaj
     [1.], # kyanite
 ]
-
-
-# move cEn to oEn
-Xik0[1][1] += Xik0[0][2]
-Xik0[0][2] = 0.0
-
-# move oDi to di
-Xik0[0][0] += Xik0[1][3]
-Xik0[1][3] = 0.0
-
-# regularize 3-component garnet
-g3 = (1-(Xik0[4][0]+Xik0[4][1]+Xik0[4][2]))/3.0
-Xik0[4][0] += g3
-Xik0[4][1] += g3
-Xik0[4][2] += g3
-Xik0[4][3] = 0.0
-Xik0[4][4] = 0.0

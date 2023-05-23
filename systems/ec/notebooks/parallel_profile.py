@@ -5,22 +5,20 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from tcg_slb.base import *
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
+import multiprocessing as mp
 from multiprocessing import Pool
 import importlib
 
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
-composition = 'vrabec_2012_kyanite_eclogite'
-rxnName = 'eclogitization_agu5_stx21_rx'
+composition = 'hacker_2015_md_xenolith'
+rxnName = 'eclogitization_agu10_stx21_rx'
 
 # number of x-nodes
 nT = 100
 
 # end time of reactions
-end_t = 1e6
-
-# which reaction to use
-rxnName = 'eclogitization_agu5_stx21_rx'
+end_t = 1e5
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-3 # 1.e-2
@@ -38,9 +36,23 @@ Pmin, Pmax = [2.5, 0.5]
 Tmin, Tmax = [773., 1273.]
 
 # number of processes
-processes = 20 # mp.cpu_count()
+processes = mp.cpu_count()
 
 # ------------------------------------------
+
+# ============= Parse arguments for CLI =============
+
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("composition")
+    args = parser.parse_args()
+
+    if args.composition is not None:
+        composition = args.composition
+
+#====================================================
 
 mod = importlib.import_module("compositions."+composition)
 Cik0, Xik0, mi0, phii0, phase_names, endmember_names = [getattr(mod,a,None) for a in ['Cik0', 'Xik0', 'mi0','phii0', 'phase_names', 'endmember_names']]
@@ -109,7 +121,6 @@ def task(i):
     v = mi/rhoi
     vi  = 1./v.sum()
     phi = vi*mi/rhoi
-    print("({},{})".format(T,P))
     return rho, phases, phi, mi, Cik_reg, i
 
 # Map blocks to block-level calculations
@@ -132,10 +143,10 @@ axi = fig.add_subplot(1,1,1)
 for i, phase in enumerate(rxn.phases()):    
     plt.plot(T_range,phi_final[:,i],':' if i>9 else '-')
 
-#plt.ylim([0.005, 0.615])
+plt.ylim([0.0, 0.615])
 plt.xlim([Tmin,Tmax])
 plt.xticks([873, 973, 1073, 1173, 1273])
-#plt.yticks([0.005,0.123,0.246,0.369,0.492,0.615])
+plt.yticks([0.005,0.123,0.246,0.369,0.492,0.615])
 plt.legend(phase_names)
 plt.savefig(Path(outputPath,'phases.png'))
 

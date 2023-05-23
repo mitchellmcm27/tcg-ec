@@ -62,18 +62,3 @@ Xik0 = [
     [1.], # kyanite
 ]
 
-Xik0[1][1] += Xik0[0][2]
-Xik0[0][2] = 0.0
-
-# move oDi to di
-Xik0[0][0] += Xik0[1][3]
-Xik0[1][3] = 0.0
-
-# regularize 3-component garnet
-g3 = (1-(Xik0[4][0]+Xik0[4][1]+Xik0[4][2]))/3.0
-Xik0[4][0] += g3
-Xik0[4][1] += g3
-Xik0[4][2] += g3
-Xik0[4][3] = 0.0
-Xik0[4][4] = 0.0
-

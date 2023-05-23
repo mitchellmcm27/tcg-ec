@@ -6,6 +6,7 @@ from pathlib import Path
 from tcg_slb.base import *
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 from multiprocessing import Pool
+import multiprocessing as mp
 import importlib
 import from_perplex as pp
 
@@ -57,7 +58,7 @@ print("rxn rate = {} kg/m2/yr".format(reaction_rate))
 show_equilibrium = False
 
 # number of processes
-processes = 20 # mp.cpu_count()
+processes = mp.cpu_count()
 
 # ------------------------------------------
 

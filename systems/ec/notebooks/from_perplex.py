@@ -7,7 +7,10 @@ import pandas as pd
 import numpy as np
 
 def get_rho_interpolator(filepath):
-    df = pd.read_csv(filepath, delimiter='\s+', header=0, names=["T","P","rho"])
+    try:
+        df = pd.read_csv(filepath, delimiter='\s+', header=0, names=["T","P","rho"])
+    except:
+        return None
     P = df["P"].to_numpy()
     T = df["T"].to_numpy()
     rho = df["rho"].to_numpy()/100

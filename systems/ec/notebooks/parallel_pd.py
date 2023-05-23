@@ -16,7 +16,7 @@ import from_perplex as pp
 ### ======================= INPUTS ============================
 reference = "parallel_pd"
 composition = "hacker_2003_morb"
-rxnName = "eclogitization_agu5_stx21_rx"
+rxnName = "eclogitization_agu10_stx21_rx"
 
 # number of nodes in each dimension (T,P) = (x,y)
 nP = 60
@@ -42,7 +42,7 @@ Pmin, Pmax = [0.5, 2.5] # Gpa
 Tmin, Tmax = [773., 1273.] # K
 
 # number of processes
-processes = 20 # mp.cpu_count()
+processes = mp.cpu_count()
 
 # Plotting options
 phasetol = 1.e-2 # # phases less than this won't plot, default 1.e-2
@@ -250,8 +250,8 @@ plt.suptitle(composition)
 save_current_fig_as("stime")
 
 # Plot comparison with Perple_X density
-
-if (composition=="hacker_2015_md_xenolith"):
+interp = pp.get_rho_interpolator("data/"+composition+".tab")
+if (interp is not None):
 
     interp = pp.get_rho_interpolator("data/hacker_2015_md_xenolith.tab")
     rho_eq_g = interp(T_g, GPa2Bar(P_g))

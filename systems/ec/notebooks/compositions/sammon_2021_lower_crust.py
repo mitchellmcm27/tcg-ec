@@ -45,14 +45,11 @@ mi0_granulite = [
 
 mi0 = mi0_eclogite
 
-# Cik0 = mass fractions
-# Xik0 = mol fractions
-# note: * = thermodynamic endmember, set to zero
 Xik0 = [
-    [0.25, 0.25, 0., 0., 0.5], # di, hed, *cEn, *cats, jd
-    [0.5, 0.5, 0., 0.], # en, fs, *mats, *oDi
+    [0.25, 0.25, 0., 0., 0.5], # di, hed, cEn, cats, jd
+    [0.5, 0.5, 0., 0.], # en, fs, mats, oDi
     [1.], # quartz
     [0.25, 0.75], # an, ab
-    [0.4, 0.4, 0.2, 0., 0.], # py, alm, gr, *mgmaj, *namaj
+    [0.4, 0.4, 0.2, 0., 0.], # py, alm, gr, mgmaj, namaj
     [1.], # ky
 ]
