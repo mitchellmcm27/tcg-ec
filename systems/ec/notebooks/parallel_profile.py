@@ -46,7 +46,7 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("composition")
+    parser.add_argument("composition", nargs='?', default=composition)
     args = parser.parse_args()
 
     if args.composition is not None:

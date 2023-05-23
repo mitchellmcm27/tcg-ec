@@ -76,16 +76,11 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("composition")
-    parser.add_argument("-l", "--lowres", action="store_true")
+    parser.add_argument("composition", nargs='?', default=composition)
     args = parser.parse_args()
 
     if args.composition is not None:
         composition = args.composition
-    if args.lowres:
-        nP = int(nP/2)
-        nT = int(nT/2)
-        end_t = 1e2
 
 #====================================================
 
