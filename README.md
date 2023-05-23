@@ -1,11 +1,41 @@
-# tcg-ec
+## Clone repo and cd into it
 
-`cd systems/ec`
+`git clone https://github.com/mitchellmcm27/tcg-ec.git && cd tcg-ec`
 
-Define reactions in
-`scripts/generate-reactions`
-and run the script.
+## Start a Docker container
 
-Then run `scripts/build-reactions database/reactions/eclogite_slb_rx.rxml`.
+Build an image using the provided Dockerfile, using `-t` to give the image a human-readable tag.
 
-Use the resulting database and reactions in notebooks
+`docker build -t tcg-ec .`
+
+Start an interactive container, binding the current directory to a volume inside the container
+
+`docker run -it -v $PWD:/workspaces/tcg-ec tcg-ec`
+
+## Build the reactions
+
+Within the container, everything is in the `systems/ec` directory.
+
+`cd /workspaces/tcg-ec/systems/ec`
+
+Custom thermodynamic datbases are included as `.tar.gz` files.
+
+Generate the `.rxml` files by running `scripts/generate-reactions`.
+
+It would take too long to build all the reactions. To build a specific reaction, you can pass the path to the rxml, e.g., `scripts/build-reactions database/reactions/eclogitization_agu10_stx21_rx.rxml`.
+
+## Calculations
+
+Calculation scripts are in the `notebooks` directory.
+
+`cd notebooks`
+
+Run them as follows
+
+- `python3 parallel_pd.py` generates a (p,T) pseudosection
+- `python3 parallel_profile.py` generates a 1-d profile in (p,T)-space
+- `python3 parallel_experiment.py` is a simple geodynamic experiment, lithospheric thickening
+
+In all cases, you can pass the name of any pre-defined composition that exists in the `notebooks/compositions` folder. For example, `python3 parallel_pd.py hacker_2015_md_xenolith`.
+
+By default the `parallel_*` scripts use all available CPU cores.
