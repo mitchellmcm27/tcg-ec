@@ -54,3 +54,11 @@ Xik0=[
     [0.64453, 0.21353, 0.14140, 0.00043, 0.00010], # py, alm, gr, *mgmaj, *namaj
     [1.], # kyanite
 ]
+
+# regularize 3-component garnet
+g3 = (1-(Xik0[4][0]+Xik0[4][1]+Xik0[4][2]))/3.0
+Xik0[4][0] += g3
+Xik0[4][1] += g3
+Xik0[4][2] += g3
+Xik0[4][3] = 0.0
+Xik0[4][4] = 0.0
