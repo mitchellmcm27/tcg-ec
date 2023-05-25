@@ -12,7 +12,7 @@ import importlib
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
 composition = 'hacker_2015_md_xenolith'
-rxnName = 'eclogitization_agu10_stx21_rx'
+rxnName = 'eclogitization_agu13_stx21_rx'
 
 # number of x-nodes
 nT = 100
@@ -30,7 +30,9 @@ eps = 1.e-5 # 1.e-2
 # these numbers seem to work very well with eps = 1e-5??
 rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
-max_steps = 4e3
+
+# large number
+max_steps = 4e4 # 4e3 is reasonable
 
 Pmin, Pmax = [2.5, 0.5]
 Tmin, Tmax = [773., 1273.]
@@ -64,6 +66,7 @@ T_range = np.linspace(Tmin, Tmax, nT)
 P_range = np.linspace(Pmin, Pmax, nT)
 
 rxn = EcModel.get_reaction(rxnName)
+print(rxn.report())
 
 def x2c(rxn, Xik0):
     return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
