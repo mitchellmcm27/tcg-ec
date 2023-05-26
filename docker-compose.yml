@@ -11,8 +11,9 @@ services:
 
   te:
     build: ./docker/te
+    platform: linux/arm64/v8
     user: root
     ports:
-      - "5000:5000"
+      - "5555:5555"
     volumes:
       - .:/home/jovyan/work/

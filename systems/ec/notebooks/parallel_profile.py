@@ -12,7 +12,7 @@ import importlib
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
 composition = 'hacker_2015_md_xenolith'
-rxnName = 'eclogitization_agu13_stx21_rx'
+rxn_name = 'eclogitization_agu14_stx21_rx'
 
 # number of x-nodes
 nT = 100
@@ -32,7 +32,7 @@ rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
 
 # large number
-max_steps = 4e4 # 4e3 is reasonable
+max_steps = 1e5 # 4e3 is reasonable
 
 Pmin, Pmax = [2.5, 0.5]
 Tmin, Tmax = [773., 1273.]
@@ -48,24 +48,31 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("composition", nargs='?', default=composition)
+    parser.add_argument("-c", "--composition")
+    parser.add_argument("-e", "--end_t")
+    parser.add_argument("-r", "--rxn_name")
+
     args = parser.parse_args()
 
     if args.composition is not None:
         composition = args.composition
+    if args.end_t is not None:
+        end_t = args.end_t
+    if args.rxn_name is not None:
+        rxn_name = args.rxn_name
 
 #====================================================
 
 mod = importlib.import_module("compositions."+composition)
 Cik0, Xik0, mi0, phii0, phase_names, endmember_names = [getattr(mod,a,None) for a in ['Cik0', 'Xik0', 'mi0','phii0', 'phase_names', 'endmember_names']]
 
-outputPath = Path("figs",reference,composition,rxnName)
+outputPath = Path("figs",reference,composition,rxn_name)
 outputPath.mkdir(parents=True, exist_ok=True)
 
 T_range = np.linspace(Tmin, Tmax, nT)
 P_range = np.linspace(Pmin, Pmax, nT)
 
-rxn = EcModel.get_reaction(rxnName)
+rxn = EcModel.get_reaction(rxn_name)
 print(rxn.report())
 
 def x2c(rxn, Xik0):
@@ -136,6 +143,7 @@ for rho, phases, phi, mi, Cik, i in sols:
     phases_final[i] = phases
     phi_final[i,:] = phi
     Cik_final[i,:] = Cik
+
 fig = plt.figure(figsize=(12,14))
 
 plt.plot(P_range,rho_final)
@@ -146,10 +154,14 @@ axi = fig.add_subplot(1,1,1)
 for i, phase in enumerate(rxn.phases()):    
     plt.plot(T_range,phi_final[:,i],':' if i>9 else '-')
 
-plt.ylim([0.0, 0.615])
+
 plt.xlim([Tmin,Tmax])
 plt.xticks([873, 973, 1073, 1173, 1273])
-plt.yticks([0.005,0.123,0.246,0.369,0.492,0.615])
+
+if composition=='hacker_2015_md_xenolith':
+    plt.ylim([0.0, 0.615])
+    plt.yticks([0.005,0.123,0.246,0.369,0.492,0.615])
+
 plt.legend(phase_names)
 plt.savefig(Path(outputPath,'phases.png'))
 
@@ -186,9 +198,3 @@ plt.ylim([0,1])
 plt.xlim([Tmin,Tmax])
 plt.legend(endmember_names)
 plt.savefig(Path(outputPath,'endmembers.png'))
-
-
-
-
-    
-

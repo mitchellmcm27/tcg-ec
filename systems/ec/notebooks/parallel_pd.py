@@ -15,8 +15,8 @@ import from_perplex as pp
 
 ### ======================= INPUTS ============================
 reference = "parallel_pd"
-composition = "hacker_2003_morb"
-rxnName = "eclogitization_agu10_stx21_rx"
+composition = "hacker_2015_md_xenolith"
+rxn_name = "eclogitization_agu14_stx21_rx"
 
 # number of nodes in each dimension (T,P) = (x,y)
 nP = 60
@@ -24,19 +24,20 @@ nT = 60
 
 # end time of reactions
 end_t = 1e5
+
 # limit the maximum number of steps taken by the solver
 # defaults to infinity, which can exhaust memory if solver doesn't converge
 max_steps = 4e3
+
+# regularization parameter for compositions
+# sets the minimum value for Cik
+eps = 1.e-5 # default, 1.e-2
 
 # TODO: these numbers seem to work very well with eps = 1e-5??
 rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
 
 Da = 1.0 # Damkhoeler num, default 1.0
-
-# regularization parameter for compositions
-# sets the minimum value for Cik
-eps = 1.e-5 # default, 1.e-2
 
 Pmin, Pmax = [0.5, 2.5] # Gpa
 Tmin, Tmax = [773., 1273.] # K
@@ -76,16 +77,23 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("composition", nargs='?', default=composition)
+    parser.add_argument("-c", "--composition")
+    parser.add_argument("-e", "--end_t")
+    parser.add_argument("-r", "--rxn_name")
+
     args = parser.parse_args()
 
     if args.composition is not None:
         composition = args.composition
+    if args.end_t is not None:
+        end_t = args.end_t
+    if args.rxn_name is not None:
+        rxn_name = args.rxn_name
 
 #====================================================
 
 # get reaction object
-rxn = EcModel.get_reaction(rxnName)
+rxn = EcModel.get_reaction(rxn_name)
 
 # import initial compositions from composition file
 module = importlib.import_module("compositions."+composition)
@@ -178,7 +186,7 @@ interp = pp.get_rho_interpolator("data/xu_2008_pyrolite.tab")
 rho_pyrolite_g = interp(T_g, GPa2Bar(P_g))
 
 # Create folders if needed
-outputPath = Path("figs",reference,composition,rxnName)
+outputPath = Path("figs",reference,composition,rxn_name)
 outputPath.mkdir(parents=True, exist_ok=True)
 
 def save_current_fig_as(name):
@@ -221,6 +229,7 @@ for i,ph in enumerate(uniquestrs):
 fig.legend(handles=scs,loc="center left")
 plot_phase_labels(axi)
 plt.suptitle(composition)
+save_current_fig_as("phases")
 
 
 # Plot variance
