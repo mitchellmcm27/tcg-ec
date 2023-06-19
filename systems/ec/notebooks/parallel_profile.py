@@ -8,6 +8,7 @@ from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 import multiprocessing as mp
 from multiprocessing import Pool
 import importlib
+import from_perplex as pp
 
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
@@ -151,18 +152,37 @@ plt.savefig(Path(outputPath,'density.png'))
 
 fig = plt.figure(figsize=(12,12))
 axi = fig.add_subplot(1,1,1)
-for i, phase in enumerate(rxn.phases()):    
-    plt.plot(T_range,phi_final[:,i],':' if i>9 else '-')
 
+df = pp.get_profile_data("data/"+composition+"_profile.tab")
 
-plt.xlim([Tmin,Tmax])
-plt.xticks([873, 973, 1073, 1173, 1273])
+# T(K), P(bar), Pl, Pl, Cpx, Opx, qtz, Gt, ky  
+phase_i_to_col_i = {
+    3:2,
+    "none":3,
+    0:4,
+    1:5,
+    2:6,
+    4:7,
+    5:8,
+}
+print(df)
 
-if composition=='hacker_2015_md_xenolith':
-    plt.ylim([0.0, 0.615])
-    plt.yticks([0.005,0.123,0.246,0.369,0.492,0.615])
+hs = []
 
+for i, phase in enumerate(rxn.phases()):
+    h = plt.plot(T_range-273.15,phi_final[:,i],':' if i>9 else '-')
+    hs.append(h)
 plt.legend(phase_names)
+plt.xlim([Tmin-273.15,Tmax-273.15])
+plt.xticks([500, 600, 700, 800, 900, 1000])
+plt.gca().set_ylim(bottom=0)
+if(df is not None):
+    for i, phase in enumerate(rxn.phases()):
+        col = phase_i_to_col_i[i]
+        h = hs[i]
+        print(h)
+        plt.plot(df["T(K)"]-273.15,df.iloc[:,col]/100, "--", alpha=0.8, linewidth=1, color=h[-1].get_color())
+
 plt.savefig(Path(outputPath,'phases.png'))
 
 fig = plt.figure(figsize=(12,12))
@@ -192,9 +212,10 @@ line_style_by_endmember = {
 for k in range(K):
     name = endmember_names[k]
     line_style = line_style_by_endmember[name]
-    plt.plot(T_range,Cik_final[:,k], line_style)
+    plt.plot(T_range-273.15,Cik_final[:,k], line_style)
 
 plt.ylim([0,1])
-plt.xlim([Tmin,Tmax])
+plt.xlim([Tmin-273.15,Tmax-273.15])
 plt.legend(endmember_names)
+
 plt.savefig(Path(outputPath,'endmembers.png'))

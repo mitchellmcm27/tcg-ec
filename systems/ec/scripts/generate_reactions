@@ -1049,6 +1049,32 @@ def generate_reactions(outdir):
             ([cats, an], [gs, qz]),
         ], database="tcg_stx21_database.tar.gz")
     
+    generate_reaction(
+        outdir,
+        'eclogitization_matlab',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+            ([ky,oEn],[qz,mgts]),
+            ([an,oEn],[ky,oDi]),
+            ([an,oEn],[ky,di]),
+            ([an,fs],[ky,hed]),
+            ([an],[qz,cats]),
+            ([oEn],[cEn]),
+            ([ab],[qz,jd]),
+            ([an],[qz,ky,gs]),
+            ([ky,oEn],[qz,pyp]),
+            ([ky,fs],[qz,alm]),
+            #([ab],[qz,namaj]),
+            #([oEn],[mgmaj])
+        ], database="tcg_stx21_database.tar.gz")
+    
 def generate_reaction(outdir, name, phases, reactions, database='tcg_slb_database.tar.gz'):
 
     dbfile = os.path.join(os.path.pardir, 'database', database)

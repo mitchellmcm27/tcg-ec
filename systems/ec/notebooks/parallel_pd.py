@@ -248,7 +248,7 @@ save_current_fig_as("phase-variance")
 fig = plt.figure(figsize=(12,14))
 axi = fig.add_subplot(1,1,1)
 #s = plt.imshow(stime_g,cmap=stime_cmap,norm=mpl.colors.LogNorm(), **imshow_kwargs)
-s = plt.scatter(T_g,P_g,c=stime_g,s=100,alpha=0.75,cmap=stime_cmap,norm=mpl.colors.LogNorm())
+s = plt.scatter(T_g,P_g,c=stime_g,s=100,alpha=0.75,cmap=stime_cmap)#,norm=mpl.colors.LogNorm(),)
 fig.colorbar(s,location="left",ax=axi)
 plt.suptitle(composition)
 save_current_fig_as("stime")
@@ -256,8 +256,6 @@ save_current_fig_as("stime")
 # Plot comparison with Perple_X density
 interp = pp.get_rho_interpolator("data/"+composition+".tab")
 if (interp is not None):
-
-    interp = pp.get_rho_interpolator("data/hacker_2015_md_xenolith.tab")
     rho_eq_g = interp(T_g, GPa2Bar(P_g))
 
     fig = plt.figure(figsize=(12,6))
@@ -279,11 +277,12 @@ if (interp is not None):
     plt.gca().set_title("Equilibrium density (Perple_X)")
 
     axi = fig.add_subplot(1,3,3)
-    levels = np.arange(-2, 2.2, 0.2)
-    diff = (rho_g-rho_eq_g)
-    s=axi.imshow(diff,cmap=diff_cmap,vmin=-2,vmax=2, **imshow_kwargs)
+    diff = (rho_g-rho_eq_g)/rho_eq_g*100
+    absmax = np.ceil(np.nanmax(np.absolute(diff)))
+    levels = np.arange(-absmax, absmax+1, 1)
+    s=axi.imshow(diff,cmap=diff_cmap,vmin=-absmax,vmax=absmax, **imshow_kwargs)
     axi.contour(T_g ,P_g, diff, levels=levels,**contour_kwargs)
-    plt.colorbar(mappable=s, location="bottom",ticks=[-2.,-1.,0.,1.,2.], label="10$^2$ kg/m$^3$")
+    plt.colorbar(mappable=s, location="bottom", label="rel. error (%)")
     plt.gca().set_title("Diff. (TCG minus PX)")
     plt.suptitle(composition)
     save_current_fig_as("density_comparison")

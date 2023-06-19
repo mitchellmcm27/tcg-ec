@@ -16,3 +16,10 @@ def get_rho_interpolator(filepath):
     rho = df["rho"].to_numpy()/100
     interp = LinearNDInterpolator((T,P), rho)
     return interp
+
+def get_profile_data(filepath):
+    try:
+        df = pd.read_csv(filepath, delimiter='\s+', header=0)
+        return df
+    except:
+        return None

@@ -17,7 +17,7 @@ cm = 1e-2
 
 ### ------------ INPUTS -------------------
 reference= 'parallel_experiment'
-composition = 'hacker_2003_morb'
+composition = 'hacker_2015_md_xenolith'
 rxn_name = 'eclogitization_agu14_stx21_rx'
 
 # only phases greater than this fraction will be plotted
@@ -36,7 +36,10 @@ moho_f = 70. # Altiplano, Tibet
 
 # Calc descent rate of Moho
 shortening_rate_kmMyr = 3.0 # km/Myr = mm/yr
+shortening_rate_myr = shortening_rate_kmMyr/1e3 # m/yr
+
 L0 = 100. # lithospheric thickness - km
+
 z0 = moho_i # km
 descent_rate_kmMyr = z0/L0 * shortening_rate_kmMyr # mm/yr
 descent_rate = descent_rate_kmMyr*mm/yr  # = m/yr
@@ -53,21 +56,24 @@ depth_km = depth_m/1e3
 # TODO: use a steady-state geotherm
 P_range = 0.027 * depth_km # GPa
 T_moho_i = 800.
-T_moho_f = 1000.
+T_moho_f = 800.
 T_range = T_moho_i + (depth_km - depth_km[0])/(depth_km[-1] - depth_km[0])*(T_moho_f - T_moho_i) + 273. 
 
-mass_tranport_rate = descent_rate * avg_density # kg/m2/yr
-print("mass transport rate = {} kg/m2/yr".format(mass_tranport_rate))
+# Damkoehler number
+Da = [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3]
 
 # Reaction rates based on Hetenyi et al. 2017
-reaction_rate_gcm =  [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3] # g/cm2/yr
-reaction_rate = [r*g/cm/cm/yr for r in reaction_rate_gcm]# kg/m2/yr
-print("rxn rate = {} kg/m2/yr".format(reaction_rate))
+# these are based on available surface area of 3/r where r is grain radius
+#reaction_rate_gcm =  [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3] # g/cm2/yr
 
-# Damkhoeler number
-Da = [r/mass_tranport_rate for r in reaction_rate]
+S0 = 6000 # m2/m3; 1 mm cubes 
+h0 = 1e-3 # 1mm
+                                #kg/m3      m/yr       
+reaction_rate_per_surface = [da*avg_density*shortening_rate_myr for da in Da]# kg/m2/yr
+reaction_rate_per_surface_gcm = [r/10 for r in reaction_rate_per_surface] # g/cm2/yr
 
-#print("Da = {}".format(Da))
+print("Da = {}".format(Da))
+print("rxn rate = {} g/cm2/yr".format(reaction_rate_per_surface_gcm))
 print("dt = {} kyr".format(dt))
 print("total t = {} Myr".format(dt * len(depth_km)/1e6))
 
@@ -246,7 +252,7 @@ iharzburgite = pp.get_rho_interpolator('data/xu_2008_harzburgite.tab')
 rho_harzburgite=iharzburgite((T_range,GPa2Bar(P_range)))
 plt.plot(rho_harzburgite/10,depth_km, 'm:')
 
-plt.legend(['$r_0 = ${:.1e} g/cm$^2$/yr'.format(r) for r in reaction_rate_gcm] + (['equil.', 'pyrolite', 'harzburgite'] if show_equilibrium else  ['pyrolite', 'harzburgite']), loc="upper right")
+plt.legend(['$r_0 = ${:.1e} g/cm$^2$/yr'.format(r) for r in reaction_rate_per_surface_gcm] + (['equil.', 'pyrolite', 'harzburgite'] if show_equilibrium else  ['pyrolite', 'harzburgite']), loc="upper right")
 
 plt.ylabel('Depth (km)')
 plt.xlabel('Density')
