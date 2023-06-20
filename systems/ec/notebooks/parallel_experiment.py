@@ -244,11 +244,11 @@ if show_equilibrium:
 
     plt.plot(rho_equil/10,depth_km,'k--')
 
-ipyrolite = pp.get_rho_interpolator('data/xu_2008_pyrolite.tab')
+ipyrolite = pp.get_rho_interpolator('xu_2008_pyrolite')
 rho_pyrolite=ipyrolite((T_range, GPa2Bar(P_range)))
 plt.plot(rho_pyrolite/10,depth_km, 'r:')
 
-iharzburgite = pp.get_rho_interpolator('data/xu_2008_harzburgite.tab')
+iharzburgite = pp.get_rho_interpolator('xu_2008_harzburgite')
 rho_harzburgite=iharzburgite((T_range,GPa2Bar(P_range)))
 plt.plot(rho_harzburgite/10,depth_km, 'm:')
 

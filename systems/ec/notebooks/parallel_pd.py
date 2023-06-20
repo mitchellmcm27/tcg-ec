@@ -12,6 +12,7 @@ import importlib
 from scipy import ndimage
 from scipy.interpolate import griddata
 import from_perplex as pp
+from from_perplex import phase_names, endmember_names
 
 ### ======================= INPUTS ============================
 reference = "parallel_pd"
@@ -40,13 +41,13 @@ atol = 1.e-9 # absolute tolerance, default 1e-9
 Da = 1.0 # Damkhoeler num, default 1.0
 
 Pmin, Pmax = [0.5, 2.5] # Gpa
-Tmin, Tmax = [773., 1273.] # K
+Tmin, Tmax = [773.15, 1273.15] # K
 
 # number of processes
 processes = mp.cpu_count()
 
 # Plotting options
-phasetol = 1.e-2 # # phases less than this won't plot, default 1.e-2
+phasetol = 1.e-5 # # phases less than this won't plot, default 1.e-2
 density_levels = np.arange(28.5, 37.6, 0.1)
 density_ticks = np.asarray([28.,30.,32.,34.,36.,38.])
 highlight_densities = np.asarray([33.30] )# /10
@@ -95,18 +96,7 @@ if __name__ == "__main__":
 # get reaction object
 rxn = EcModel.get_reaction(rxn_name)
 
-# import initial compositions from composition file
-module = importlib.import_module("compositions."+composition)
-Cik0, Xik0, mi0, phii0, phase_names, endmember_names = [
-    getattr(module,a,None) for a in [
-        "Cik0", 
-        "Xik0", 
-        "mi0",
-        "phii0", 
-        "phase_names", 
-        "endmember_names"
-        ]
-    ]
+mi0, Xik0, phii0, Cik0 = pp.get_point_composition(composition)
 
 def x2c(rxn, Xik0):
     return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
@@ -182,7 +172,7 @@ def index(ls,v):
     return i
 phaseis_g = np.asarray([[index(uniquestrs,phstr) for phstr in phasestrr]  for phasestrr in phases_g])
 # Get pyrolite density grid
-interp = pp.get_rho_interpolator("data/xu_2008_pyrolite.tab")
+interp = pp.get_rho_interpolator("xu_2008_pyrolite")
 rho_pyrolite_g = interp(T_g, GPa2Bar(P_g))
 
 # Create folders if needed
@@ -254,7 +244,7 @@ plt.suptitle(composition)
 save_current_fig_as("stime")
 
 # Plot comparison with Perple_X density
-interp = pp.get_rho_interpolator("data/"+composition+".tab")
+interp = pp.get_rho_interpolator(composition)
 if (interp is not None):
     rho_eq_g = interp(T_g, GPa2Bar(P_g))
 

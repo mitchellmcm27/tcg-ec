@@ -9,6 +9,7 @@ import multiprocessing as mp
 from multiprocessing import Pool
 import importlib
 import from_perplex as pp
+from from_perplex import phase_names, endmember_names
 
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
@@ -36,7 +37,7 @@ atol = 1.e-9 # absolute tolerance, default 1e-9
 max_steps = 1e5 # 4e3 is reasonable
 
 Pmin, Pmax = [2.5, 0.5]
-Tmin, Tmax = [773., 1273.]
+Tmin, Tmax = [773.15, 1273.15]
 
 # number of processes
 processes = mp.cpu_count()
@@ -64,8 +65,8 @@ if __name__ == "__main__":
 
 #====================================================
 
-mod = importlib.import_module("compositions."+composition)
-Cik0, Xik0, mi0, phii0, phase_names, endmember_names = [getattr(mod,a,None) for a in ['Cik0', 'Xik0', 'mi0','phii0', 'phase_names', 'endmember_names']]
+#mod = importlib.import_module("compositions."+composition)
+#Cik0, Xik0, mi0, phii0, phase_names, endmember_names = [getattr(mod,a,None) for a in ['Cik0', 'Xik0', 'mi0','phii0', 'phase_names', 'endmember_names']]
 
 outputPath = Path("figs",reference,composition,rxn_name)
 outputPath.mkdir(parents=True, exist_ok=True)
@@ -74,7 +75,8 @@ T_range = np.linspace(Tmin, Tmax, nT)
 P_range = np.linspace(Pmin, Pmax, nT)
 
 rxn = EcModel.get_reaction(rxn_name)
-print(rxn.report())
+
+mi0, Xik0, phii0, Cik0 = pp.get_point_composition(composition)
 
 def x2c(rxn, Xik0):
     return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
@@ -153,19 +155,17 @@ plt.savefig(Path(outputPath,'density.png'))
 fig = plt.figure(figsize=(12,12))
 axi = fig.add_subplot(1,1,1)
 
-df = pp.get_profile_data("data/"+composition+"_profile.tab")
+df = pp.get_profile_data(composition)
 
 # T(K), P(bar), Pl, Pl, Cpx, Opx, qtz, Gt, ky  
-phase_i_to_col_i = {
-    3:2,
-    "none":3,
-    0:4,
-    1:5,
-    2:6,
-    4:7,
-    5:8,
+phase_name_to_col_name = {
+    "Clinopyroxene_slb_ph":"Cpx",
+    "Orthopyroxene_slb_ph":"Opx",
+    "Quartz_slb_ph":"qtz",
+    "Feldspar_slb_ph":"Pl2",
+    "Garnet_slb_ph":"Gt",
+    "Kyanite_slb_ph":"ky"
 }
-print(df)
 
 hs = []
 
@@ -178,10 +178,10 @@ plt.xticks([500, 600, 700, 800, 900, 1000])
 plt.gca().set_ylim(bottom=0)
 if(df is not None):
     for i, phase in enumerate(rxn.phases()):
-        col = phase_i_to_col_i[i]
+        pname = phase.name()
+        col = phase_name_to_col_name[pname]
         h = hs[i]
-        print(h)
-        plt.plot(df["T(K)"]-273.15,df.iloc[:,col]/100, "--", alpha=0.8, linewidth=1, color=h[-1].get_color())
+        plt.plot(df["T(K)"]-273.15,df[col]/100, "--", alpha=0.8, linewidth=1, color=h[-1].get_color())
 
 plt.savefig(Path(outputPath,'phases.png'))
 
