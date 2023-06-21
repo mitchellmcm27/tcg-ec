@@ -14,6 +14,20 @@ from scipy.interpolate import griddata
 import from_perplex as pp
 from from_perplex import phase_names, endmember_names
 
+SMALL_SIZE = 9
+MEDIUM_SIZE = 12
+BIGGER_SIZE = 14
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=MEDIUM_SIZE, titleweight="semibold")     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+plt.rc('axes', titley=1.0)    # y is in axes-relative coordinates.
+plt.rc('axes', titlepad=-16)  # pad is in points...
+
 ### ======================= INPUTS ============================
 reference = "parallel_pd"
 composition = "hacker_2015_md_xenolith"
@@ -50,22 +64,50 @@ processes = mp.cpu_count()
 phasetol = 1.e-5 # # phases less than this won't plot, default 1.e-2
 density_levels = np.arange(28.5, 37.6, 0.1)
 density_ticks = np.asarray([28.,30.,32.,34.,36.,38.])
+
+T_ticks = np.arange(Tmin-273.15+100, Tmax-273.15-100, 100.)
+T_limits = [Tmin-273.15, Tmax-273.15]
+
+P_ticks = np.arange(Pmin, Pmax+0.5, 0.5)
+
 highlight_densities = np.asarray([33.30] )# /10
+highlight_diffs= np.asarray([0.] )
+
 density_cmap = plt.get_cmap("Spectral_r")
 diff_cmap = plt.get_cmap("bwr_r")
 stime_cmap = plt.get_cmap("bwr")
 variance_cmap = plt.get_cmap("Blues")
 contour_kwargs = {
-    "colors": "black",
+    "colors": "#333333",
     "linewidths": 1,
     "linestyles": "solid",
-    "alpha": 0.25
+    "linewidths": 1,
+    "alpha": 0.6
+}
+contour_highlight_kwargs = {
+    "alpha":0.6,
+    "colors":"black",
+    "linewidths":1,
 }
 imshow_kwargs = {
-    "extent": (Tmin,Tmax,Pmin,Pmax),
+    "extent": (Tmin-273.15,Tmax-273.15,Pmin,Pmax),
     "origin":"lower",
     "aspect":"auto",
 }
+
+# This custom formatter removes trailing zeros, e.g. "1.0" becomes "1", and
+# then adds a percent sign.
+def rel_err_fmt(x):
+    s = f"{x:.1f}"
+    if s.endswith("0"):
+        s = f"{x:.0f}"
+    return rf"{s}"
+
+def diff_fmt(x):
+    s = f"{x:.1f}"
+    if s.endswith("0"):
+        s = f"{x:.0f}"
+    return rf"{s}"
 
 fig_filetypes = ["png", "pdf"]
 
@@ -200,10 +242,10 @@ def plot_phase_labels(ax):
 fig = plt.figure(figsize=(12,14))
 axi = fig.add_subplot(1,1,1)
 
-s = axi.contourf(T_g,P_g,rho_g,levels=density_levels,alpha=0.75,cmap=density_cmap)
-axi.contour(T_g,P_g,rho_g,levels=density_levels,alpha=1,cmap=density_cmap)
-axi.contour(T_g,P_g,rho_g,levels=highlight_densities,alpha=1,colors="black")
-plt.xlim([Tmin, Tmax])
+s = axi.contourf(T_g-273.15,P_g,rho_g,levels=density_levels,alpha=0.75,cmap=density_cmap)
+axi.contour(T_g-273.15,P_g,rho_g,levels=density_levels,alpha=1,cmap=density_cmap)
+axi.contour(T_g-273.15,P_g,rho_g,levels=highlight_densities,alpha=1,colors="black")
+plt.xlim(T_limits)
 plt.ylim([Pmin,Pmax])
 plt.colorbar(mappable=s, location="left")
 plt.suptitle(composition)
@@ -215,7 +257,7 @@ fig = plt.figure(figsize=(12,14))
 axi = fig.add_subplot(1,1,1)
 scs = []
 for i,ph in enumerate(uniquestrs):
-    scs.append(axi.scatter(T_g[phaseis_g==i],P_g[phaseis_g==i],alpha=0.35,label=ph,s=50))
+    scs.append(axi.scatter(T_g[phaseis_g==i]-273.15,P_g[phaseis_g==i],alpha=0.35,label=ph,s=50))
 fig.legend(handles=scs,loc="center left")
 plot_phase_labels(axi)
 plt.suptitle(composition)
@@ -228,7 +270,7 @@ fig = plt.figure(figsize=(12,14))
 axi = fig.add_subplot(1,1,1)
 max_variance = np.nanmax(variance_g)
 min_variance = np.nanmin(variance_g)
-s = axi.scatter(T_g,P_g,c=variance_g,s=50,cmap=variance_cmap,alpha=0.5,vmin=min_variance-1,vmax=max_variance+1)
+s = axi.scatter(T_g-273.15,P_g,c=variance_g,s=50,cmap=variance_cmap,alpha=0.5,vmin=min_variance-1,vmax=max_variance+1)
 plot_phase_labels(axi)
 plt.suptitle(composition)
 save_current_fig_as("phase-variance")
@@ -238,7 +280,7 @@ save_current_fig_as("phase-variance")
 fig = plt.figure(figsize=(12,14))
 axi = fig.add_subplot(1,1,1)
 #s = plt.imshow(stime_g,cmap=stime_cmap,norm=mpl.colors.LogNorm(), **imshow_kwargs)
-s = plt.scatter(T_g,P_g,c=stime_g,s=100,alpha=0.75,cmap=stime_cmap)#,norm=mpl.colors.LogNorm(),)
+s = plt.scatter(T_g-273.15,P_g,c=stime_g,s=100,alpha=0.75,cmap=stime_cmap)#,norm=mpl.colors.LogNorm(),)
 fig.colorbar(s,location="left",ax=axi)
 plt.suptitle(composition)
 save_current_fig_as("stime")
@@ -252,16 +294,18 @@ if (interp is not None):
     
     axi = fig.add_subplot(1,3,1)
 
-    s = axi.contourf(T_g, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
-    axi.contour(T_g, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
-    plt.xlim([Tmin, Tmax])
+    s = axi.contourf(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
+    axi.contour(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
+    plt.xlim(T_limits)
+    plt.xticks(T_ticks)
     plt.colorbar(mappable=s, location="bottom", ticks=density_ticks, label="10$^2$ kg/m$^3$")
     plt.gca().set_title("Reactive density (TCG)")
 
     axi = fig.add_subplot(1,3,2)
-    s = axi.contourf(T_g, P_g, rho_eq_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
-    axi.contour(T_g, P_g, rho_eq_g, levels=density_levels, alpha=1, cmap=density_cmap)
-    plt.xlim([Tmin, Tmax])
+    s = axi.contourf(T_g-273.15, P_g, rho_eq_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
+    axi.contour(T_g-273.15, P_g, rho_eq_g, levels=density_levels, alpha=1, cmap=density_cmap)
+    plt.xlim(T_limits)
+    plt.xticks(T_ticks)
     plt.ylim([Pmin,Pmax])
     plt.colorbar(mappable=s, location="bottom",ticks=density_ticks, label="10$^2$ kg/m$^3$")
     plt.gca().set_title("Equilibrium density (Perple_X)")
@@ -271,10 +315,11 @@ if (interp is not None):
     absmax = np.ceil(np.nanmax(np.absolute(diff)))
     levels = np.arange(-absmax, absmax+1, 1)
     s=axi.imshow(diff,cmap=diff_cmap,vmin=-absmax,vmax=absmax, **imshow_kwargs)
-    axi.contour(T_g ,P_g, diff, levels=levels,**contour_kwargs)
+    axi.contour(T_g-273.15 ,P_g, diff, levels=levels,**contour_kwargs)
     plt.colorbar(mappable=s, location="bottom", label="rel. error (%)")
     plt.gca().set_title("Diff. (TCG minus PX)")
     plt.suptitle(composition)
+    plt.xticks(T_ticks)
     save_current_fig_as("density_comparison")
 
 # Plot comparison with pyrolite
@@ -282,17 +327,19 @@ if (interp is not None):
 fig = plt.figure(figsize=(12,6))
 
 axi = fig.add_subplot(1,3,1)
-s = axi.contourf(T_g, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
-axi.contour(T_g, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
-plt.xlim([Tmin, Tmax])
+s = axi.contourf(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
+axi.contour(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
+plt.xlim(T_limits)
+plt.xticks(T_ticks)
 plt.ylim([Pmin,Pmax])
 plt.colorbar(mappable=s, location="bottom", ticks=density_ticks, label="10$^2$ kg/m$^3$")
 plt.gca().set_title("Reactive density (TCG)")
 
 axi = fig.add_subplot(1,3,2)
-s = axi.contourf(T_g, P_g, rho_pyrolite_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
-axi.contour(T_g, P_g, rho_pyrolite_g, levels=density_levels, alpha=1, cmap=density_cmap)
-plt.xlim([Tmin, Tmax])
+s = axi.contourf(T_g-273.15, P_g, rho_pyrolite_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
+axi.contour(T_g-273.15, P_g, rho_pyrolite_g, levels=density_levels, alpha=1, cmap=density_cmap)
+plt.xlim(T_limits)
+plt.xticks(T_ticks)
 plt.ylim([Pmin,Pmax])
 plt.colorbar(mappable=s, location="bottom", ticks=density_ticks, label="10$^2$ kg/m$^3$")
 plt.gca().set_title("Pyrolite density (Xu et al. 2008)")
@@ -302,8 +349,57 @@ diff = (rho_g-rho_pyrolite_g)*100 # g/cm3
 maxval = np.ceil(np.nanmax(np.absolute(diff))/100)*100+50
 levels = np.arange(-maxval,maxval+50,50)
 s=axi.imshow(diff,cmap=diff_cmap,vmin=-maxval,vmax=maxval, **imshow_kwargs)
-axi.contour(T_g ,P_g, diff, levels=levels,**contour_kwargs)
+axi.contour(T_g-273.15, P_g, diff, levels=levels,**contour_kwargs)
 plt.colorbar(mappable=s, location="bottom", label="g/cm$^3$")
 plt.gca().set_title("Density above pyrolite")
 plt.suptitle(composition)
+plt.xticks(T_ticks)
 save_current_fig_as("density_contrast")
+
+
+# Plot combined figure
+
+fig = plt.figure(figsize=(10,5))
+
+axi = fig.add_subplot(1,3,1)
+s = axi.contourf(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
+axi.contour(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
+plt.xlim(T_limits)
+plt.xticks(T_ticks)
+plt.ylim([Pmin,Pmax])
+plt.yticks(P_ticks)
+plt.colorbar(mappable=s, location="bottom", ticks=density_ticks, label="10$^2$ kg/m$^3$",pad=0.12)
+plt.ylabel("Pressure (GPa)")
+plt.gca().set_title("Reactive density")
+
+axi = fig.add_subplot(1,3,2)
+diff = (rho_g-rho_eq_g)/rho_eq_g*100
+absmax = np.ceil(np.nanmax(np.absolute(diff))*10)/10
+levels = np.arange(-absmax, absmax+0.2, 0.2)
+s=axi.imshow(diff,cmap=diff_cmap,vmin=-absmax,vmax=absmax, **imshow_kwargs)
+contours = axi.contour(T_g-273.15 ,P_g, diff, levels=levels,**contour_kwargs)
+axi.clabel(contours, contours.levels, inline=True, fmt=rel_err_fmt, fontsize=SMALL_SIZE)
+plt.colorbar(mappable=s, location="bottom", label="rel. error (%)",pad=0.12)
+plt.gca().set_title("Diff. with equilibrium")
+plt.xticks(T_ticks)
+plt.yticks([])
+plt.xlabel("Temperature (°C)", labelpad=2)
+save_current_fig_as("density_comparison")
+
+axi = fig.add_subplot(1,3,3)
+diff = (rho_g-rho_pyrolite_g)*100 # g/cm3
+maxval = np.ceil(np.nanmax(np.absolute(diff))/100)*100+50
+levels = np.arange(-maxval,maxval+50,50)
+s=axi.imshow(diff,cmap=diff_cmap,vmin=-maxval,vmax=maxval, **imshow_kwargs)
+contours = axi.contour(T_g-273.15, P_g, diff, levels=levels,**contour_kwargs)
+contour0 = axi.contour(T_g-273.15, P_g, diff, levels=highlight_diffs,**contour_highlight_kwargs)
+axi.clabel(contours, contours.levels, inline=True, fmt=diff_fmt, fontsize=SMALL_SIZE)
+axi.clabel(contour0, contour0.levels, inline=True, fmt=diff_fmt, fontsize=SMALL_SIZE)
+plt.colorbar(mappable=s, location="bottom", label="g/cm$^3$", pad=0.12)
+plt.gca().set_title("Density above pyrolite")
+plt.xticks(T_ticks)
+plt.yticks([])
+
+plt.tight_layout()
+
+save_current_fig_as(composition+"_density_summary")

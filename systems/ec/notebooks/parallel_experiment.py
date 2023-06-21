@@ -100,10 +100,10 @@ if __name__ == "__main__":
 
 #====================================================
 
-mod = importlib.import_module("compositions."+composition)
-Cik0, Xik0, mi0, phii0, phase_names, endmember_names = [getattr(mod,a,None) for a in ['Cik0', 'Xik0', 'mi0','phii0', 'phase_names', 'endmember_names']]
 
 rxn = EcModel.get_reaction(rxn_name)
+
+mi0, Xik0, phii0, Cik0 = pp.get_point_composition(composition)
 
 def x2c(rxn, Xik0):
     return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])

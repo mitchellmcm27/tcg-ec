@@ -147,12 +147,12 @@ for rho, phases, phi, mi, Cik, i in sols:
     phi_final[i,:] = phi
     Cik_final[i,:] = Cik
 
-fig = plt.figure(figsize=(12,14))
+fig = plt.figure(figsize=(10,10))
 
 plt.plot(P_range,rho_final)
 plt.savefig(Path(outputPath,'density.png'))
 
-fig = plt.figure(figsize=(12,12))
+fig = plt.figure(figsize=(10,6))
 axi = fig.add_subplot(1,1,1)
 
 df = pp.get_profile_data(composition)
@@ -170,19 +170,54 @@ phase_name_to_col_name = {
 hs = []
 
 for i, phase in enumerate(rxn.phases()):
-    h = plt.plot(T_range-273.15,phi_final[:,i],':' if i>9 else '-')
+    x=T_range-273.15
+    y = phi_final[:,i]
+    h = plt.plot(x,y,':' if i>9 else '-')
     hs.append(h)
-plt.legend(phase_names)
+
+for i, phase in enumerate(rxn.phases()):
+    x=T_range-273.15
+    y = phi_final[:,i]
+    h = hs[i]
+    pname = f'{phase.name().replace("_slb_ph","")}'
+    tx = np.mean(x)
+    ty = np.mean(y)
+    if pname=="Clinopyroxene":
+        tx = 620
+        ty = 0.52
+    elif pname == "Garnet":
+        tx = 650
+        ty = 0.255
+    elif pname == "Quartz":
+        tx = 670
+        ty = 0.13
+    elif pname == "Kyanite":
+        tx = 650
+        ty = 0.07
+    elif pname == "Feldspar":
+        tx = 900
+        ty = 0.58
+        pname = "Plagioclase"
+    elif pname == "Orthopyroxene":
+        tx = 920
+        ty = 0.26
+    plt.text(tx, ty, pname.lower(), color=h[-1].get_color(), fontsize=10)
+
+#plt.legend(phase_names)
 plt.xlim([Tmin-273.15,Tmax-273.15])
 plt.xticks([500, 600, 700, 800, 900, 1000])
+plt.xlabel("Temperature (°C)")
+plt.ylabel("Phase vol. mode")
 plt.gca().set_ylim(bottom=0)
 if(df is not None):
     for i, phase in enumerate(rxn.phases()):
         pname = phase.name()
         col = phase_name_to_col_name[pname]
         h = hs[i]
-        plt.plot(df["T(K)"]-273.15,df[col]/100, "--", alpha=0.8, linewidth=1, color=h[-1].get_color())
-
+        x = df["T(K)"]-273.15
+        y = df[col]/100
+        plt.plot(x,y, "--", alpha=0.8, linewidth=1, color=h[-1].get_color())
+        
 plt.savefig(Path(outputPath,'phases.png'))
 
 fig = plt.figure(figsize=(12,12))
