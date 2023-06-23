@@ -1,5 +1,5 @@
 import os, sys
-from mcm import EcModel
+from mcm.tcg import EcModel
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib as mpl
@@ -13,13 +13,14 @@ from scipy import ndimage
 from scipy.interpolate import griddata
 import from_perplex as pp
 from from_perplex import phase_names, endmember_names
+from mcm.plotting import zoomcontour
 
 SMALL_SIZE = 9
-MEDIUM_SIZE = 12
-BIGGER_SIZE = 14
+MEDIUM_SIZE = 11
+BIGGER_SIZE = 13
 
 plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-plt.rc('axes', titlesize=MEDIUM_SIZE, titleweight="semibold")     # fontsize of the axes title
+plt.rc('axes', titlesize=MEDIUM_SIZE, titleweight="medium")     # fontsize of the axes title
 plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
 plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
@@ -31,11 +32,11 @@ plt.rc('axes', titlepad=-16)  # pad is in points...
 ### ======================= INPUTS ============================
 reference = "parallel_pd"
 composition = "hacker_2015_md_xenolith"
-rxn_name = "eclogitization_agu14_stx21_rx"
+rxn_name = "eclogitization_agu17_stx21_rx"
 
 # number of nodes in each dimension (T,P) = (x,y)
-nP = 60
-nT = 60
+nP = 80
+nT = 80
 
 # end time of reactions
 end_t = 1e5
@@ -58,7 +59,7 @@ Pmin, Pmax = [0.5, 2.5] # Gpa
 Tmin, Tmax = [773.15, 1273.15] # K
 
 # number of processes
-processes = mp.cpu_count()
+processes = mp.cpu_count()-1
 
 # Plotting options
 phasetol = 1.e-5 # # phases less than this won't plot, default 1.e-2
@@ -165,6 +166,7 @@ mi0 = phi2m(rxn, phii0, Cik0) if mi0 is None else mi0
 T_range = np.linspace(Tmin, Tmax, nT)
 P_range = np.linspace(Pmin, Pmax, nP)
 P_g, T_g  = np.meshgrid(P_range, T_range, indexing="ij")
+
 rho_g = np.zeros(P_g.shape)
 stime_g = np.zeros(P_g.shape)
 variance_g = np.zeros(P_g.shape)
@@ -215,7 +217,7 @@ def index(ls,v):
 phaseis_g = np.asarray([[index(uniquestrs,phstr) for phstr in phasestrr]  for phasestrr in phases_g])
 # Get pyrolite density grid
 interp = pp.get_rho_interpolator("xu_2008_pyrolite")
-rho_pyrolite_g = interp(T_g, GPa2Bar(P_g))
+rho_pyrolite_g = interp((T_g, P_g))
 
 # Create folders if needed
 outputPath = Path("figs",reference,composition,rxn_name)
@@ -228,7 +230,7 @@ def save_current_fig_as(name):
         plt.savefig(Path(outputPath,"{}.{}".format(_name, _ext)))
 
 def plot_phase_labels(ax):
-    fxgrid = T_g.flatten()
+    fxgrid = T_g.flatten()-273.15
     fygrid = P_g.flatten()
     fphaseis = phaseis_g.flatten()
 
@@ -247,8 +249,8 @@ axi.contour(T_g-273.15,P_g,rho_g,levels=density_levels,alpha=1,cmap=density_cmap
 axi.contour(T_g-273.15,P_g,rho_g,levels=highlight_densities,alpha=1,colors="black")
 plt.xlim(T_limits)
 plt.ylim([Pmin,Pmax])
-plt.colorbar(mappable=s, location="left")
-plt.suptitle(composition)
+plt.colorbar(mappable=s, location="left", label="density (10$^2$ kg/m$^3$)")
+plt.gca().set_title(composition.replace("_", " ").capitalize())
 save_current_fig_as("density")
 
 # Plot phases
@@ -260,7 +262,9 @@ for i,ph in enumerate(uniquestrs):
     scs.append(axi.scatter(T_g[phaseis_g==i]-273.15,P_g[phaseis_g==i],alpha=0.35,label=ph,s=50))
 fig.legend(handles=scs,loc="center left")
 plot_phase_labels(axi)
-plt.suptitle(composition)
+plt.xlabel("Temperature (°C)", labelpad=2)
+plt.ylabel("Pressure (GPa)")
+plt.gca().set_title(composition.replace("_", " ").capitalize())
 save_current_fig_as("phases")
 
 
@@ -272,7 +276,9 @@ max_variance = np.nanmax(variance_g)
 min_variance = np.nanmin(variance_g)
 s = axi.scatter(T_g-273.15,P_g,c=variance_g,s=50,cmap=variance_cmap,alpha=0.5,vmin=min_variance-1,vmax=max_variance+1)
 plot_phase_labels(axi)
-plt.suptitle(composition)
+plt.xlabel("Temperature (°C)", labelpad=2)
+plt.ylabel("Pressure (GPa)")
+plt.gca().set_title(composition.replace("_", " ").capitalize())
 save_current_fig_as("phase-variance")
 
 # Plot solution time
@@ -281,19 +287,21 @@ fig = plt.figure(figsize=(12,14))
 axi = fig.add_subplot(1,1,1)
 #s = plt.imshow(stime_g,cmap=stime_cmap,norm=mpl.colors.LogNorm(), **imshow_kwargs)
 s = plt.scatter(T_g-273.15,P_g,c=stime_g,s=100,alpha=0.75,cmap=stime_cmap)#,norm=mpl.colors.LogNorm(),)
-fig.colorbar(s,location="left",ax=axi)
-plt.suptitle(composition)
+fig.colorbar(s,location="left",ax=axi, label="sol time (s)")
+plt.xlabel("Temperature (°C)", labelpad=2)
+plt.ylabel("Pressure (GPa)")
+plt.gca().set_title(composition.replace("_", " ").capitalize())
 save_current_fig_as("stime")
 
 # Plot comparison with Perple_X density
 interp = pp.get_rho_interpolator(composition)
 if (interp is not None):
-    rho_eq_g = interp(T_g, GPa2Bar(P_g))
+    rho_eq_g = interp((T_g, P_g))
 
-    fig = plt.figure(figsize=(12,6))
+    fig = plt.figure(figsize=(10,5))
     
     axi = fig.add_subplot(1,3,1)
-
+    plt.tight_layout()
     s = axi.contourf(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
     axi.contour(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
     plt.xlim(T_limits)
@@ -307,6 +315,7 @@ if (interp is not None):
     plt.xlim(T_limits)
     plt.xticks(T_ticks)
     plt.ylim([Pmin,Pmax])
+    plt.yticks([])
     plt.colorbar(mappable=s, location="bottom",ticks=density_ticks, label="10$^2$ kg/m$^3$")
     plt.gca().set_title("Equilibrium density (Perple_X)")
 
@@ -316,17 +325,18 @@ if (interp is not None):
     levels = np.arange(-absmax, absmax+1, 1)
     s=axi.imshow(diff,cmap=diff_cmap,vmin=-absmax,vmax=absmax, **imshow_kwargs)
     axi.contour(T_g-273.15 ,P_g, diff, levels=levels,**contour_kwargs)
+    plt.yticks([])
     plt.colorbar(mappable=s, location="bottom", label="rel. error (%)")
     plt.gca().set_title("Diff. (TCG minus PX)")
-    plt.suptitle(composition)
     plt.xticks(T_ticks)
     save_current_fig_as("density_comparison")
 
 # Plot comparison with pyrolite
 
-fig = plt.figure(figsize=(12,6))
+fig = plt.figure(figsize=(10,5))
 
 axi = fig.add_subplot(1,3,1)
+plt.tight_layout()
 s = axi.contourf(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
 axi.contour(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
 plt.xlim(T_limits)
@@ -341,6 +351,7 @@ axi.contour(T_g-273.15, P_g, rho_pyrolite_g, levels=density_levels, alpha=1, cma
 plt.xlim(T_limits)
 plt.xticks(T_ticks)
 plt.ylim([Pmin,Pmax])
+plt.yticks([])
 plt.colorbar(mappable=s, location="bottom", ticks=density_ticks, label="10$^2$ kg/m$^3$")
 plt.gca().set_title("Pyrolite density (Xu et al. 2008)")
 
@@ -352,8 +363,8 @@ s=axi.imshow(diff,cmap=diff_cmap,vmin=-maxval,vmax=maxval, **imshow_kwargs)
 axi.contour(T_g-273.15, P_g, diff, levels=levels,**contour_kwargs)
 plt.colorbar(mappable=s, location="bottom", label="g/cm$^3$")
 plt.gca().set_title("Density above pyrolite")
-plt.suptitle(composition)
 plt.xticks(T_ticks)
+plt.yticks([])
 save_current_fig_as("density_contrast")
 
 
@@ -380,11 +391,10 @@ s=axi.imshow(diff,cmap=diff_cmap,vmin=-absmax,vmax=absmax, **imshow_kwargs)
 contours = axi.contour(T_g-273.15 ,P_g, diff, levels=levels,**contour_kwargs)
 axi.clabel(contours, contours.levels, inline=True, fmt=rel_err_fmt, fontsize=SMALL_SIZE)
 plt.colorbar(mappable=s, location="bottom", label="rel. error (%)",pad=0.12)
-plt.gca().set_title("Diff. with equilibrium")
 plt.xticks(T_ticks)
 plt.yticks([])
 plt.xlabel("Temperature (°C)", labelpad=2)
-save_current_fig_as("density_comparison")
+plt.gca().set_title("Diff. with equilibrium")
 
 axi = fig.add_subplot(1,3,3)
 diff = (rho_g-rho_pyrolite_g)*100 # g/cm3
@@ -402,4 +412,4 @@ plt.yticks([])
 
 plt.tight_layout()
 
-save_current_fig_as(composition+"_density_summary")
+save_current_fig_as("density_summary")

@@ -2,23 +2,51 @@
 # Rho from equilibrium data computed in Perple_X 
 # Compositions from Xu et al., 2008 EPSL
 
-from scipy.interpolate import LinearNDInterpolator
+from scipy.interpolate import LinearNDInterpolator,RegularGridInterpolator
 import pandas as pd
 import numpy as np
 from io import StringIO
 
 def get_rho_interpolator(name):
     filepath = "perple_x/output/{}/{}_2.tab".format(name,name)
-    print(filepath)
     try:
+        with open(filepath, 'r') as fp:
+            '''
+            |6.6.6
+            sammon_2021_lower_crust_2.tab
+            2
+            T(K)
+            773.14999999999998
+            3.1446540880503151
+            160
+            P(bar)
+            5000.0000000000000
+            125.78616352201257
+            160
+            3
+            '''         
+            perplex_version = fp.readline()
+            perplex_fname = fp.readline()
+            n_dims = fp.readline() # ?
+            xvarname = fp.readline()
+            x0 = float(fp.readline().strip())
+            xstep = float(fp.readline().strip())
+            nx = int(fp.readline().strip())
+            yvarname = fp.readline()
+            y0 = float(fp.readline().strip())
+            ystep = float(fp.readline().strip())
+            ny = int(fp.readline().strip())
+            n_cols = fp.readline() # ?
+            T_range = np.arange(0,nx)*xstep + x0
+            P_range = np.arange(0,ny)*ystep + y0
         df = pd.read_csv(filepath, delimiter='\s+', skiprows=12, header=0, names=["T","P","rho"])
-    except:
+    except Exception as e:
+        print(e)
         return None
-
-    P = df["P"].to_numpy()
-    T = df["T"].to_numpy()
-    rho = df["rho"].to_numpy()/100
-    interp = LinearNDInterpolator((T,P), rho)
+ 
+    rho = df["rho"].to_numpy()/100 # convert to 100 kg/m3
+    rho_g = np.reshape(rho,(nx,ny), order='F')
+    interp = RegularGridInterpolator((T_range, P_range/1e4), rho_g, bounds_error=False, fill_value=np.nan)
     return interp
 
 def get_profile_data(name):
@@ -26,9 +54,13 @@ def get_profile_data(name):
     try:
         df = pd.read_csv(filepath, delimiter='\s+', skiprows=8, header=0)
         df.fillna(0, inplace=True)
-        df["Pl2"] = df["Pl"] + df["Pl.1"]
+        if("Pl.1" in df.columns):
+            df["Pl2"] = df["Pl"] + df["Pl.1"]
+        else:
+            df["Pl2"] = df["Pl"]
         return df
     except Exception as e:
+        print("Error parsing perple_x profile:")
         print(e)
         return None
 
@@ -119,15 +151,21 @@ def get_point_composition(name):
             elif(phase=="Opx"):
                 Xik0[1] = [ems[1], ems[2], ems[3], ems[0]]
             elif(phase=="Gt"):
-                Xik0[4] = [ems[4], ems[3], ems[2], ems[1], ems[0]]
-        #print(Xik0)
-        # regularize 3-component garnet
-        g3 = (1-(Xik0[4][0]+Xik0[4][1]+Xik0[4][2]))/3.0
-        Xik0[4][0] += g3
-        Xik0[4][1] += g3
-        Xik0[4][2] += g3
-        Xik0[4][3] = 0.0
-        Xik0[4][4] = 0.0
+                if(len(ems)==5):
+                    # 5 endmember garnet
+                    Xik0[4] = [ems[4], ems[3], ems[2], ems[1], ems[0]]
+                    #print(Xik0)
+                    # regularize 3-component garnet
+                    g3 = (1-(Xik0[4][0]+Xik0[4][1]+Xik0[4][2]))/3.0
+                    Xik0[4][0] += g3
+                    Xik0[4][1] += g3
+                    Xik0[4][2] += g3
+                    Xik0[4][3] = 0.0
+                    Xik0[4][4] = 0.0
+
+                elif(len(ems)==3):
+                    # 3 endmember garnet
+                    Xik0[4] = [ems[2], ems[1], ems[0], 0., 0.,]
 
         phii0 = None
         Cik0 = None

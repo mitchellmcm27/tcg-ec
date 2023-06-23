@@ -1,4 +1,24 @@
 compositions = Dict(
+    "bhowany_2018_hol2a" => Dict(
+        "basis" => "mol",
+        "comment" => "based on Figure 9",
+        "elements" => [
+            "NA2O",   
+            "MGO",    
+            "AL2O3",  
+            "SIO2",   
+            "CAO",    
+            "FEO",
+        ],
+        "composition" => [
+            4.29,
+            7.98,
+            15.90,
+            55.47,
+            11.72,
+            3.71
+        ]
+    ),
     # Hacker 2015 md xenolith
     "hacker_2015_md_xenolith"=> Dict(
         "basis" => "wt",

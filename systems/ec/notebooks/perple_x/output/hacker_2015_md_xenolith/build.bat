@@ -5,7 +5,6 @@ n
 2
 n
 n
-n
 NA2O
 MGO
 AL2O3
@@ -13,7 +12,6 @@ SIO2
 CAO
 FEO
 
-5
 n
 2
 773.15
@@ -25,6 +23,9 @@ y
 n
 y
 n
+maj
+namaj
+namj
 
 y
 solution_model.dat

@@ -23,6 +23,9 @@ y
 n
 y
 n
+maj
+namaj
+namj
 
 y
 solution_model.dat

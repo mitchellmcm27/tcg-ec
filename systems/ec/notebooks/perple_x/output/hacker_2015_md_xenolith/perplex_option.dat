@@ -85,8 +85,8 @@ bad_number                default | [NaN] any number or NaN (not-a-number)
 bounds                    default | [VRH] VRH or HS; Voigt-Reuss-Hill or Hashin-Shtrikman, see vrh/hs_averaging
 closed_c_space            default | [T] T => closed composition space for gridded minimization 
 composition_constant      default | [F] allow constants in composition expressions
-composition_phase              wt | [mol] mol or wt (mass) phase compositions in WERAMI output
-composition_system             wt | [wt] mol or wt; system composition in WERAMI mode 2-4 output
+composition_phase         default | [mol] mol or wt (mass) phase compositions in WERAMI output
+composition_system        default | [wt] mol or wt; system composition in WERAMI mode 2-4 output
 console_messages          default | [on] off => suppresses most console messages (warnings, errors, etc)
 cumulative                default | [F] WERAMI, computational mode 3, property choice #36 only!- cumulative component amounts (for fractionation problems)
 dependent_potentials      default | [on] off => compute dependent thermodynamic potentials (usually chemical potentials)

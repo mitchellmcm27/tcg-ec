@@ -1,4 +1,4 @@
-from mcm import EcModel
+from mcm.tcg import EcModel
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
@@ -7,20 +7,19 @@ from tcg_slb.base import *
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 import multiprocessing as mp
 from multiprocessing import Pool
-import importlib
 import from_perplex as pp
 from from_perplex import phase_names, endmember_names
 
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
 composition = 'hacker_2015_md_xenolith'
-rxn_name = 'eclogitization_agu14_stx21_rx'
+rxn_name = 'eclogitization_agu17_stx21_rx'
 
 # number of x-nodes
 nT = 100
 
 # end time of reactions
-end_t = 1e5
+end_t = 1e6
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-3 # 1.e-2
@@ -73,6 +72,21 @@ outputPath.mkdir(parents=True, exist_ok=True)
 
 T_range = np.linspace(Tmin, Tmax, nT)
 P_range = np.linspace(Pmin, Pmax, nT)
+
+tdiff = np.abs(Tmax-Tmin)/500.
+pdiff = np.abs(Pmax-Pmin)/2.
+
+if(pdiff > tdiff):
+    xaxis = "pressure"
+    xvar = P_range
+    xlabel = "Pressure (GPa)"
+    xlimits = [Pmin, Pmax]
+else:
+    xvar = T_range-273.15
+    xaxis = "temperature"
+    xlabel = "Temperature (°C)"
+    xlimits = [Tmin-273.15, Tmax-273.15]
+
 
 rxn = EcModel.get_reaction(rxn_name)
 
@@ -170,43 +184,12 @@ phase_name_to_col_name = {
 hs = []
 
 for i, phase in enumerate(rxn.phases()):
-    x=T_range-273.15
-    y = phi_final[:,i]
-    h = plt.plot(x,y,':' if i>9 else '-')
+    h = plt.plot(xvar,phi_final[:,i],':' if i>9 else '-', linewidth=3,alpha=0.5)
     hs.append(h)
 
-for i, phase in enumerate(rxn.phases()):
-    x=T_range-273.15
-    y = phi_final[:,i]
-    h = hs[i]
-    pname = f'{phase.name().replace("_slb_ph","")}'
-    tx = np.mean(x)
-    ty = np.mean(y)
-    if pname=="Clinopyroxene":
-        tx = 620
-        ty = 0.52
-    elif pname == "Garnet":
-        tx = 650
-        ty = 0.255
-    elif pname == "Quartz":
-        tx = 670
-        ty = 0.13
-    elif pname == "Kyanite":
-        tx = 650
-        ty = 0.07
-    elif pname == "Feldspar":
-        tx = 900
-        ty = 0.58
-        pname = "Plagioclase"
-    elif pname == "Orthopyroxene":
-        tx = 920
-        ty = 0.26
-    plt.text(tx, ty, pname.lower(), color=h[-1].get_color(), fontsize=10)
-
-#plt.legend(phase_names)
-plt.xlim([Tmin-273.15,Tmax-273.15])
-plt.xticks([500, 600, 700, 800, 900, 1000])
-plt.xlabel("Temperature (°C)")
+plt.legend(phase_names)
+plt.xlim(xlimits)
+plt.xlabel(xlabel)
 plt.ylabel("Phase vol. mode")
 plt.gca().set_ylim(bottom=0)
 if(df is not None):
@@ -214,11 +197,11 @@ if(df is not None):
         pname = phase.name()
         col = phase_name_to_col_name[pname]
         h = hs[i]
-        x = df["T(K)"]-273.15
+        x = df["P(bar)"]/1e4 if xaxis == "pressure" else df["T(K)"]-273.15
         y = df[col]/100
-        plt.plot(x,y, "--", alpha=0.8, linewidth=1, color=h[-1].get_color())
+        plt.plot(x,y,"--",linewidth=1, color=h[-1].get_color())
         
-plt.savefig(Path(outputPath,'phases.png'))
+plt.savefig(Path(outputPath,"phases.png"))
 
 fig = plt.figure(figsize=(12,12))
 axi = fig.add_subplot(1,1,1)
@@ -247,10 +230,10 @@ line_style_by_endmember = {
 for k in range(K):
     name = endmember_names[k]
     line_style = line_style_by_endmember[name]
-    plt.plot(T_range-273.15,Cik_final[:,k], line_style)
+    plt.plot(xvar,Cik_final[:,k], line_style)
 
 plt.ylim([0,1])
-plt.xlim([Tmin-273.15,Tmax-273.15])
+plt.xlim(xlimits)
 plt.legend(endmember_names)
 
 plt.savefig(Path(outputPath,'endmembers.png'))
