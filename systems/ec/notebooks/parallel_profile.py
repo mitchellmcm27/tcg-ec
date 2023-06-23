@@ -166,18 +166,17 @@ fig = plt.figure(figsize=(10,10))
 plt.plot(P_range,rho_final)
 plt.savefig(Path(outputPath,'density.png'))
 
-fig = plt.figure(figsize=(10,6))
-axi = fig.add_subplot(1,1,1)
-
+fig = plt.figure(figsize=(10,8))
+axi = plt.gca()
 df = pp.get_profile_data(composition)
 
 # T(K), P(bar), Pl, Pl, Cpx, Opx, qtz, Gt, ky  
 phase_name_to_col_name = {
-    "Clinopyroxene_slb_ph":"Cpx",
+    "Clinopyroxene_slb_ph":"Cpx3",
     "Orthopyroxene_slb_ph":"Opx",
     "Quartz_slb_ph":"qtz",
     "Feldspar_slb_ph":"Pl2",
-    "Garnet_slb_ph":"Gt",
+    "Garnet_slb_ph":"Gt2",
     "Kyanite_slb_ph":"ky"
 }
 
@@ -191,16 +190,32 @@ plt.legend(phase_names)
 plt.xlim(xlimits)
 plt.xlabel(xlabel)
 plt.ylabel("Phase vol. mode")
-plt.gca().set_ylim(bottom=0)
+plt.ylim([0,1])
 if(df is not None):
     for i, phase in enumerate(rxn.phases()):
         pname = phase.name()
         col = phase_name_to_col_name[pname]
+        if col not in df.columns:
+            continue
         h = hs[i]
         x = df["P(bar)"]/1e4 if xaxis == "pressure" else df["T(K)"]-273.15
         y = df[col]/100
         plt.plot(x,y,"--",linewidth=1, color=h[-1].get_color())
-        
+
+if(df is not None):
+    if("Sp" in df.columns):
+        x = df["P(bar)"]/1e4 if xaxis == "pressure" else df["T(K)"]-273.15
+        y = df["Sp"]/100
+        plt.plot(x,y,"-",linewidth=1,alpha=0.5,color="black")
+    if("O" in df.columns):
+        x = df["P(bar)"]/1e4 if xaxis == "pressure" else df["T(K)"]-273.15
+        y = df["O"]/100
+        plt.plot(x,y,"-",linewidth=1,alpha=0.5,color="black")
+    if("Aki" in df.columns):
+        x = df["P(bar)"]/1e4 if xaxis == "pressure" else df["T(K)"]-273.15
+        y = df["Aki"]/100
+        plt.plot(x,y,"-",linewidth=1,alpha=0.5,color="black")
+
 plt.savefig(Path(outputPath,"phases.png"))
 
 fig = plt.figure(figsize=(12,12))

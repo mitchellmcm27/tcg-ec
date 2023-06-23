@@ -4,7 +4,7 @@ FROM registry.gitlab.com/enki-portal/thermocodegen:tf-focal
 RUN pip install jill -U
 ENV PATH="/usr/local/bin:${PATH}"
 RUN jill install 1.9 --upstream Official --confirm
-RUN julia -e 'using Pkg; Pkg.add(["StatGeochem","Plots"]);'
+RUN julia -e 'using Pkg; Pkg.add(["StatGeochem","Plots","JSON"]);'
 
 RUN pip install --upgrade matplotlib julia
 

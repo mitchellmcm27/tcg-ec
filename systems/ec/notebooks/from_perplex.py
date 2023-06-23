@@ -54,10 +54,18 @@ def get_profile_data(name):
     try:
         df = pd.read_csv(filepath, delimiter='\s+', skiprows=8, header=0)
         df.fillna(0, inplace=True)
-        if("Pl.1" in df.columns):
-            df["Pl2"] = df["Pl"] + df["Pl.1"]
-        else:
-            df["Pl2"] = df["Pl"]
+        pl0 = df["Pl"]
+        pl1 = 0 if not "Pl.1" in df.columns else df["Pl.1"]
+        cpx0 = df["Cpx"]
+        cpx1 = 0 if not "Cpx.1" in df.columns else df["Cpx.1"]
+        cpx2 = 0 if not "Cpx.2" in df.columns else df["Cpx.2"]
+        gt0 = df["Gt"]
+        gt1 = 0 if not "Gt.1" in df.columns else df["Gt.1"]
+        df["Pl2"] = pl0 + pl1
+        df["Cpx3"] = cpx0 + cpx1 + cpx2
+        df["Gt2"] = gt0 + gt1
+
+        print(df)
         return df
     except Exception as e:
         print("Error parsing perple_x profile:")
