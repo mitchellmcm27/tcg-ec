@@ -1,4 +1,4 @@
-from mcm.tcg import EcModel
+from mcm.tcg import *
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
@@ -8,15 +8,14 @@ from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 import multiprocessing as mp
 from multiprocessing import Pool
 import from_perplex as pp
-from from_perplex import phase_names, endmember_names
 
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
 composition = 'hacker_2015_md_xenolith'
-rxn_name = 'eclogitization_agu17_stx21_rx'
+rxn_name = 'eclogitization_agu19_stx21_rx'
 
 # number of x-nodes
-nT = 100
+#nT = 100
 
 # end time of reactions
 end_t = 1e6
@@ -35,11 +34,11 @@ atol = 1.e-9 # absolute tolerance, default 1e-9
 # large number
 max_steps = 1e5 # 4e3 is reasonable
 
-Pmin, Pmax = [2.5, 0.5]
-Tmin, Tmax = [773.15, 1273.15]
+#Pmin, Pmax = [2.5, 0.5]
+#Tmin, Tmax = [773.15, 1273.15]
 
 # number of processes
-processes = mp.cpu_count()
+processes = mp.cpu_count()-1
 
 # ------------------------------------------
 
@@ -64,14 +63,16 @@ if __name__ == "__main__":
 
 #====================================================
 
-#mod = importlib.import_module("compositions."+composition)
-#Cik0, Xik0, mi0, phii0, phase_names, endmember_names = [getattr(mod,a,None) for a in ['Cik0', 'Xik0', 'mi0','phii0', 'phase_names', 'endmember_names']]
-
 outputPath = Path("figs",reference,composition,rxn_name)
 outputPath.mkdir(parents=True, exist_ok=True)
 
-T_range = np.linspace(Tmin, Tmax, nT)
-P_range = np.linspace(Pmin, Pmax, nT)
+df = pp.get_profile_data(composition)
+T_range = df['T(K)'].to_numpy() # K
+P_range = df['P(bar)'].to_numpy()/1e4 # GPa
+Tmin = np.min(T_range)
+Tmax = np.max(T_range)
+Pmin = np.min(P_range)
+Pmax = np.max(P_range)
 
 tdiff = np.abs(Tmax-Tmin)/500.
 pdiff = np.abs(Pmax-Pmin)/2.
@@ -88,9 +89,15 @@ else:
     xlimits = [Tmin-273.15, Tmax-273.15]
 
 
-rxn = EcModel.get_reaction(rxn_name)
+rxn = get_reaction(rxn_name)
+table = latex_reactions(rxn)
 
-mi0, Xik0, phii0, Cik0 = pp.get_point_composition(composition)
+with open(Path(outputPath,"reaction_table_body.tex"), "w") as text_file:
+    text_file.write(table)
+
+mi0, Xik0, phii0, Cik0 = pp.get_point_composition(rxn, composition)
+
+phase_names, endmember_names = get_names(rxn)
 
 def x2c(rxn, Xik0):
     return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
@@ -122,19 +129,18 @@ Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in e
 K = sum(Kis)
 
 rho_final = np.zeros(T_range.shape)
-phases_final = ['' for i in range(nT)]
+phases_final = ['' for i in T_range]
 phi_final = np.empty(T_range.shape+(I,))
 Cik_final = np.empty(T_range.shape+(K,))
+Xik_final = np.empty(Cik_final.shape)
 
 # function to run in parallel
 def task(i):
     P = P_range[i]
     T = T_range[i]
-    # top-left corner is very slow, decrease end_t
-    end = end_t/100. if(P>2.25) and (T<800) else end_t
 
     ode = ScipyPDReactiveODE(rxn)
-    ode.solve(T,GPa2Bar(P),mi0,Cik0,end,Da=Da,eps=eps,method="BDF_mcm",max_steps=max_steps)
+    ode.solve(T,GPa2Bar(P),mi0,Cik0,end_t,Da=Da,eps=eps,method="BDF_mcm",max_steps=max_steps)
     odephasenames, phaseabbrev = ode.final_phases(phasetol)
     phases = '+'.join(phaseabbrev)
     rho = ode.final_rho()
@@ -148,26 +154,30 @@ def task(i):
     v = mi/rhoi
     vi  = 1./v.sum()
     phi = vi*mi/rhoi
-    return rho, phases, phi, mi, Cik_reg, i
+    Xik = [x for xarr in ode.rxn.C_to_X(C) for x in xarr]
+    return rho, phases, phi, mi, Cik_reg, Xik, i
 
 # Map blocks to block-level calculations
 with Pool(processes,maxtasksperchild=12) as pool:
     # blocks until all finished
     sols = pool.map(task, range(len(T_range)))
 
-for rho, phases, phi, mi, Cik, i in sols:
+for rho, phases, phi, mi, Cik, Xik, i in sols:
     rho_final[i] = rho
     phases_final[i] = phases
     phi_final[i,:] = phi
     Cik_final[i,:] = Cik
+    Xik_final[i,:] = Xik
 
 fig = plt.figure(figsize=(10,10))
 
 plt.plot(P_range,rho_final)
+plt.suptitle(composition.replace("_", " ").capitalize())
 plt.savefig(Path(outputPath,'density.png'))
 
 fig = plt.figure(figsize=(10,8))
 axi = plt.gca()
+axi2 = axi.twinx()
 df = pp.get_profile_data(composition)
 
 # T(K), P(bar), Pl, Pl, Cpx, Opx, qtz, Gt, ky  
@@ -177,20 +187,23 @@ phase_name_to_col_name = {
     "Quartz_slb_ph":"qtz",
     "Feldspar_slb_ph":"Pl2",
     "Garnet_slb_ph":"Gt2",
-    "Kyanite_slb_ph":"ky"
+    "Kyanite_slb_ph":"ky",
+    "Spinel_slb_ph":"Sp"
 }
 
 hs = []
 
 for i, phase in enumerate(rxn.phases()):
-    h = plt.plot(xvar,phi_final[:,i],':' if i>9 else '-', linewidth=3,alpha=0.5)
+    h = axi.plot(xvar,phi_final[:,i],':' if i>9 else '-', linewidth=3,alpha=0.5)
     hs.append(h)
 
-plt.legend(phase_names)
+axi.legend(phase_names)
 plt.xlim(xlimits)
-plt.xlabel(xlabel)
-plt.ylabel("Phase vol. mode")
-plt.ylim([0,1])
+axi.set_xlabel(xlabel)
+axi.set_ylabel("Phase vol. mode")
+axi.set_ylim([0,1])
+axi2.set_ylabel('abs. diff.')  # we already handled the x-label with ax1
+axi2.set_ylim([0.02,0])
 if(df is not None):
     for i, phase in enumerate(rxn.phases()):
         pname = phase.name()
@@ -198,24 +211,21 @@ if(df is not None):
         if col not in df.columns:
             continue
         h = hs[i]
-        x = df["P(bar)"]/1e4 if xaxis == "pressure" else df["T(K)"]-273.15
         y = df[col]/100
-        plt.plot(x,y,"--",linewidth=1, color=h[-1].get_color())
+        y1 = phi_final[:,i]
+        diff = y-y1
+        axi.plot(xvar,y,"--",linewidth=1, color=h[-1].get_color())
+        axi2.plot(xvar, np.abs(diff),"-",color=h[-1].get_color(),linewidth=0.5)
 
 if(df is not None):
-    if("Sp" in df.columns):
-        x = df["P(bar)"]/1e4 if xaxis == "pressure" else df["T(K)"]-273.15
-        y = df["Sp"]/100
-        plt.plot(x,y,"-",linewidth=1,alpha=0.5,color="black")
     if("O" in df.columns):
-        x = df["P(bar)"]/1e4 if xaxis == "pressure" else df["T(K)"]-273.15
         y = df["O"]/100
-        plt.plot(x,y,"-",linewidth=1,alpha=0.5,color="black")
+        axi.plot(xvar,y,"-",linewidth=1,alpha=0.5,color="black")
     if("Aki" in df.columns):
-        x = df["P(bar)"]/1e4 if xaxis == "pressure" else df["T(K)"]-273.15
         y = df["Aki"]/100
-        plt.plot(x,y,"-",linewidth=1,alpha=0.5,color="black")
+        axi.plot(xvar,y,"-",linewidth=1,alpha=0.5,color="black")
 
+plt.suptitle(composition.replace("_", " ").capitalize())
 plt.savefig(Path(outputPath,"phases.png"))
 
 fig = plt.figure(figsize=(12,12))
@@ -240,6 +250,8 @@ line_style_by_endmember = {
     'Grossular':"--", 
     'MgMajorite':"--", 
     'NaMajorite':"--",
+    'MgSpinel':"-",
+    'Hercynite':"-"
     }
 
 for k in range(K):
@@ -250,5 +262,38 @@ for k in range(K):
 plt.ylim([0,1])
 plt.xlim(xlimits)
 plt.legend(endmember_names)
+plt.suptitle(composition.replace("_", " ").capitalize())
+plt.savefig(Path(outputPath,'endmembers_Cik.png'))
 
-plt.savefig(Path(outputPath,'endmembers.png'))
+fig = plt.figure(figsize=(12,12))
+axi = fig.add_subplot(1,1,1)
+
+for k in range(K):
+    name = endmember_names[k]
+    line_style = line_style_by_endmember[name]
+    plt.plot(xvar,Xik_final[:,k], line_style)
+
+plt.ylim([0,1])
+plt.xlim(xlimits)
+plt.legend(endmember_names)
+plt.suptitle(composition.replace("_", " ").capitalize())
+plt.savefig(Path(outputPath,'endmembers_Xik.png'))
+
+fig = plt.figure(figsize=(12,12))
+axi = fig.add_subplot(1,1,1)
+
+N = 0
+for i, phase in enumerate(rxn.phases()):
+    phi = phi_final[:,i]
+    for k, em in enumerate(phase.endmembers()):
+        em_c = Cik_final[:,N+k]
+        name = endmember_names[N+k]
+        line_style = line_style_by_endmember[name]
+        plt.plot(xvar,em_c*phi, line_style)
+    N = N + len(phase.endmembers())
+
+plt.ylim([0,1])
+plt.xlim(xlimits)
+plt.legend(endmember_names)
+plt.suptitle(composition.replace("_", " ").capitalize())
+plt.savefig(Path(outputPath,'endmembers_wtpc.png'))

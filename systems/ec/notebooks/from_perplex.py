@@ -64,34 +64,14 @@ def get_profile_data(name):
         df["Pl2"] = pl0 + pl1
         df["Cpx3"] = cpx0 + cpx1 + cpx2
         df["Gt2"] = gt0 + gt1
-
-        print(df)
         return df
     except Exception as e:
         print("Error parsing perple_x profile:")
         print(e)
         return None
 
-phase_names = [
-    'Clinopyroxene',
-    'Orthopyroxene',
-    'Quartz',
-    'Feldspar', 
-    'Garnet', 
-    'Kyanite',
-]
 
-endmember_names = [
-    'Diopside', 'Hedenbergite', 'Clinoenstatite', 'CaTschermaks', 'Jadeite',
-    'Enstatite', 'Ferrosilite', 'MgTschermaks', 'OrthoDiopside',
-    'Quartz',
-    'Anorthite','Albite',
-    'Pyrope', 'Almandine', 'Grossular', 'MgMajorite', 'NaMajorite',
-    'Kyanite'
-]
-
-
-def get_point_composition(name):
+def get_point_composition(rxn, name):
 
     filepath = "perple_x/output/{}/{}_1.txt".format(name,name)
     print(filepath)
@@ -121,28 +101,34 @@ def get_point_composition(name):
         m[0] = m[0].replace(" %", "%")
         m = "\n".join(m)
         m_df = pd.read_csv(StringIO(m), delimiter="\s+", header=0)
+        ms = m_df['wt%']
+        mi0 = [0 for p in rxn.phases()]
 
-        mi0 = [0 for p in phase_names]
-        ms = m_df["wt%"]
-        mi0[0] = ms.get("Cpx",0.)
-        mi0[1] = ms.get("Opx",0.)
-        mi0[2] = ms.get("qtz",0.)
-        mi0[3] = ms.get("Pl",0.)
-        mi0[4] = ms.get("Gt",0.)
-        mi0[5] = ms.get("ky",0.)
+        for n,p in enumerate(rxn.phases()):
+            if p.abbrev()=="cpx":
+                mi0[n] = ms.get("Cpx",0.)
+            if p.abbrev()=="opx":
+                mi0[n] = ms.get("Opx",0.)
+            if p.abbrev()=="qtz":
+                mi0[n] = ms.get("qtz",0.)
+            if p.abbrev()=="plg":
+                mi0[n] = ms.get("Pl",0.)
+            if p.abbrev()=="gt":
+                mi0[n] = ms.get("Gt",0.)
+            if p.abbrev()=="ky":
+                mi0[n] = ms.get("ky",0.)
+            if p.abbrev()=="sp":
+                mi0[6] = ms.get("Sp",0.)
+            if p.abbrev()=="co":
+                mi0[6] = ms.get("Aki",0.)
 
         mi0 = [m/100 for m in mi0]
         #print(mi0)
         x = x.strip().split("\n")
 
-        Xik0 = [
-            [1., 0., 0., 0., 0.], # di, hed, cEn, cats, jd
-            [1., 0., 0., 0.], # en, fs, mgts, oDi
-            [1.], # quartz
-            [1.0, 0.], # an, ab
-            [1., 0., 0., 0., 0.], # py, alm, gr, *mgmaj, *namaj
-            [1.], # kyanite
-        ]
+        Xik0 = rxn.zero_C()
+        for i,c in enumerate(Xik0):
+            Xik0[i][0] = 1.
 
         import re
         for line in x:
@@ -154,6 +140,8 @@ def get_point_composition(name):
                 ems.append(float(v))
             if(phase=="Pl"):
                 Xik0[3] = [ems[1],ems[0]]
+            elif(phase=="Sp"):
+                Xik0[6] = [ems[1],ems[0]]
             elif(phase=="Cpx"):
                 Xik0[0] = [ems[1], ems[2], ems[3], ems[4], ems[0]]
             elif(phase=="Opx"):

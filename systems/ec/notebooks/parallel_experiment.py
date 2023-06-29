@@ -1,4 +1,4 @@
-from mcm import EcModel
+from mcm.tcg import *
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
@@ -8,10 +8,14 @@ from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 from multiprocessing import Pool
 import multiprocessing as mp
 import importlib
-import from_perplex as pp
+from from_perplex import *
 
-yr = 1 # 3.154e7
+yr = 3.154e7
+kyr = 1e3*yr
+Myr = 1e6*yr
+s = 1
 mm = 1e-3
+km = 1e3
 g = 1e-3
 cm = 1e-2
 
@@ -21,64 +25,43 @@ composition = 'hacker_2015_md_xenolith'
 rxn_name = 'eclogitization_agu17_stx21_rx'
 
 # only phases greater than this fraction will be plotted
-phasetol = 1.e-2 # 1.e-2
+phasetol = 1.e-5 # 1.e-2
 
 # regularization parameter for compositions
 eps = 1.e-5 # 1.e-2
 # these numbers seem to work very well with eps = 1e-5??
 rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
-max_steps = 1e4
+max_steps = 3e4
 
-# Set initial and final crustal thickness (km)
-moho_i = 30. # typical crust
-moho_f = 70. # Altiplano, Tibet
+# Set initial and final crustal thickness (m)
+moho_i = 30.*km # typical crust
+moho_f = 70.*km # Altiplano, Tibet
 
 # Calc descent rate of Moho
-shortening_rate_kmMyr = 3.0 # km/Myr = mm/yr
-shortening_rate_myr = shortening_rate_kmMyr/1e3 # m/yr
+shortening_rate = 3.0 *mm/yr # m/s
 
-L0 = 100. # lithospheric thickness - km
-
-z0 = moho_i # km
-descent_rate_kmMyr = z0/L0 * shortening_rate_kmMyr # mm/yr
-descent_rate = descent_rate_kmMyr*mm/yr  # = m/yr
-avg_density = 2800 # kg/m3, assumes a linear increase in density from 2600 at the surface to 3000 at the moho
+L0 = 100.*km # lithospheric thickness - m
+z0 = moho_i # 
+descent_rate = z0/L0 * shortening_rate # m/s
 
 # choose a time step
-dt = 100.e3 # yrs
-depth_step_size = dt*descent_rate # meters
+dt = 100.*kyr # sec
+max_t = 100.*Myr
+times = np.arange(0,max_t+dt,dt)
 
-depth_m = np.arange(moho_i*1e3, moho_f*1e3 + depth_step_size, depth_step_size) # meters
-depth_km = depth_m/1e3
+depth_m = z0 + times*descent_rate
+depth_m[depth_m > 70.*km] = 70.* km
 
 # Calc pressure, temperature from depths
 # TODO: use a steady-state geotherm
-P_range = 0.027 * depth_km # GPa
-T_moho_i = 800.
-T_moho_f = 800.
-T_range = T_moho_i + (depth_km - depth_km[0])/(depth_km[-1] - depth_km[0])*(T_moho_f - T_moho_i) + 273. 
-
-# Damkoehler number
-Da = [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3]
-
-# Reaction rates based on Hetenyi et al. 2017
-# these are based on available surface area of 3/r where r is grain radius
-#reaction_rate_gcm =  [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3] # g/cm2/yr
-
-S0 = 6000 # m2/m3; 1 mm cubes 
-h0 = 1e-3 # 1mm
-                                #kg/m3      m/yr       
-reaction_rate_per_surface = [da*avg_density*shortening_rate_myr for da in Da]# kg/m2/yr
-reaction_rate_per_surface_gcm = [r/10 for r in reaction_rate_per_surface] # g/cm2/yr
-
-print("Da = {}".format(Da))
-print("rxn rate = {} g/cm2/yr".format(reaction_rate_per_surface_gcm))
-print("dt = {} kyr".format(dt))
-print("total t = {} Myr".format(dt * len(depth_km)/1e6))
-
+P_range = 0.027 * depth_m/1e3 # assumes 0.027 Gpa/km
+T_moho_i = 800. + 273.15
+T_moho_f = 850. + 273.15
+T_range = T_moho_i + (depth_m - depth_m[0])/(depth_m[-1] - depth_m[0])*(T_moho_f - T_moho_i)
+print(P_range)
 show_equilibrium = False
-processes =  mp.cpu_count()
+processes =  mp.cpu_count()-1
 
 # ------------------------------------------
 
@@ -100,46 +83,60 @@ if __name__ == "__main__":
 
 #====================================================
 
+rxn = get_reaction(rxn_name)
+phase_names, endmember_names = get_names(rxn)
 
-rxn = EcModel.get_reaction(rxn_name)
+rxn.set_parameter('T0', T_range[0]) # K; default 2000 K
+mi0, Xik0, phii0, Cik0 = get_point_composition(rxn, composition)
 
-mi0, Xik0, phii0, Cik0 = pp.get_point_composition(composition)
+ipyrolite = get_rho_interpolator('xu_2008_pyrolite')
+iharzburgite = get_rho_interpolator('xu_2008_harzburgite')
+rho_pyrolite=ipyrolite((T_range, P_range))
+rho_harzburgite=iharzburgite((T_range,P_range))
 
-def x2c(rxn, Xik0):
-    return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
+_Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
+_mi0 = phi2m(rxn, phii0, _Cik0) if mi0 is None else mi0
 
-def phi2m(rxn, phii0, Cik0, T=900.,p=10000.):
-    '''Converts phase modes in volume fraction to mass fraction given an intial EM composition in mass fractions.'''    
-    densities = []
-    C = rxn.zero_C()
-    Ki = 0
-    for i,ph in enumerate(rxn.phases()):
-        n = len(ph.endmembers())
-        C[i] = Cik0[Ki:Ki+n]
-        Ki = Ki+n
+I = len(rxn.phases())
+Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
+K = sum(Kis)
 
-    C = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
-    C = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
+# Equilibrate model at initial (T0, P0)
+ode = ScipyPDReactiveODE(rxn)
+ode.solve(T_range[0],GPa2Bar(P_range[0]),_mi0,_Cik0,1,Da=1e6,eps=eps)
+rho0 = ode.final_rho()*100 # kg/m3
 
-    densities = [ph.rho(T, p, C[i]) for i,ph in enumerate(rxn.phases())]
-    mass = np.sum(np.asarray(densities) * np.asarray(phii0))
-    mi0 = np.asarray([v*densities[i]/mass for (i, v) in enumerate(phii0)])
+# Damkoehler number
+# Da = t0*Gamma0/rho0
+# Gamma0 = Da*rho0/t0
+# Gamma0 = r0/dg <- grain size
+# t0 = dt
+Da = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4]
 
-    return mi0
+# NOTE
+# reaction rates are multiplied by Damkholer number
+# this implies that they are scaled so that mass flux rate = 1
+# this defines a time scale?
+
+# Reaction rates based on Hetenyi et al. 2017
+# these are based on available surface area of 3/r where r is grain radius
+#reaction_rate_gcm =  [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3] # g/cm2/yr
+
+reaction_rate = [da*rho0/dt for da in Da] # Gamma0 (kg/m3/s)
+dg = 1.*mm # grain size
+reaction_rate_per_surface = [r*dg for r in reaction_rate] # r0 (kg/m2/s), assumes 1mm grains
+reaction_rate_per_surface_gcm = [r/10*yr for r in reaction_rate_per_surface] # g/cm2/yr
+
+print("rho0 = {}".format(rho0))
+print("Da = {}".format(Da))
+print("rxn rate = {} g/cm2/yr".format(reaction_rate_per_surface_gcm))
+print("dt = {} kyr".format(dt/kyr))
+print("total t = {} Myr".format(max_t/Myr))
 
 # function to run in parallel
 def run_experiment(Da):
-
-    _Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
-    _mi0 = phi2m(rxn, phii0, _Cik0) if mi0 is None else mi0
-
-    I = len(rxn.phases())
-    Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
-    K = sum(Kis)
-
     rho_final = np.zeros(T_range.shape)
-    s_final = np.zeros(T_range.shape)
-    phases_final = ['' for i,_ in enumerate(depth_km)]
+    phases_final = ['' for i,_ in enumerate(depth_m)]
     phi_final = np.empty(T_range.shape+(I,))
     mi_final = np.zeros(T_range.shape+(I,))
     Cik_final = np.empty(T_range.shape+(K,))
@@ -147,18 +144,19 @@ def run_experiment(Da):
 
     # Equilibrate model at initial (T0, P0)
     ode = ScipyPDReactiveODE(rxn)
-    ode.solve(T_range[0],GPa2Bar(P_range[0]),_mi0,_Cik0,1e5,Da=1e4,eps=eps)
+    ode.solve(T_range[0],GPa2Bar(P_range[0]),_mi0,_Cik0,1,Da=1e5,eps=eps)
 
     # get "equilibrated" composition
     mi1 = ode.sol.y[:ode.I, -1]
     Cik1 = ode.sol.y[ode.I:ode.I+ode.K, -1]
 
     # Thicken the crust
-    for i,P in enumerate(P_range):
+    for i,t in enumerate(times):
+        P = P_range[i]
         T = T_range[i]
         ode = ScipyPDReactiveODE(rxn)
 
-        ode.solve(T,GPa2Bar(P),mi1,Cik1,dt,Da=Da,eps=eps,method="BDF_mcm",max_steps=max_steps)
+        ode.solve(T, GPa2Bar(P), mi1, Cik1, dt/dt, Da=Da, eps=eps, method="BDF_mcm", max_steps=max_steps)
         odephasenames, phaseabbrev = ode.final_phases(phasetol)
         phases = '+'.join(phaseabbrev)
         rho = ode.final_rho()
@@ -182,9 +180,8 @@ def run_experiment(Da):
         mi_final[i]=mi_reg
         Cik_final[i]=Cik_reg
         Xik_final[i]= [x for arr in Xik for x in arr]
-        s_final[i] = np.sum(rxn.s(T,GPa2Bar(P),C))
 
-    return rho_final, phases_final, phi_final, mi_final, Cik_final, Xik_final, s_final, Da
+    return rho_final, phases_final, phi_final, mi_final, Cik_final, Xik_final, Da
 
 # Fn to run an "equilibrium" profile
 _Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
@@ -219,8 +216,10 @@ with Pool(processes) as pool:
 outputPath = Path("figs",reference,composition,rxn_name)
 outputPath.mkdir(parents=True, exist_ok=True)
 
+depth_km = depth_m/1e3
+
 # plot 
-num_subplots = 2 + len(phase_names) + 3
+num_subplots = 2 + len(phase_names) + 2
 fig = plt.figure(figsize=(3*num_subplots,12))
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 ax = fig.add_subplot(1,num_subplots,(1,2))
@@ -229,7 +228,7 @@ ax.invert_yaxis()
 n = len(Da)
 colormap = plt.cm.get_cmap('Greys')
 ax.set_prop_cycle(plt.cycler('color', colormap(np.linspace(0.2, 1, n))))
-for rho, phases, phi, mi, Cik, Xik, s, _Da in sols:
+for rho, *rest in sols:
     plt.plot(rho/10, depth_km)
 
 # Optionally run for equilibrium
@@ -244,12 +243,8 @@ if show_equilibrium:
 
     plt.plot(rho_equil/10,depth_km,'k--')
 
-ipyrolite = pp.get_rho_interpolator('xu_2008_pyrolite')
-rho_pyrolite=ipyrolite((T_range, GPa2Bar(P_range)))
-plt.plot(rho_pyrolite/10,depth_km, 'r:')
 
-iharzburgite = pp.get_rho_interpolator('xu_2008_harzburgite')
-rho_harzburgite=iharzburgite((T_range,GPa2Bar(P_range)))
+plt.plot(rho_pyrolite/10,depth_km, 'r:')
 plt.plot(rho_harzburgite/10,depth_km, 'm:')
 
 plt.legend(['$r_0 = ${:.1e} g/cm$^2$/yr'.format(r) for r in reaction_rate_per_surface_gcm] + (['equil.', 'pyrolite', 'harzburgite'] if show_equilibrium else  ['pyrolite', 'harzburgite']), loc="upper right")
@@ -304,18 +299,6 @@ for rho, phases, phi, mi, Cik, Xik, *rest in sols:
     Xjd = np.asarray(Xik[:,4])
     plt.plot(Xjd, depth_km)
 
-# Plot Specific entropy
-#ax = fig.add_subplot(1,num_subplots,num_subplots)
-#ax.invert_yaxis()
-#ax.set_ylabel(None)
-#ax.set_xlabel("specific $S$")
-#
-#colormap = plt.cm.get_cmap('Greens')
-#ax.set_prop_cycle(plt.cycler('color', colormap(np.linspace(0.2, 1, n))))
-#
-#for rho, phases, phi, mi, Cik, Xik, s, _Da in sols:
-#    # s is J/K/kg
-#    plt.plot(s, depth_km)
-
-fig.suptitle('$R_m=${:.1f} km/Myr, $T_m=${:.0f}-{:.0f} °C, $d_m=${:.0f}-{:.0f} km, {}'.format(descent_rate_kmMyr,T_moho_i, T_moho_f, moho_i,moho_f,composition),y=0.9)
+fig.suptitle('$R_m=${:.1f} km/Myr, $T_m=${:.0f}-{:.0f} °C, $d_m=${:.0f}-{:.0f} km, {}'.format(descent_rate*1e3,T_moho_i-273.15,T_moho_f-273.15,moho_i/1e3,moho_f/1e3,composition),y=0.9)
 plt.savefig(Path(outputPath,"{}.{}".format("results", "pdf")))
+plt.savefig(Path(outputPath,"{}.{}".format("results", "png")))

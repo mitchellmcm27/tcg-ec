@@ -57,8 +57,8 @@ class EcModel():
             self.T = np.linspace(Tmin,Tmax,num_points)
             self.P = np.linspace(Pmin,Pmax,num_points)
 
-        self.Cik0 = Cik0 if Cik0 is not None else self.x2c(self.rxn, Xik0)
-        self.mi0 = mi0 if mi0 is not None else self.phi2m(
+        self.Cik0 = Cik0 if Cik0 is not None else x2c(self.rxn, Xik0)
+        self.mi0 = mi0 if mi0 is not None else phi2m(
             self.rxn, phii0, self.Cik0, P=P0, T=T0)
 
         #print(self.Cik0)
@@ -133,43 +133,6 @@ class EcModel():
             display(df)
         except:
             print(df)
-
-    def x2c(self, rxn, Xik0):
-        return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
-
-    def phi2m(self, rxn, vi0, Cik0, T=None, P=None):
-        '''Converts phase modes in volume fraction to mass fraction given an intial EM composition in mass fractions.'''
-  
-        densities = []
-        i = 0
-        if T is None:
-            T = 300 # K
-        if P is None:
-            P = 0.0001013 # GPa
-
-        for ph in rxn.phases():
-            n = len(ph.endmembers())
-            densities.append(ph.rho(T, GPa2Bar(P), Cik0[i:i+n]))
-            i = i+n
-        #print(densities)
-        mass = np.sum(np.asarray(densities) * np.asarray(vi0))
-        #print(mass)
-        
-        mi0 = np.asarray([v*densities[i]/mass for (i, v) in enumerate(vi0)])
-        print(np.sum(mi0))
-        return mi0
-
-    @staticmethod
-    def get_reaction(rxnName):
-        pv = repr(sys.version_info.major)+'.'+repr(sys.version_info.minor)
-        path = os.path.join(os.path.pardir, 'database', 'install', rxnName,
-                            'lib', 'python'+pv, 'site-packages/')  # the final slash is necessary!
-        sys.path.append(path)
-        #print(path)
-        tcgdb = __import__('py_'+rxnName)
-        func = getattr(tcgdb, rxnName)
-        rxn = func()  # <-- this should work!
-        return rxn
 
     def get_pickle_path(self):
         if(self.domain=="profile"):
@@ -283,3 +246,124 @@ class EcModel():
         print("plot_path")
         bdfdiag.plot_path()
         return bdfdiag
+
+def x2c(rxn, Xik0):
+    return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
+
+def phi2m(rxn, phii0, Cik0, T=900.,p=10000.):
+    '''Converts phase modes in volume fraction to mass fraction given an intial EM composition in mass fractions.'''    
+    densities = []
+    C = rxn.zero_C()
+    Ki = 0
+    for i,ph in enumerate(rxn.phases()):
+        n = len(ph.endmembers())
+        C[i] = Cik0[Ki:Ki+n]
+        Ki = Ki+n
+
+    C = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
+    C = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
+
+    densities = [ph.rho(T, p, C[i]) for i,ph in enumerate(rxn.phases())]
+    mass = np.sum(np.asarray(densities) * np.asarray(phii0))
+    mi0 = np.asarray([v*densities[i]/mass for (i, v) in enumerate(phii0)])
+
+    return mi0
+
+def get_reaction(rxnName):
+    pv = repr(sys.version_info.major)+'.'+repr(sys.version_info.minor)
+    path = os.path.join(os.path.pardir, 'database', 'install', rxnName,
+                        'lib', 'python'+pv, 'site-packages/')  # the final slash is necessary!
+    sys.path.append(path)
+    #print(path)
+    tcgdb = __import__('py_'+rxnName)
+    func = getattr(tcgdb, rxnName)
+    rxn = func()  # <-- this should work!
+    return rxn
+
+def get_names(rxn):
+    phase_names = [p.name() for p in rxn.phases()]
+    phase_names = [s.replace("_slb_ph","") for s in phase_names]
+
+    endmember_names = [em.name() for p in rxn.phases() for em in p.endmembers()]
+    endmember_names = [s.replace("_slb_em","") for s in endmember_names]
+    return phase_names, endmember_names
+
+def latex_reactions(rxn):
+    '''
+    rudnick_2014_lower_crust
+    Reaction object: eclogitization_agu18_stx21_rx
+
+    Phase 0 Clinopyroxene_slb_ph (cpx)
+         Endmember 0 Diopside_slb_em : CaMgSi2O6_(cpx)
+         Endmember 1 Hedenbergite_slb_em : CaFeSi2O6_(cpx)
+         Endmember 2 Clinoenstatite_slb_em : Mg2Si2O6_(cpx)
+         Endmember 3 CaTschermaks_slb_em : CaAl2SiO6_(cpx)
+         Endmember 4 Jadeite_slb_em : NaAlSi2O6_(cpx)
+    Phase 1 Orthopyroxene_slb_ph (opx)
+         Endmember 0 Enstatite_slb_em : Mg2Si2O6_(opx)
+         Endmember 1 Ferrosilite_slb_em : Fe2Si2O6_(opx)
+         Endmember 2 MgTschermaks_slb_em : MgAl2SiO6_(opx)
+         Endmember 3 OrthoDiopside_slb_em : CaMgSi2O6_(opx)
+    Phase 2 Quartz_slb_ph (qtz)
+         Endmember 0 Quartz_slb_em : SiO2_(qtz)
+    Phase 3 Feldspar_slb_ph (plg)
+         Endmember 0 Anorthite_slb_em : CaAl2Si2O8_(plg)
+         Endmember 1 Albite_slb_em : NaAlSi3O8_(plg)
+    Phase 4 Garnet_slb_ph (gt)
+         Endmember 0 Pyrope_slb_em : Mg3Al2Si3O12_(gt)
+         Endmember 1 Almandine_slb_em : Fe3Al2Si3O12_(gt)
+         Endmember 2 Grossular_slb_em : Ca3Al2Si3O12_(gt)
+         Endmember 3 MgMajorite_slb_em : Mg4Si4O12_(gt)
+         Endmember 4 NaMajorite_slb_em : Na2Al2Si4O12_(gt)
+    Phase 5 Kyanite_slb_ph (ky)
+         Endmember 0 Kyanite_slb_em : Al2SiO5_(ky)
+
+    Reaction 0
+         0.666667 CaFeSi2O6_(cpx) + 0.333333 Mg2Si2O6_(opx) -> 0.666667 CaMgSi2O6_(cpx) + 0.333333 Fe2Si2O6_(opx)
+    Reaction 1
+         0.6 Fe2Si2O6_(opx) + 0.4 Mg3Al2Si3O12_(gt) -> 0.6 Mg2Si2O6_(opx) + 0.4 Fe3Al2Si3O12_(gt)
+    Reaction 2
+         0.75 CaFeSi2O6_(cpx) + 0.25 Mg3Al2Si3O12_(gt) -> 0.75 CaMgSi2O6_(cpx) + 0.25 Fe3Al2Si3O12_(gt)
+    Reaction 3
+         Mg2Si2O6_(opx) -> Mg2Si2O6_(cpx)
+    '''
+    
+    import io
+    from contextlib import redirect_stdout
+
+    with io.StringIO() as buf, redirect_stdout(buf):
+        rxn.report()
+        report = buf.getvalue()
+
+    lines = report.splitlines()
+    ref = lines[0]
+    name = lines[1]
+    phases=[]
+    reactions=[]
+    names = []
+    for i in range(2,len(lines)):
+        line = lines[i]
+        if(line[0:5]=="Phase"):
+            phases.append(line[8:].strip())
+        if(line[0:8]=="Reaction"):
+            n = int(line[8:].strip())+1
+            names.append("\\textbf{"+str(n)+".}")
+            rxn = lines[i+1].strip()
+            rxn = rxn.replace("0.333333","1/3")
+            rxn = rxn.replace("0.666667","2/3")
+            rxn = rxn.replace("0.75","3/4")
+            rxn = rxn.replace("0.5","1/2")
+            rxn = rxn.replace("0.25","1/4")
+            rxn = rxn.replace("0.2","1/5")
+            rxn = rxn.replace("0.4","2/5")
+            rxn = rxn.replace("0.6","3/5")
+            rxn = rxn.replace("0.8","4/5")
+            rxn = rxn.replace("0.166667","1/6")
+            rxn = rxn.replace("_","")
+            rxn = rxn.replace("->", "=")
+            rxn = "\ce{" + rxn + "}"
+            reactions.append(rxn)
+
+    # 1 & $\ce{2/3 CaFeSi2O6}^\text{cpx} + \ce{1/3 Mg2Si2O6}^\text{opx} = \ce{2/3 CaMgSi2O6}^\text{cpx} + \ce{1/3 Fe2Si2O6}^\text{opx}$ \\
+    table = "\n".join(["{} & {} \\\\".format(names[i], reactions[i]) for i in range(len(names))])
+    return table

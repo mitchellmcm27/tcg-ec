@@ -79,6 +79,28 @@ end
 
 export perplex_build_vertex
 
+function perplex_pssect(perplexdir::String, scratchdir::String;
+    name::String="scratch")
+    # Run PSSECT to generate a pseudosection
+
+    pssect = joinpath(perplexdir, "pssect")# path to PerpleX werami
+    prefix = joinpath(scratchdir, "$(name)/") # path to data files
+
+    # Create werami batch file
+    fp = open(prefix*"pssect.bat", "w")
+    # v6.7.8 pseudosection
+    write(fp,"$name\nn\n")
+    close(fp)
+
+    # Make sure there isn"t already an output
+    system("rm -f $(prefix)$(name).ps")
+
+    # Run PSSECT
+    system("cd $prefix; $pssect < pssect.bat > pssect.log")
+end
+
+export perplex_pssect
+
 function perplex_werami_profile(perplexdir::String, scratchdir::String, P::NTuple{2,Number}, T::NTuple{2,Number};
     name::String="scratch", npoints::Integer=100, include_fluid="y", importas=:Dict)
     # Query a new path from a pseudosection

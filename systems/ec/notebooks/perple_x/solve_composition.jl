@@ -4,20 +4,14 @@ include("perplex_api.jl")
 # Absolute path to Perple_X installation
 resourcepath = "/root/resources"
 perplexdir = joinpath(resourcepath,"perplex-stable")
-scratchdir = "./output/" # Location of directory to store output files
 
-dataset = "stx21ver.dat"
 mode_basis = "vol"
-phases_all = ["O","Pl","Sp","Cpx","Wad","Ring","Pv","Wus","C2/c","Opx","Aki","Ppv","CF","Gt","NaAl"]
-phases_simple = ["Pl","Cpx","Opx","Gt"]
-#phases_exclude = ["maj","namaj","namj","sp","cor","herc","neph","fo","fa",]
-phases_exclude = ["maj","namaj","namj"]
 
 T_range_2d = (500+273.15, 1000+273.15) # Kelvin
 P_range_2d = (5000, 25000) # bar
 
-T_range_1d = (500+273.15,1000+273.15) # Kelvin
-P_range_1d = (25000, 5000) # bar
+T_range_1d = (650+273.15, 850+273.15) # Kelvin
+P_range_1d = (5000, 25000) # bar
 
 T_point = 800+273.15 # K
 P_point = 1.0e4 # bar
@@ -45,6 +39,31 @@ end
 
 for name in comp_names
     comp = compositions[name]
+
+    dataset = comp["dataset"] isa String ? comp["dataset"] : "stx21ver"
+
+    if dataset == "stx21ver"
+        scratchdir = "./output/"
+        phases_exclude = ["maj","namaj","namj"]
+        phases = ["O","Pl","Sp","Cpx","Wad","Ring","Pv","Wus","C2/c","Opx","Aki","Ppv","CF","Gt","NaAl"]
+        #phases = ["Pl","Cpx","Opx","Gt"]
+    else
+        scratchdir = "./output"*dataset*"/"
+        phases_exclude = []
+        phases = [
+            "Fsp(C1)",
+            "melt(G)",
+            "Omph(GHP)",
+            "Gt(W)",
+            "Opx(W)" ,
+            "Mt(W)" ,
+            "Ilm(WPH)",
+            "cAmph(G)",
+            "Bi(W)",
+            "Mica(W)",
+            "T"
+        ]
+    end
     oxide_comp = convert(Array{Number},comp["composition"])
     oxides = convert(Array{String},comp["elements"])
     composition_basis = comp["basis"]
@@ -55,13 +74,14 @@ for name in comp_names
     if force_pseudosection || !pseudosection_exists
         print("Solving pseudosection...\n")
         perplex_build_vertex(perplexdir, scratchdir, oxide_comp,oxides, P_range_2d, T_range_2d, 
-            dataset=dataset, 
+            dataset=dataset*".dat", 
             excludes=join(phases_exclude,"\n")*"\n",
-            solution_phases=join(phases_all,"\n")*"\n", 
+            solution_phases=join(phases,"\n")*"\n", 
             composition_basis=composition_basis, 
             mode_basis=mode_basis, 
             name=name
         )
+        perplex_pssect(perplexdir, scratchdir, name=name)
     end
 
     print("Extracting profile...\n")

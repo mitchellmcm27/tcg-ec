@@ -1,5 +1,5 @@
 import os, sys
-from mcm.tcg import EcModel
+from mcm.tcg import *
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib as mpl
@@ -12,8 +12,6 @@ import importlib
 from scipy import ndimage
 from scipy.interpolate import griddata
 import from_perplex as pp
-from from_perplex import phase_names, endmember_names
-from mcm.plotting import zoomcontour
 
 SMALL_SIZE = 9
 MEDIUM_SIZE = 11
@@ -32,7 +30,7 @@ plt.rc('axes', titlepad=-16)  # pad is in points...
 ### ======================= INPUTS ============================
 reference = "parallel_pd"
 composition = "hacker_2015_md_xenolith"
-rxn_name = "eclogitization_agu17_stx21_rx"
+rxn_name = "eclogitization_agu20_stx21_rx"
 
 # number of nodes in each dimension (T,P) = (x,y)
 nP = 80
@@ -137,9 +135,9 @@ if __name__ == "__main__":
 #====================================================
 
 # get reaction object
-rxn = EcModel.get_reaction(rxn_name)
+rxn = get_reaction(rxn_name)
 
-mi0, Xik0, phii0, Cik0 = pp.get_point_composition(composition)
+mi0, Xik0, phii0, Cik0 = pp.get_point_composition(rxn, composition)
 
 def x2c(rxn, Xik0):
     return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])

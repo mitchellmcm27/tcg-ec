@@ -1,6 +1,7 @@
 {
     "bhowany_2018_hol2a" : {
         "basis" : "mol",
+        "dataset": "stx21ver",
         "comment" : "based on Figure 9",
         "elements" : [
             "NA2O",   
@@ -21,6 +22,7 @@
     },
     "hacker_2015_md_xenolith": {
         "basis" : "wt",
+        "dataset": "stx21ver",
         "elements" : [
             "NA2O",   
             "MGO",    
@@ -38,8 +40,30 @@
             9.00000
         ]
     },
-    "sammon_2021_lower_crust" : {
+    "rudnick_2014_lower_crust":{
+        "comment": "Rudnick & Gao 2014. Grabbed normalized oxides from Sammon & McDonough 2021 (Table S3).",
+        "basis": "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",   
+            "MGO",    
+            "AL2O3",  
+            "SIO2",   
+            "CAO",    
+            "FEO"
+        ],
+        "composition":[
+            2.65,
+            7.24,
+            16.9,
+            53.4,
+            9.59,
+            8.57
+        ]
+    },
+    "sammon_2021_deep_crust" : {
         "basis" : "wt",
+        "dataset": "stx21ver",
         "elements" : [
             "NA2O",
             "MGO",
@@ -49,16 +73,77 @@
             "FEO"
         ],
         "composition" : [
-            2.63000,
-            8.61500,
-            17.2000,
-            53.3000,
-            10.1500,
-            8.10500
+            2.93,
+            5.87,
+            16.66,
+            57.6,
+            8.21,
+            6.44
+        ]
+    },
+    "sammon_2021_lower_crust" : {
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",
+            "MGO",
+            "AL2O3",
+            "SIO2",
+            "CAO",
+            "FEO"
+        ],
+        "composition" : [
+            2.63,
+            8.615,
+            17.2,
+            53.3,
+            10.15,
+            8.105
+        ]
+    },
+    "sammon_2021_eclogite_terrains" : {
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",
+            "MGO",
+            "AL2O3",
+            "SIO2",
+            "CAO",
+            "FEO"
+        ],
+        "composition" : [
+            2.72,
+            8.47,
+            15.9,
+            50.1,
+            11.8,
+            9.11
+        ]
+    },
+    "sammon_2021_eclogite_xenoliths" : {
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",
+            "MGO",
+            "AL2O3",
+            "SIO2",
+            "CAO",
+            "FEO"
+        ],
+        "composition" : [
+            1.64,
+            12.1,
+            16.3,
+            48.0,
+            11.8,
+            9.09
         ]
     },
     "vrabec_2012_kyanite_eclogite" : {
         "basis" : "wt",
+        "dataset": "stx21ver",
         "elements" : [
             "NA2O",
             "MGO",
@@ -78,6 +163,7 @@
     },
     "xu_2008_pyrolite" : {
         "basis" : "mol",
+        "dataset": "stx21ver",
         "elements" : [
             "NA2O",
             "MGO",
@@ -97,6 +183,7 @@
     },
     "xu_2008_harzburgite" : {
         "basis" : "mol",
+        "dataset": "stx21ver",
         "elements" : [
             "NA2O",
             "MGO",
@@ -116,6 +203,7 @@
     },
     "xu_2008_basalt" : {
         "basis" : "mol",
+        "dataset": "stx21ver",
         "elements" : [
             "NA2O",
             "MGO",
@@ -135,6 +223,7 @@
     },
     "zhang_2006_mafic_granulite" : {
         "basis" : "wt",
+        "dataset": "stx21ver",
         "elements" : [
             "NA2O",
             "MGO",
@@ -154,6 +243,7 @@
     },
     "zhang_2022_cd07-2" : {
         "basis" : "wt",
+        "dataset": "stx21ver",
         "elements" : [
             "NA2O",
             "MGO",
