@@ -21,7 +21,7 @@ g = 1e-3
 cm = 1e-2
 
 ### ------------ INPUTS -------------------
-reference= 'parallel_experiment'
+reference= 'parallel_experiment2'
 composition = 'hacker_2015_md_xenolith'
 rxn_name = 'eclogitization_agu17_stx21_rx'
 
@@ -48,26 +48,17 @@ descent_rate = z0/L0 * shortening_rate # m/s
 
 # choose a time step
 dt = 100.*kyr # sec
-max_t = 100.*Myr
-times = np.arange(0,max_t+dt,dt)
-
-depth_m = z0 + times*descent_rate
-depth_m[depth_m > 70.*km] = 70.* km
+max_t = (moho_f - moho_i) / descent_rate # seconds
 
 # Calc pressure, temperature from depths
 # TODO: use a steady-state geotherm
-P_range = 0.027 * depth_m/1e3 # assumes 0.027 Gpa/km
-T_moho_i = 800. + 273.15
+T_moho_i = 600. + 273.15
 T_moho_f = 850. + 273.15
-T_range = T_moho_i + (depth_m - depth_m[0])/(depth_m[-1] - depth_m[0])*(T_moho_f - T_moho_i)
-print(P_range)
-show_equilibrium = False
 processes =  mp.cpu_count()-1
-
 
 # initial temperature and pressure in K and bars
 T0 = T_moho_i
-P0 = P_range[0] # Gpa
+P0 = 0.027 * 30 # Gpa, 0.027 Gpa/km
 
 # ------------------------------------------
 
@@ -92,13 +83,11 @@ if __name__ == "__main__":
 rxn = get_reaction(rxn_name)
 phase_names, endmember_names = get_names(rxn)
 
-rxn.set_parameter('T0', T_range[0]) # K; default 2000 K
+rxn.set_parameter('T0', T0) # K; default 2000 K
 mi0, Xik0, phii0, Cik0 = get_point_composition(rxn, composition)
 
 ipyrolite = get_rho_interpolator('xu_2008_pyrolite')
 iharzburgite = get_rho_interpolator('xu_2008_harzburgite')
-rho_pyrolite=ipyrolite((T_range, P_range))
-rho_harzburgite=iharzburgite((T_range,P_range))
 
 _Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
 _mi0 = phi2m(rxn, phii0, _Cik0) if mi0 is None else mi0
@@ -109,27 +98,20 @@ K = sum(Kis)
 
 # Equilibrate model at initial (T0, P0)
 ode = ScipyPDReactiveODE(rxn)
-ode.solve(T_range[0],GPa2Bar(P_range[0]),_mi0,_Cik0,1,Da=1e6,eps=eps)
+ode.solve(T0,GPa2Bar(P0),_mi0,_Cik0,1,Da=1e6,eps=eps)
 rho0 = ode.final_rho()*100 # kg/m3
-
+Cik0 = ode.sol.y[ode.I:ode.I+ode.K,-1]
+mi0 = ode.sol.y[:ode.I,-1] # -1 = final time step
 scale= {'T':T0, 'P':P0*1e4, 'rho':rho0, 'h':(moho_f-moho_i)}
 
 # Damkoehler number
-Das = [1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3]
+Das = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5]
 
-# NOTE
-# reaction rates are multiplied by Damkholer number
-# this implies that they are scaled so that mass flux rate = 1
-# this defines a time scale?
-
-# Reaction rates based on Hetenyi et al. 2017
-# these are based on available surface area of 3/r where r is grain radius
-#reaction_rate_gcm =  [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3] # g/cm2/yr
-
-                            #   kg/m3  m/s       
-reaction_rate_per_surface = [da*rho0*descent_rate for da in Das]# kg/m2/s
+r0 = [da*rho0/max_t for da in Das] # Gamma0 (kg/m3/s)
+dg = 3.*mm # grain size
+reaction_rate_per_surface = [r*dg for r in r0] # r0 (kg/m2/s), assumes 1mm grains
 reaction_rate_per_surface_gcm = [r/10*yr for r in reaction_rate_per_surface] # g/cm2/yr
-
+print(reaction_rate_per_surface_gcm)
 _Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
 
 def rhs(t,u,rxn,scale,Da,verbose=False):
@@ -143,7 +125,7 @@ def rhs(t,u,rxn,scale,Da,verbose=False):
     # scale Temperature and pressure
     Ts = scale['T']*T
     Ps = scale['P']*P
-    print(Ts,Ps)
+ 
     C = rxn.zero_C()
     # reshape C
     Kis = 0
@@ -155,11 +137,11 @@ def rhs(t,u,rxn,scale,Da,verbose=False):
     Cs = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
 
     # phase properties
-    rho = np.array(rxn.rho(Ts, Ps, Cs))
+    rhoi = np.array(rxn.rho(Ts, Ps, Cs))
     #alpha = np.array(rxn.alpha(Ts, Ps, C))
     #cp = np.array(rxn.Cp(Ts, Ps, C))
     #s = np.array(rxn.s(Ts, Ps, C))
-    v = np.sum(mi/rho)
+    v = np.sum(mi/rhoi)
 
     # mean properties
     #rho_bar = 1./v
@@ -182,125 +164,97 @@ def rhs(t,u,rxn,scale,Da,verbose=False):
             Gammaik[sKi+k] = gamma_ik[i][k]
         sKi += _Kis[i]
     
-    du = np.zeros(I+K)
+    dudt = np.zeros(u.shape)
     sKi = 0
     for i in range(I):
-        du[i] = Da*rho0*Gammai[i]*v
+        dudt[i] = Da*rho0*Gammai[i]*v
         for k in range(_Kis[i]):
             GikcGi = Gammaik[sKi+k] - C[i][k]*Gammai[i]
-            du[I+sKi+k] = Da*rho0*GikcGi*v/mis[i]
+            dudt[I+sKi+k] = Da*rho0*GikcGi*v/mis[i]
         sKi += _Kis[i]
     
-    dTdz = (T_moho_f - T_moho_i)/scale['T']
-    dPdz = 1.8e4/scale['P'] # 0.027*1e4*1e3*(moho_f-moho_i)/scale['h'] # 0.027 GPa/km
-    print(dTdz,dPdz)
-
-    #if verbose:
-        #print(_T/cp_bar, A*alpha_bar, s.dot(Gammai))
-    du = np.empty(u.shape)
-
-    du[I+K:] = np.array([dTdz, dPdz])
-    return du
+    dTdt = (T_moho_f - T_moho_i)/scale['T']
+    dPdt = 0.027/1e3 * (moho_f - moho_i) * 1e4/scale['P']
+    dudt[I+K:] = np.array([dTdt, dPdt])
+    return dudt
 
 # function to run in parallel
 def run_experiment(Da):
     rxn = get_reaction(rxn_name)
     rxn.set_parameter('T0',T0)
-    rho_final = np.zeros(T_range.shape)
-    phases_final = ['' for i,_ in enumerate(depth_m)]
-    phi_final = np.empty(T_range.shape+(I,))
-    mi_final = np.zeros(T_range.shape+(I,))
-    Cik_final = np.empty(T_range.shape+(K,))
-    Xik_final = np.empty(T_range.shape+(K,))
 
-    # Equilibrate model at initial (T0, P0)
-    ode = ScipyPDReactiveODE(rxn)
-    ode.solve(T_range[0],GPa2Bar(P_range[0]),_mi0,_Cik0,1,Da=1e5,eps=eps)
-    
     u0=np.empty(I+K+2)
-    u0[:I] = _mi0
-    u0[I:I+K] = _Cik0
+    u0[:I] = mi0
+    u0[I:I+K] = Cik0
     u0[I+K:] = np.array([1., 1.]) # T/T0, P/P0
     
     Pmax = (0.027 * moho_f/1e3)/P0 # assumes 0.027 Gpa per km
-    event = lambda t, y, rxn, scale,Da: Pmax - P0*y[-1] # when pressure = Pmax
+    event = lambda t,y,rxn,scale,Da: Pmax - P0*y[-1] # when pressure = Pmax
     event.terminal = True
-    sol = solve_ivp(rhs,[0,1],u0,args=(rxn,scale,Da),dense_output=True,method='Radau',rtol=rtol,atol=atol, events=event)
+    sol = solve_ivp(rhs,[0,1],u0,args=(rxn,scale,Da),dense_output=True,method='BDF',rtol=rtol,atol=atol,events=event)
     
     T = sol.y[-2][-1]*scale['T']
     P = sol.y[-1][-1]*scale['P']
     print('{} P_end = {} bar.  T_end = {} K. Used {} steps: '.format(sol.message, P,T,len(sol.t)))
 
-    mi  = sol.y[:I,-1]
-    Cik = sol.y[I:I+K,-1]
-
-    C  = ode.reshapeC(Cik)
-    Cs = ode.regularizeC(C)
-
-    rhoi = np.asarray(rxn.rho(T, P, Cs))
-
-    v    = sum(mi/rhoi)
-    rho   = 1/v
-
-    Cik = sol.y[I:I+K,-1]
-    mi = sol.y[:I,-1] # -1 = final time step
-    mi_reg = ode.regularizem(mi)
-
-    C = ode.reshapeC(Cik)
-    Xik = rxn.C_to_X(C)
-    Cs = ode.regularizeC(C)
-    Cik_reg = [c for arr in Cs for c in arr]
-    rhoi = rxn.rho(T, GPa2Bar(P), Cs)
-    v = mi/rhoi
-    vi  = 1./v.sum()
-    phi = vi*mi/rhoi
-    rho_final[i]=rho
-    phases_final[i]=phases 
-    phi_final[i]=phi 
-    mi_final[i]=mi_reg
-    Cik_final[i]=Cik_reg
-    Xik_final[i]= [x for arr in Xik for x in arr]
-
-    return rho_final, phases_final, phi_final, mi_final, Cik_final, Xik_final, Da
+    return sol, Da
 
 # run for varying damkhoeler numbers
-with Pool(1) as pool:
+with Pool(processes) as pool:
     # blocks until all finished
-    sols = pool.map(run_experiment, [Das[-1]])
+    sols = pool.map(run_experiment, Das)
 
 outputPath = Path("figs",reference,composition,rxn_name)
 outputPath.mkdir(parents=True, exist_ok=True)
 
-depth_km = depth_m/1e3
 
 # plot 
 num_subplots = 2 + len(phase_names) + 2
+subplot_mosaic = [['rho','rho'] + phase_names + ['An', 'Jd']]
+
 fig = plt.figure(figsize=(3*num_subplots,12))
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-ax = fig.add_subplot(1,num_subplots,(1,2))
-ax.invert_yaxis()
+axes = fig.subplot_mosaic(subplot_mosaic)
+[ax.invert_yaxis() for label,ax in axes.items()]
 
 n = len(Das)
-colormap = plt.cm.get_cmap('Greys')
-ax.set_prop_cycle(plt.cycler('color', colormap(np.linspace(0.2, 1, n))))
-for rho, *rest in sols:
-    plt.plot(rho/10, depth_km)
+z = np.linspace(0,1,100)
+depth_m = moho_i + z*(moho_f-moho_i)
+depth_km = depth_m / 1000.
+greys = plt.cm.get_cmap('Greys')
+axes['rho'].set_prop_cycle(plt.cycler('color', greys(np.linspace(0.2, 1, n))))
+axes['An'].set_prop_cycle(plt.cycler('color', greys(np.linspace(0.2, 1, n))))
+axes['Jd'].set_prop_cycle(plt.cycler('color', greys(np.linspace(0.2, 1, n))))
+for i,obj in enumerate(sols):
+    ax = axes['rho']
 
-plt.plot(rho_pyrolite/10,depth_km, 'r:')
-plt.plot(rho_harzburgite/10,depth_km, 'm:')
+    sol, Da = obj
+    y = sol.sol(z)
+    mi_times  = y[:I].T
+    Cik_times = y[I:I+K].T
+    T = y[I+K].T*scale['T']
+    P = y[I+K+1].T*scale['P']
 
-plt.legend(['$r_0 = ${:.1e} g/cm$^2$/yr'.format(r) for r in reaction_rate_per_surface_gcm] + (['equil.', 'pyrolite', 'harzburgite'] if show_equilibrium else  ['pyrolite', 'harzburgite']), loc="upper right")
+    C_times = [ode.reshapeC(Cik) for Cik in Cik_times]
+    Cs_times = [ode.regularizeC(C) for C in C_times]
+    rho = [1/sum(mi_times[t]/rxn.rho(T[t], P[t], Cs))/10 for t,Cs in enumerate(Cs_times)]
+    ax.plot(rho, depth_km)
 
-plt.ylabel('Depth (km)')
-plt.xlabel('Density')
-plt.xlim([2.8, 3.8])
+rho_pyrolite=ipyrolite((T, P/1e4))
+rho_harzburgite=iharzburgite((T,P/1e4))
+
+ax.plot(rho_pyrolite/10,depth_km, 'r:')
+ax.plot(rho_harzburgite/10,depth_km, 'm:')
+ax.legend(['$r_0 = ${:.1e} g/cm$^2$/yr'.format(r) for r in reaction_rate_per_surface_gcm] +  (['pyrolite', 'harzburgite']), loc="upper right")
+
+ax.set_ylabel('Depth (km)')
+ax.set_xlabel('Density')
+ax.set_xlim([2.8, 3.8])
 
 # plot all phases
-
 cmaps = [plt.cm.get_cmap(name) for name in ['Blues', 'YlOrBr', 'Greens','Reds','Purples','copper_r']]
 for i,phase in enumerate(phase_names):
-    ax = fig.add_subplot(1,num_subplots,3+i)
-    ax.invert_yaxis()
+    ax = axes[phase]
     cmap = cmaps[i]
     ax.set_prop_cycle(plt.cycler('color', cmap(np.linspace(0.2, 1, n))))
     ax.set_xlim([0., 80.])
@@ -309,38 +263,46 @@ for i,phase in enumerate(phase_names):
     ax.set_xticks(np.arange(0,110,10))
     ax.set_xticklabels([None, None, 20, None, 40, None, 60, None, 80, None, None])
     ax.set_yticklabels([])
-    for rho, phases, phi, mi, Cik, Xik, *rest in sols:
+    for j, obj in enumerate(sols):
+        sol, Da = obj
+        y = sol.sol(z)
+        mi_times  = y[i].T
+        Cik_times = y[I:I+K].T
+        T = y[I+K].T*scale['T']
+        P = y[I+K+1].T*scale['P']
         # plot garnet mass fraction
-        plt.plot(mi[:,i]*100, depth_km)
-    
+        ax.plot(mi_times*100, depth_km)
+
 # Plot plagioclase composition
-ax = fig.add_subplot(1,num_subplots,num_subplots-1)
-ax.invert_yaxis()
+ax = axes['An']
 ax.set_xlim([0., 1.0])
 ax.set_ylabel(None)
 ax.set_yticklabels([])
 ax.set_xlabel("$X_{\mathrm{An}}$")
-colormap = plt.cm.get_cmap('Greys')
-ax.set_prop_cycle(plt.cycler('color', colormap(np.linspace(0.2, 1, n))))
 
-for rho, phases, phi, mi, Cik, Xik, *rest in sols:
-    Xan = np.asarray(Xik[:,10])
-    plt.plot(Xan, depth_km)
-
-# Plot Cpx composition
-ax = fig.add_subplot(1,num_subplots,num_subplots)
-ax.invert_yaxis()
+ax = axes['Jd']
 ax.set_xlim([0., 1.0])
 ax.set_ylabel(None)
 ax.set_yticklabels([])
 ax.set_xlabel("$X_{\mathrm{Jd}}$")
-colormap = plt.cm.get_cmap('Greys')
-ax.set_prop_cycle(plt.cycler('color', colormap(np.linspace(0.2, 1, n))))
 
-for rho, phases, phi, mi, Cik, Xik, *rest in sols:
-    Xjd = np.asarray(Xik[:,4])
-    plt.plot(Xjd, depth_km)
 
-fig.suptitle('$R_m=${:.1f} km/Myr, $T_m=${:.0f}-{:.0f} °C, $d_m=${:.0f}-{:.0f} km, {}'.format(descent_rate*1e3,T_moho_i-273.15,T_moho_f-273.15,moho_i/1e3,moho_f/1e3,composition),y=0.9)
+for j, obj in enumerate(sols):
+    sol, Da = obj
+    y = sol.sol(z)
+    mi_times  = y[i].T
+    Cik_times = y[I:I+K].T
+    C_times = [ode.reshapeC(Cik) for Cik in Cik_times]
+    Cs_times = [ode.regularizeC(C) for C in C_times]
+    T = y[I+K].T*scale['T']
+    P = y[I+K+1].T*scale['P']
+    Xik_nested_times = np.asarray([rxn.C_to_X(c) for c in Cs_times])
+    XAn = [x[3][0] for x in Xik_nested_times]
+    XJd = [x[0][4] for x in Xik_nested_times]
+
+    axes['An'].plot(XAn, depth_km)
+    axes['Jd'].plot(XJd, depth_km)
+
+fig.suptitle('$R_m=${:.1f} km/Myr, $T_m=${:.0f}-{:.0f} °C, $d_g=${}mm'.format(descent_rate/1e3*yr*1e6,T_moho_i-273.15,T_moho_f-273.15,dg/mm,composition.capitalize().replace("_"," ")),y=0.9)
 plt.savefig(Path(outputPath,"{}.{}".format("results", "pdf")))
 plt.savefig(Path(outputPath,"{}.{}".format("results", "png")))

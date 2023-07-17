@@ -30,7 +30,7 @@ plt.rc('axes', titlepad=-16)  # pad is in points...
 ### ======================= INPUTS ============================
 reference = "parallel_pd"
 composition = "hacker_2015_md_xenolith"
-rxn_name = "eclogitization_agu20_stx21_rx"
+rxn_name = "eclogitization_agu17_stx21_rx"
 
 # number of nodes in each dimension (T,P) = (x,y)
 nP = 80

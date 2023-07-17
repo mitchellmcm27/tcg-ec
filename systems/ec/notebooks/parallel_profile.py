@@ -12,7 +12,7 @@ import from_perplex as pp
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
 composition = 'hacker_2015_md_xenolith'
-rxn_name = 'eclogitization_agu19_stx21_rx'
+rxn_name = 'eclogitization_agu17_stx21_rx'
 
 # number of x-nodes
 #nT = 100
