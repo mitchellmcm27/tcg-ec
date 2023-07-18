@@ -1,4 +1,5 @@
-from scipy.integrate import solve_ivp
+# %%
+
 import numpy as np
 import matplotlib.pyplot as plt
 from fd1d_heat_implicit import *
@@ -78,7 +79,17 @@ if __name__ == "__main__":
     rhoH0 = 1.9e-6 # W/m3, heat prod at surface
     rhoHc = 0.e-6 # W/m3, heat prod in mantle
 
-    for (time,L) in enumerate(np.linspace(L0, L0*thickening, 10)):
+    fig = plt.figure()
+    ax1 = plt.gca()
+    ax1.set_ylabel("Depth (km)")
+    ax1.set_xlabel("T (°C)")
+    ax2 = plt.gca().twiny()
+    ax2.set_xlabel("$\\rho H$ (W/m$^3$)", color="red")
+    ax2.tick_params(colors="red",which="both")
+    ax2.spines['top'].set_color('red') 
+
+    nsteps = 10
+    for (time,L) in enumerate(np.linspace(L0, L0*thickening, nsteps)):
         moho = z0*L/L0
         hr = hr0*L/L0 # initially 10 km
  
@@ -134,8 +145,13 @@ if __name__ == "__main__":
         #
         #  Plot X and T versus H.
         #
-        plt.plot(u[x<moho]-273.,x[x<moho]/1.e3, 'r', linewidth=1,alpha=0.5)
-        plt.plot(u[x>=moho]-273.,x[x>=moho]/1.e3, 'k', linewidth=1,alpha=0.5)
-        plt.plot(Tmoho-273.,moho/1e3,'ro')
-    plt.gca().invert_yaxis()
+        ax1.plot(u[x<moho]-273.,x[x<moho]/1.e3, 'k', linewidth=1,alpha=time/nsteps/2 + 0.4)
+        ax1.plot(u[x>=moho]-273.,x[x>=moho]/1.e3, 'k', linewidth=1,alpha=time/nsteps/2 + 0.1)
+        ax1.plot(Tmoho-273.,moho/1e3,'ko')
+        ax2.plot(rhoH0*np.exp(-x/hr),x/1.e3, 'r', linewidth=1, alpha=time/nsteps/2 + 0.1)
+    ax1.invert_yaxis()
+    plt.title("$L_0=${:n} km, $z_0=${:n} km, $h_{{r0}}=${:n} km\n$T_s=${:n} °C, $T_L=${:n} °C, $\\rho H_s=${:g} μW/m$^3$, $k=${}".format(L0/1e3,z0/1e3,hr0/1e3,T_surf-273, T_lab-273, rhoH0*1e6,k),
+              fontsize=8)
     plt.show()
+
+# %%

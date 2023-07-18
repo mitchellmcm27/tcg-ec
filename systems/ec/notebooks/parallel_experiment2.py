@@ -10,6 +10,8 @@ import multiprocessing as mp
 import importlib
 from from_perplex import *
 from scipy.integrate import solve_ivp
+from get_geotherm import *
+from geotherm_steady import * 
 
 yr = 3.154e7
 kyr = 1e3*yr
@@ -42,24 +44,19 @@ moho_f = 70.*km # Altiplano, Tibet
 # Calc descent rate of Moho
 shortening_rate = 3.0 *mm/yr # m/s
 
-L0 = 100.*km # lithospheric thickness - m
+L0 = 60.*km # lithospheric thickness - m
 z0 = moho_i # 
 descent_rate = z0/L0 * shortening_rate # m/s
 
 # choose a time step
 dt = 100.*kyr # sec
 max_t = (moho_f - moho_i) / descent_rate # seconds
-
 # Calc pressure, temperature from depths
 # TODO: use a steady-state geotherm
-T_moho_i = 600. + 273.15
-T_moho_f = 850. + 273.15
+T_moho_i = get_geotherm(L0,z0,1,3e7*1e6)
+T_moho_f = get_geotherm(L0,z0,moho_f/moho_i,3e7*1e6)
+print(T_moho_f)
 processes =  mp.cpu_count()-1
-
-# initial temperature and pressure in K and bars
-T0 = T_moho_i
-P0 = 0.027 * 30 # Gpa, 0.027 Gpa/km
-
 # ------------------------------------------
 
 # ============= Parse arguments for CLI =============
@@ -83,6 +80,10 @@ if __name__ == "__main__":
 rxn = get_reaction(rxn_name)
 phase_names, endmember_names = get_names(rxn)
 
+# initial temperature and pressure in K and bars
+T0 = T_moho_i
+P0 = 2780 * 9.81 * 30.e3/1e5 # Gpa, 0.027 Gpa/km
+print(P0)
 rxn.set_parameter('T0', T0) # K; default 2000 K
 mi0, Xik0, phii0, Cik0 = get_point_composition(rxn, composition)
 
@@ -98,11 +99,10 @@ K = sum(Kis)
 
 # Equilibrate model at initial (T0, P0)
 ode = ScipyPDReactiveODE(rxn)
-ode.solve(T0,GPa2Bar(P0),_mi0,_Cik0,1,Da=1e6,eps=eps)
+ode.solve(T0, P0,_mi0,_Cik0,1,Da=1e6,eps=eps)
 rho0 = ode.final_rho()*100 # kg/m3
 Cik0 = ode.sol.y[ode.I:ode.I+ode.K,-1]
 mi0 = ode.sol.y[:ode.I,-1] # -1 = final time step
-scale= {'T':T0, 'P':P0*1e4, 'rho':rho0, 'h':(moho_f-moho_i)}
 
 # Damkoehler number
 Das = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5]
@@ -114,6 +114,10 @@ reaction_rate_per_surface_gcm = [r/10*yr for r in reaction_rate_per_surface] # g
 print(reaction_rate_per_surface_gcm)
 _Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
 
+
+scale= {'T':T0, 'P':P0, 'rho':rho0, 'h':(moho_f-moho_i), 't':max_t}
+print(scale)
+
 def rhs(t,u,rxn,scale,Da,verbose=False):
 
     # Extract variables
@@ -121,11 +125,11 @@ def rhs(t,u,rxn,scale,Da,verbose=False):
     Cik = u[I:I+K]
     T = u[I+K] # 1 to 1.something
     P = u[I+K+1] # 1 to 2.something
-
+ 
     # scale Temperature and pressure
     Ts = scale['T']*T
     Ps = scale['P']*P
- 
+
     C = rxn.zero_C()
     # reshape C
     Kis = 0
@@ -138,6 +142,7 @@ def rhs(t,u,rxn,scale,Da,verbose=False):
 
     # phase properties
     rhoi = np.array(rxn.rho(Ts, Ps, Cs))
+
     #alpha = np.array(rxn.alpha(Ts, Ps, C))
     #cp = np.array(rxn.Cp(Ts, Ps, C))
     #s = np.array(rxn.s(Ts, Ps, C))
@@ -173,8 +178,18 @@ def rhs(t,u,rxn,scale,Da,verbose=False):
             dudt[I+sKi+k] = Da*rho0*GikcGi*v/mis[i]
         sKi += _Kis[i]
     
-    dTdt = (T_moho_f - T_moho_i)/scale['T']
-    dPdt = 0.027/1e3 * (moho_f - moho_i) * 1e4/scale['P']
+  
+    # linear temperature
+    dTdt_linear = (T_moho_f - T_moho_i)/scale['T']
+
+    dzdt = scale['h'] # m per unit time
+    dPdt = 2780*9.81/1e5 * dzdt # bar per unit time
+    dPdt = dPdt/scale['P']
+
+    shortening = 1 + 1.3*t
+    T_steady, dTdz = geotherm_steady(z0/L0, L0*shortening, shortening)
+
+    dTdt = (T_steady-Ts)*dzdt/scale['T']
     dudt[I+K:] = np.array([dTdt, dPdt])
     return dudt
 
@@ -186,16 +201,18 @@ def run_experiment(Da):
     u0=np.empty(I+K+2)
     u0[:I] = mi0
     u0[I:I+K] = Cik0
+
     u0[I+K:] = np.array([1., 1.]) # T/T0, P/P0
     
-    Pmax = (0.027 * moho_f/1e3)/P0 # assumes 0.027 Gpa per km
-    event = lambda t,y,rxn,scale,Da: Pmax - P0*y[-1] # when pressure = Pmax
-    event.terminal = True
-    sol = solve_ivp(rhs,[0,1],u0,args=(rxn,scale,Da),dense_output=True,method='BDF',rtol=rtol,atol=atol,events=event)
+    #Pmax = 2780 * 9.81 * moho_f/1e5 # bar
+    #print(Pmax)
+    #event = lambda t,y,rxn,scale,Da: Pmax - y[-1]*scale['P'] # when pressure = Pmax
+    #event.terminal = True
+    sol = solve_ivp(rhs,[0,1],u0,args=(rxn,scale,Da),dense_output=True,method='BDF',rtol=rtol,atol=atol,events=None)
     
-    T = sol.y[-2][-1]*scale['T']
-    P = sol.y[-1][-1]*scale['P']
-    print('{} P_end = {} bar.  T_end = {} K. Used {} steps: '.format(sol.message, P,T,len(sol.t)))
+    T = sol.y[-2]*scale['T']
+    P = sol.y[-1]*scale['P']
+    print('{} P_end = {:.2f} Gpa. T_end = {:.2f} K. Used {:n} steps: '.format(sol.message,P[-1]/1e4,T[-1],len(sol.t)))
 
     return sol, Da
 
@@ -209,8 +226,8 @@ outputPath.mkdir(parents=True, exist_ok=True)
 
 
 # plot 
-num_subplots = 2 + len(phase_names) + 2
-subplot_mosaic = [['rho','rho'] + phase_names + ['An', 'Jd']]
+num_subplots = 3 + len(phase_names) + 2
+subplot_mosaic = [['rho','rho'] + phase_names + ['An', 'Jd', 'T']]
 
 fig = plt.figure(figsize=(3*num_subplots,12))
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
@@ -250,6 +267,15 @@ ax.legend(['$r_0 = ${:.1e} g/cm$^2$/yr'.format(r) for r in reaction_rate_per_sur
 ax.set_ylabel('Depth (km)')
 ax.set_xlabel('Density')
 ax.set_xlim([2.8, 3.8])
+
+# Plot temperature profile
+ax = axes['T']
+ax.plot(T-273.15, depth_km, linewidth=2)
+ax.set_xlabel("T (°C)")
+ax2 = ax.twinx()
+ax2.plot(T-273.15, P/1e4, alpha=0)
+ax2.invert_yaxis()
+ax2.set_ylabel("P (GPa)")
 
 # plot all phases
 cmaps = [plt.cm.get_cmap(name) for name in ['Blues', 'YlOrBr', 'Greens','Reds','Purples','copper_r']]
