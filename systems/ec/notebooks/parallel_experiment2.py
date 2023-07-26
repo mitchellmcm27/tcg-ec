@@ -5,13 +5,11 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from tcg_slb.base import *
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
-from multiprocessing import Pool
+from multiprocessing import Pool, shared_memory
 import multiprocessing as mp
-import importlib
 from from_perplex import *
 from scipy.integrate import solve_ivp
-from get_geotherm import *
-from geotherm_steady import * 
+from geotherm_steady import geotherm_steady
 
 yr = 3.154e7
 kyr = 1e3*yr
@@ -23,9 +21,8 @@ g = 1e-3
 cm = 1e-2
 
 ### ------------ INPUTS -------------------
-reference= 'parallel_experiment2'
-composition = 'hacker_2015_md_xenolith'
-rxn_name = 'eclogitization_agu17_stx21_rx'
+reference= "parallel_experiment2"
+rxn_name = "eclogitization_agu17_stx21_rx"
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-5 # 1.e-2
@@ -37,25 +34,67 @@ rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
 max_steps = 3e4
 
-# Set initial and final crustal thickness (m)
-moho_i = 30.*km # typical crust
-moho_f = 70.*km # Altiplano, Tibet
-
 # Calc descent rate of Moho
 shortening_rate = 3.0 *mm/yr # m/s
 
-L0 = 60.*km # lithospheric thickness - m
-z0 = moho_i # 
-descent_rate = z0/L0 * shortening_rate # m/s
+crustal_rho = 2780.
+gravity = 9.81 
 
-# choose a time step
-dt = 100.*kyr # sec
-max_t = (moho_f - moho_i) / descent_rate # seconds
-# Calc pressure, temperature from depths
-# TODO: use a steady-state geotherm
-T_moho_i = get_geotherm(L0,z0,1,3e7*1e6)
-T_moho_f = get_geotherm(L0,z0,moho_f/moho_i,3e7*1e6)
-print(T_moho_f)
+tectonic_settings = [
+    {
+        "setting": "orogen_hot",
+        "L0": 60.e3,
+        "z0": 30.e3,
+        "z1": 70.e3,
+        "As": 2.5e-6,
+        "hr0": 10.e3,
+        "k": 2.25,
+    },
+    {
+        "setting": "orogen_cold",
+        "L0": 100.e3,
+        "z0": 35.e3,
+        "z1": 70.e3,
+        "As": 2.0e-6,
+        "hr0": 10.e3,
+        "k": 2.25,
+    },
+    {
+        "setting":"craton_hot",
+        "L0": 125.e3,
+        "z0": 35.e3,
+        "z1": 70.e3,
+        "As": 3.0e-6,
+        "hr0": 15.e3,
+        "k": 2.25,
+    },
+    {
+        "setting":"craton_cold",
+        "L0": 135.e3,
+        "z0": 35.e3,
+        "z1": 70.e3,
+        "As": 2.0e-6,
+        "hr0": 10.e3,
+        "k": 2.25,
+    }
+]
+
+# Damkoehler numbers
+Das = [1e-3]#, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4]#, 1e5]
+compositions = ["hacker_2015_md_xenolith", "sammon_2021_deep_crust", "zhang_2022_cd07-2"]
+
+scenarios = []
+
+for setting in tectonic_settings:
+    for da in Das:
+        for comp in compositions:
+            scenario = setting.copy()
+            scenario["Da"] = da
+            scenario["composition"] = comp
+            scenario["Ts"] = 10. + 273.15
+            scenario["Tlab"] = 1330. + 273.15
+            scenarios.append(scenario)
+
 processes =  mp.cpu_count()-1
 # ------------------------------------------
 
@@ -71,90 +110,105 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.composition is not None:
-        composition = args.composition
+        compositions = [args.composition]
     if args.rxn_name is not None:
         rxn_name = args.rxn_name
 
 #====================================================
 
 rxn = get_reaction(rxn_name)
+
 phase_names, endmember_names = get_names(rxn)
-
-# initial temperature and pressure in K and bars
-T0 = T_moho_i
-P0 = 2780 * 9.81 * 30.e3/1e5 # Gpa, 0.027 Gpa/km
-print(P0)
-rxn.set_parameter('T0', T0) # K; default 2000 K
-mi0, Xik0, phii0, Cik0 = get_point_composition(rxn, composition)
-
-ipyrolite = get_rho_interpolator('xu_2008_pyrolite')
-iharzburgite = get_rho_interpolator('xu_2008_harzburgite')
-
-_Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
-_mi0 = phi2m(rxn, phii0, _Cik0) if mi0 is None else mi0
-
 I = len(rxn.phases())
 Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
 K = sum(Kis)
 
-# Equilibrate model at initial (T0, P0)
-ode = ScipyPDReactiveODE(rxn)
-ode.solve(T0, P0,_mi0,_Cik0,1,Da=1e6,eps=eps)
-rho0 = ode.final_rho()*100 # kg/m3
-Cik0 = ode.sol.y[ode.I:ode.I+ode.K,-1]
-mi0 = ode.sol.y[:ode.I,-1] # -1 = final time step
+ic_cache = {}
+def get_initial_composition(T0,P0,rxn,composition):
+    slug = "{:.4f}-{:.4f}-{}-{}".format(T0,P0,rxn.name(),composition)
+    if slug in ic_cache:
+        print("ic_cache hit")
+        return ic_cache[slug]
 
-# Damkoehler number
-Das = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5]
+    # Get equilibrium composition at arbitrary P,T
+    mi0, Xik0, phii0, Cik0 = get_point_composition(rxn, composition) 
+    _Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
+    _mi0 = phi2m(rxn, phii0, _Cik0) if mi0 is None else mi0
 
-r0 = [da*rho0/max_t for da in Das] # Gamma0 (kg/m3/s)
-dg = 3.*mm # grain size
-reaction_rate_per_surface = [r*dg for r in r0] # r0 (kg/m2/s), assumes 1mm grains
-reaction_rate_per_surface_gcm = [r/10*yr for r in reaction_rate_per_surface] # g/cm2/yr
-print(reaction_rate_per_surface_gcm)
+    # Equilibrate model at initial (T0, P0)
+    ode = ScipyPDReactiveODE(rxn)
+    ode.solve(T0, P0,_mi0,_Cik0,1,Da=1e6,eps=eps)
+    
+    rho0 = ode.final_rho()*100 # kg/m3
+    Cik0 = ode.sol.y[ode.I:ode.I+ode.K,-1] # -1 = final time step
+    mi0 = ode.sol.y[:ode.I,-1]
+
+    ic_cache[slug] = (Cik0, mi0, rho0)
+    return Cik0, mi0, rho0
+
+# initial temperature and pressure in K and bars
+def get_initial_state(rxn,scenario):
+
+    composition = scenario['composition']
+    L0 = scenario["L0"]
+    z0 = scenario["z0"]
+    As = scenario["As"]
+    hr0 = scenario["hr0"]
+    k = scenario["k"]
+    Ts = scenario["Ts"]
+    Tlab = scenario["Tlab"]
+
+    # Temperature
+    T0, qs0 = geotherm_steady(
+        z0/L0, # between 0 and 1
+        L0,
+        thickening=1.0, # gt 1
+        Ts=Ts,
+        Tlab=Tlab,
+        k=k,
+        A=As,
+        hr0=hr0
+    )
+    # Pressure
+    P0 = crustal_rho * gravity * z0/1e5 # bar
+
+    Cik0, mi0, rho0 = get_initial_composition(T0,P0,rxn,composition)
+
+    return T0, P0, Cik0, mi0, rho0
+
+ipyrolite = get_rho_interpolator("xu_2008_pyrolite")
+iharzburgite = get_rho_interpolator("xu_2008_harzburgite")
+
 _Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
 
-
-scale= {'T':T0, 'P':P0, 'rho':rho0, 'h':(moho_f-moho_i), 't':max_t}
-print(scale)
-
-def rhs(t,u,rxn,scale,Da,verbose=False):
+def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
 
     # Extract variables
     mi = u[:I]
     Cik = u[I:I+K]
-    T = u[I+K] # 1 to 1.something
-    P = u[I+K+1] # 1 to 2.something
+    T = u[I+K]
+    P = u[I+K+1] 
  
     # scale Temperature and pressure
-    Ts = scale['T']*T
-    Ps = scale['P']*P
+    Ts = scale["T"]*T
+    Ps = scale["P"]*P
+    dz = scale["h"] # m per unit time
+    rho0 = scale["rho"]
 
     C = rxn.zero_C()
+    
     # reshape C
     Kis = 0
     for i,Ki in enumerate(_Kis):
         C[i] = Cik[Kis:Kis+Ki]
         Kis = Kis+Ki
+
     # regularize C
     Cs = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
     Cs = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
 
-    # phase properties
     rhoi = np.array(rxn.rho(Ts, Ps, Cs))
-
-    #alpha = np.array(rxn.alpha(Ts, Ps, C))
-    #cp = np.array(rxn.Cp(Ts, Ps, C))
-    #s = np.array(rxn.s(Ts, Ps, C))
     v = np.sum(mi/rhoi)
-
-    # mean properties
-    #rho_bar = 1./v
-    #alpha_bar = v.dot(alpha)*rho_bar
-    #cp_bar = mi.dot(cp)
-    #s_bar = mi.dot(s)
-
-    #A = scale['P']/scale['rho']
     
     # regularize m
     mis = np.asarray(mi)
@@ -169,166 +223,236 @@ def rhs(t,u,rxn,scale,Da,verbose=False):
             Gammaik[sKi+k] = gamma_ik[i][k]
         sKi += _Kis[i]
     
-    dudt = np.zeros(u.shape)
+    du = np.zeros(u.shape)
     sKi = 0
     for i in range(I):
-        dudt[i] = Da*rho0*Gammai[i]*v
+        du[i] = Da*rho0*Gammai[i]*v
         for k in range(_Kis[i]):
             GikcGi = Gammaik[sKi+k] - C[i][k]*Gammai[i]
-            dudt[I+sKi+k] = Da*rho0*GikcGi*v/mis[i]
+            du[I+sKi+k] = Da*rho0*GikcGi*v/mis[i]
         sKi += _Kis[i]
     
   
     # linear temperature
-    dTdt_linear = (T_moho_f - T_moho_i)/scale['T']
+    # dT_linear = (T_moho_f - T_moho_i)/scale["T"]
 
-    dzdt = scale['h'] # m per unit time
-    dPdt = 2780*9.81/1e5 * dzdt # bar per unit time
-    dPdt = dPdt/scale['P']
+    dP = crustal_rho * gravity / 1e5 * dz # bar 
+    dP = dP/scale["P"]
 
-    shortening = 1 + 1.3*t
-    T_steady, dTdz = geotherm_steady(z0/L0, L0*shortening, shortening)
+    shortening = 1 + ((dz+z0)/z0 - 1)*t
+    T_steady, q_s = geotherm_steady(z0/L0,
+                                    L0*shortening,
+                                    shortening,
+                                    Ts=T_surf,
+                                    Tlab=Tlab,
+                                    k=conductivity,
+                                    A=As,
+                                    hr0=hr0)
+    dT = (T_steady-Ts)*dz/scale["T"]
 
-    dTdt = (T_steady-Ts)*dzdt/scale['T']
-    dudt[I+K:] = np.array([dTdt, dPdt])
-    return dudt
+    du[I+K:] = np.array([dT, dP])
+    
+    return du
+
+def setup_ics(scenario):
+    rxn = get_reaction(rxn_name)
+    T0, P0, Cik0, mi0, rho0 = get_initial_state(rxn,scenario)
+    scenario["T0"] = T0
+    scenario["P0"] = P0
+    scenario["Cik0"] = Cik0
+    scenario["mi0"] = mi0
+    scenario["rho0"] = rho0
+    return scenario
 
 # function to run in parallel
-def run_experiment(Da):
+def run_experiment(scenario):
+
+    # print("Running ", scenario, "...\n")
+    Da = scenario["Da"]
+    L0 = scenario["L0"]
+    z0 = scenario["z0"]
+    As = scenario["As"]
+    hr0 = scenario["hr0"]
+    z1 = scenario["z1"]
+    T0 = scenario["T0"]
+    P0 = scenario["P0"] 
+    Cik0 = scenario["Cik0"]
+    mi0 = scenario["mi0"]
+    rho0 = scenario["rho0"]
+    k = scenario["k"]
+    Ts = scenario["Ts"]
+    Tlab = scenario["Tlab"]
+
     rxn = get_reaction(rxn_name)
-    rxn.set_parameter('T0',T0)
+    rxn.set_parameter("T0",T0)
+
+    scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0)}
+    print(scale)
 
     u0=np.empty(I+K+2)
     u0[:I] = mi0
     u0[I:I+K] = Cik0
-
     u0[I+K:] = np.array([1., 1.]) # T/T0, P/P0
     
-    #Pmax = 2780 * 9.81 * moho_f/1e5 # bar
+    #Pmax = crustal_rho * gravity * z1/1e5 # bar
     #print(Pmax)
-    #event = lambda t,y,rxn,scale,Da: Pmax - y[-1]*scale['P'] # when pressure = Pmax
+    #event = lambda t,y,rxn,scale,Da: Pmax - y[-1]*scale["P"] # when pressure = Pmax
     #event.terminal = True
-    sol = solve_ivp(rhs,[0,1],u0,args=(rxn,scale,Da),dense_output=True,method='BDF',rtol=rtol,atol=atol,events=None)
+    args = (rxn,scale,Da,L0,z0,As,hr0,k,Ts,Tlab)
+    sol = solve_ivp(rhs, [0,1], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None)
     
-    T = sol.y[-2]*scale['T']
-    P = sol.y[-1]*scale['P']
-    print('{} P_end = {:.2f} Gpa. T_end = {:.2f} K. Used {:n} steps: '.format(sol.message,P[-1]/1e4,T[-1],len(sol.t)))
+    t = np.linspace(0,1,1000)
+    y = sol.sol(t)
 
-    return sol, Da
+    T = y[-2]*scale["T"] # K
+    P = y[-1]*scale["P"] # bar
+
+    mi_times  = y[:I].T
+    Cik_times = y[I:I+K].T
+
+    # reshape C
+    def reshape_C(Cik):
+        C = rxn.zero_C()
+        k = 0
+        for i,Ki in enumerate(Kis):
+            C[i] = Cik[k:k+Ki]
+            k = k+Ki
+        return C
+    
+    Cs_times = [reshape_C(Cik) for Cik in Cik_times]
+
+    rho = [1/sum(mi_times[t]/rxn.rho(T[t], P[t], Cs))/10 for t,Cs in enumerate(Cs_times)]
+
+    print("{} P_end = {:.2f} Gpa. T_end = {:.2f} K. Used {:n} steps: ".format(sol.message,P[-1]/1e4,T[-1],len(sol.t)))
+
+    depth_m = (P*1e5) / gravity / crustal_rho
+    
+    scenario["T"] = T # K
+    scenario["P"] = P # bar
+    scenario["rho"] = rho # g/cm3
+    scenario["mi"] = mi_times
+    scenario["Cik"] = Cik_times
+    scenario["Xik"] = np.asarray([rxn.C_to_X(c) for c in Cs_times], dtype="object")
+    scenario["z"] = depth_m
+
+    return scenario
+
+print("Preparing to run {} scenarios".format(len(scenarios)))
+
+scenarios = [setup_ics(s) for s in scenarios]
 
 # run for varying damkhoeler numbers
 with Pool(processes) as pool:
     # blocks until all finished
-    sols = pool.map(run_experiment, Das)
+    outs = pool.map(run_experiment, scenarios)
 
-outputPath = Path("figs",reference,composition,rxn_name)
-outputPath.mkdir(parents=True, exist_ok=True)
+for composition in compositions:
+    for tectonic_setting in tectonic_settings:
+
+        setting = tectonic_setting["setting"]
+
+        # same setting, same composition
+        # different Da
+        
+        outs_c = sorted([out for out in outs if (out["composition"] == composition and out["setting"] == setting)], key=lambda out: out["Da"])
+
+        base = outs_c[0]
+        T = base["T"]
+        P = base["P"]
+        rho0 = base["rho0"]
+        L0 = base["L0"]
+        z0 = base["z0"]
+        z1 = base["z1"]
+
+        _Das = [o["Da"] for o in outs_c]
+        
+        descent_rate = z0/L0 * shortening_rate # m/s
+        max_t = (z1-z0)/descent_rate
+        r0 = [da*rho0/max_t for da in _Das] # Gamma0 (kg/m3/s)
+        dg = 3.*mm # grain size
+        reaction_rate_per_surface = [r*dg for r in r0] # r0 (kg/m2/s), assumes 1mm grains
+        reaction_rate_per_surface_gcm = [r/10*yr for r in reaction_rate_per_surface] # g/cm2/yr
+
+        #print(reaction_rate_per_surface_gcm)
+        output_path = Path("figs",reference,rxn_name,setting,composition)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        # plot 
+        num_subplots = 3 + len(phase_names) + 2
+        subplot_mosaic = [["rho","rho"] + phase_names + ["An", "Jd", "T"]]
+
+        fig = plt.figure(figsize=(3*num_subplots,12))
+        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+        axes = fig.subplot_mosaic(subplot_mosaic)
+        [ax.invert_yaxis() for label,ax in axes.items()]
+
+        num_lines = len(_Das)
+   
+        greys = plt.cm.get_cmap("Greys")
+        axes["rho"].set_prop_cycle(plt.cycler("color", greys(np.linspace(0.2, 1, num_lines))))
+        axes["An"].set_prop_cycle(plt.cycler("color", greys(np.linspace(0.2, 1, num_lines))))
+        axes["Jd"].set_prop_cycle(plt.cycler("color", greys(np.linspace(0.2, 1, num_lines))))
+
+        for i, obj in enumerate(outs_c):
+            ax = axes["rho"]
+            ax.plot(obj["rho"], obj["z"])
+
+        rho_pyrolite=ipyrolite((T, P/1e4))
+        rho_harzburgite=iharzburgite((T,P/1e4))
+
+        ax.plot(rho_pyrolite/10, outs_c[0]["z"], "r:")
+        ax.plot(rho_harzburgite/10, outs_c[0]["z"], "m:")
+        ax.legend(["$r_0 = ${:.1e} g/cm$^2$/yr".format(r) for r in reaction_rate_per_surface_gcm] +  (["pyrolite", "harzburgite"]), loc="upper right")
+
+        ax.set_ylabel("Depth (km)")
+        ax.set_xlabel("Density")
+        ax.set_xlim([2.8, 3.8])
+
+        # Plot temperature profile
+        ax = axes["T"]
+        ax.plot(T-273.15, base["z"]/1e3, linewidth=2)
+        ax.set_xlabel("T (°C)")
+        ax2 = ax.twinx()
+        ax2.plot(T-273.15, P/1e4, alpha=0)
+        ax2.invert_yaxis()
+        ax2.set_ylabel("P (GPa)")
+
+        # plot all phases
+        cmaps = [plt.cm.get_cmap(name) for name in ["Blues", "YlOrBr", "Greens","Reds","Purples","copper_r"]]
+        for i,phase in enumerate(phase_names):
+            ax = axes[phase]
+            cmap = cmaps[i]
+            ax.set_prop_cycle(plt.cycler("color", cmap(np.linspace(0.2, 1, num_lines))))
+            ax.set_xlim([0., 80.])
+            ax.set_ylabel(None)
+            ax.set_xlabel("{} (wt%)".format(phase))
+            ax.set_xticks(np.arange(0,110,10))
+            ax.set_xticklabels([None, None, 20, None, 40, None, 60, None, 80, None, None])
+            ax.set_yticklabels([])
+            for j, obj in enumerate(outs_c):
+                ax.plot(obj["mi"][:,i]*100, obj["z"])
+
+        # Plot plagioclase composition
+        ax = axes["An"]
+        ax.set_xlim([0., 1.0])
+        ax.set_ylabel(None)
+        ax.set_yticklabels([])
+        ax.set_xlabel("$X_{\mathrm{An}}$")
+
+        ax = axes["Jd"]
+        ax.set_xlim([0., 1.0])
+        ax.set_ylabel(None)
+        ax.set_yticklabels([])
+        ax.set_xlabel("$X_{\mathrm{Jd}}$")
 
 
-# plot 
-num_subplots = 3 + len(phase_names) + 2
-subplot_mosaic = [['rho','rho'] + phase_names + ['An', 'Jd', 'T']]
+        for j, obj in enumerate(outs_c):
+            XAn = [x[3][0] for x in obj["Xik"]]
+            XJd = [x[0][4] for x in obj["Xik"]]
 
-fig = plt.figure(figsize=(3*num_subplots,12))
-plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-axes = fig.subplot_mosaic(subplot_mosaic)
-[ax.invert_yaxis() for label,ax in axes.items()]
+            axes["An"].plot(XAn, obj["z"])
+            axes["Jd"].plot(XJd, obj["z"])
 
-n = len(Das)
-z = np.linspace(0,1,100)
-depth_m = moho_i + z*(moho_f-moho_i)
-depth_km = depth_m / 1000.
-greys = plt.cm.get_cmap('Greys')
-axes['rho'].set_prop_cycle(plt.cycler('color', greys(np.linspace(0.2, 1, n))))
-axes['An'].set_prop_cycle(plt.cycler('color', greys(np.linspace(0.2, 1, n))))
-axes['Jd'].set_prop_cycle(plt.cycler('color', greys(np.linspace(0.2, 1, n))))
-for i,obj in enumerate(sols):
-    ax = axes['rho']
-
-    sol, Da = obj
-    y = sol.sol(z)
-    mi_times  = y[:I].T
-    Cik_times = y[I:I+K].T
-    T = y[I+K].T*scale['T']
-    P = y[I+K+1].T*scale['P']
-
-    C_times = [ode.reshapeC(Cik) for Cik in Cik_times]
-    Cs_times = [ode.regularizeC(C) for C in C_times]
-    rho = [1/sum(mi_times[t]/rxn.rho(T[t], P[t], Cs))/10 for t,Cs in enumerate(Cs_times)]
-    ax.plot(rho, depth_km)
-
-rho_pyrolite=ipyrolite((T, P/1e4))
-rho_harzburgite=iharzburgite((T,P/1e4))
-
-ax.plot(rho_pyrolite/10,depth_km, 'r:')
-ax.plot(rho_harzburgite/10,depth_km, 'm:')
-ax.legend(['$r_0 = ${:.1e} g/cm$^2$/yr'.format(r) for r in reaction_rate_per_surface_gcm] +  (['pyrolite', 'harzburgite']), loc="upper right")
-
-ax.set_ylabel('Depth (km)')
-ax.set_xlabel('Density')
-ax.set_xlim([2.8, 3.8])
-
-# Plot temperature profile
-ax = axes['T']
-ax.plot(T-273.15, depth_km, linewidth=2)
-ax.set_xlabel("T (°C)")
-ax2 = ax.twinx()
-ax2.plot(T-273.15, P/1e4, alpha=0)
-ax2.invert_yaxis()
-ax2.set_ylabel("P (GPa)")
-
-# plot all phases
-cmaps = [plt.cm.get_cmap(name) for name in ['Blues', 'YlOrBr', 'Greens','Reds','Purples','copper_r']]
-for i,phase in enumerate(phase_names):
-    ax = axes[phase]
-    cmap = cmaps[i]
-    ax.set_prop_cycle(plt.cycler('color', cmap(np.linspace(0.2, 1, n))))
-    ax.set_xlim([0., 80.])
-    ax.set_ylabel(None)
-    ax.set_xlabel("{} (wt%)".format(phase))
-    ax.set_xticks(np.arange(0,110,10))
-    ax.set_xticklabels([None, None, 20, None, 40, None, 60, None, 80, None, None])
-    ax.set_yticklabels([])
-    for j, obj in enumerate(sols):
-        sol, Da = obj
-        y = sol.sol(z)
-        mi_times  = y[i].T
-        Cik_times = y[I:I+K].T
-        T = y[I+K].T*scale['T']
-        P = y[I+K+1].T*scale['P']
-        # plot garnet mass fraction
-        ax.plot(mi_times*100, depth_km)
-
-# Plot plagioclase composition
-ax = axes['An']
-ax.set_xlim([0., 1.0])
-ax.set_ylabel(None)
-ax.set_yticklabels([])
-ax.set_xlabel("$X_{\mathrm{An}}$")
-
-ax = axes['Jd']
-ax.set_xlim([0., 1.0])
-ax.set_ylabel(None)
-ax.set_yticklabels([])
-ax.set_xlabel("$X_{\mathrm{Jd}}$")
-
-
-for j, obj in enumerate(sols):
-    sol, Da = obj
-    y = sol.sol(z)
-    mi_times  = y[i].T
-    Cik_times = y[I:I+K].T
-    C_times = [ode.reshapeC(Cik) for Cik in Cik_times]
-    Cs_times = [ode.regularizeC(C) for C in C_times]
-    T = y[I+K].T*scale['T']
-    P = y[I+K+1].T*scale['P']
-    Xik_nested_times = np.asarray([rxn.C_to_X(c) for c in Cs_times])
-    XAn = [x[3][0] for x in Xik_nested_times]
-    XJd = [x[0][4] for x in Xik_nested_times]
-
-    axes['An'].plot(XAn, depth_km)
-    axes['Jd'].plot(XJd, depth_km)
-
-fig.suptitle('$R_m=${:.1f} km/Myr, $T_m=${:.0f}-{:.0f} °C, $d_g=${}mm'.format(descent_rate/1e3*yr*1e6,T_moho_i-273.15,T_moho_f-273.15,dg/mm,composition.capitalize().replace("_"," ")),y=0.9)
-plt.savefig(Path(outputPath,"{}.{}".format("results", "pdf")))
-plt.savefig(Path(outputPath,"{}.{}".format("results", "png")))
+        fig.suptitle("{}, {}, $R_m=${:.1f} km/Myr, $d_g=${}mm".format(composition.capitalize().replace("_"," "), setting, descent_rate/1e3*yr*1e6, dg/mm),y=0.9)
+        plt.savefig(Path(output_path,"{}.{}".format("results", "pdf")))
+        plt.savefig(Path(output_path,"{}.{}".format("results", "png")))

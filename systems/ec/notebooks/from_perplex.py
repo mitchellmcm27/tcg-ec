@@ -141,7 +141,8 @@ def get_point_composition(rxn, name):
             if(phase=="Pl"):
                 Xik0[3] = [ems[1],ems[0]]
             elif(phase=="Sp"):
-                Xik0[6] = [ems[1],ems[0]]
+                if len(Xik0)>=7:
+                    Xik0[6] = [ems[1],ems[0]]
             elif(phase=="Cpx"):
                 Xik0[0] = [ems[1], ems[2], ems[3], ems[4], ems[0]]
             elif(phase=="Opx"):
