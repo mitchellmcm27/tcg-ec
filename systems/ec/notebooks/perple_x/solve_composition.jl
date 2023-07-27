@@ -7,7 +7,7 @@ perplexdir = joinpath(resourcepath,"perplex-stable")
 
 mode_basis = "vol"
 
-T_range_2d = (500+273.15, 1000+273.15) # Kelvin
+T_range_2d = (300+273.15, 1300+273.15) # Kelvin
 P_range_2d = (5000, 25000) # bar
 
 T_range_1d = (650+273.15, 850+273.15) # Kelvin

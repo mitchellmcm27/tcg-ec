@@ -40,6 +40,46 @@
             9.00000
         ]
     },
+    "hacker_2015_fast_Vp":{
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",   
+            "MGO",    
+            "AL2O3",  
+            "SIO2",   
+            "CAO",    
+            "FEO"
+        ],
+        "composition" : [
+            2.8,
+            7.03,
+            16.5,
+            50.7,
+            10.1,
+            10.39
+        ]
+    },
+    "hacker_2015_middle_crust":{
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",   
+            "MGO",    
+            "AL2O3",  
+            "SIO2",   
+            "CAO",    
+            "FEO"
+        ],
+        "composition" : [
+            3.89,
+            4.46,
+            16.8,
+            57.3,
+            6.63,
+            8.15
+        ]
+    },
     "rudnick_2014_lower_crust":{
         "comment": "Rudnick & Gao 2014. Grabbed normalized oxides from Sammon & McDonough 2021 (Table S3).",
         "basis": "wt",
@@ -94,11 +134,31 @@
         ],
         "composition" : [
             2.63,
-            8.615,
+            7.63,
             17.2,
             53.3,
             10.15,
-            8.105
+            7.12
+        ]
+    },
+    "sammon_2022_M85": {
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",
+            "MGO",
+            "AL2O3",
+            "SIO2",
+            "CAO",
+            "FEO"
+        ],
+        "composition" : [
+            2.75,
+            4.93,
+            16.8,
+            53.3,
+            7.76,
+            8.75
         ]
     },
     "sammon_2021_eclogite_terrains" : {

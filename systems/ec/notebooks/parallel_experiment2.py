@@ -42,46 +42,201 @@ gravity = 9.81
 
 tectonic_settings = [
     {
-        "setting": "orogen_hot",
-        "L0": 60.e3,
+        "setting": "hot-0",
+        "L0": 65.e3,
         "z0": 30.e3,
         "z1": 70.e3,
-        "As": 2.5e-6,
-        "hr0": 10.e3,
+        "As": 2.0e-6,
+        "hr0": 12.25e3,
         "k": 2.25,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
     },
     {
-        "setting": "orogen_cold",
+        "setting": "hot-1",
+        "L0": 70.e3,
+        "z0": 30.e3,
+        "z1": 70.e3,
+        "As": 2.0e-6,
+        "hr0": 11.5e3,
+        "k": 2.25,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting": "hot-2",
+        "L0": 75.e3,
+        "z0": 30.e3,
+        "z1": 70.e3,
+        "As": 2.0e-6,
+        "hr0": 10.75e3,
+        "k": 2.25,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting": "transitional-1",
+        "L0": 80.e3,
+        "z0": 30.e3,
+        "z1": 70.e3,
+        "As": 2.0e-6,
+        "hr0": 10.e3,
+        "k": 2.25,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting": "transitional-2",
+        "L0": 85.e3,
+        "z0": 30.e3,
+        "z1": 70.e3,
+        "As": 2.0e-6,
+        "hr0": 9.25e3,
+        "k": 2.25,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting":"cold-1",
+        "L0": 90.e3,
+        "z0": 30.e3,
+        "z1": 70.e3,
+        "As": 2.0e-6,
+        "hr0": 8.5e3,
+        "k": 2.25,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting":"cold-2",
+        "L0": 95.e3,
+        "z0": 30.e3,
+        "z1": 70.e3,
+        "As": 2.0e-6,
+        "hr0": 7.75e3,
+        "k": 2.25,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting":"cold-3",
         "L0": 100.e3,
-        "z0": 35.e3,
+        "z0": 30.e3,
         "z1": 70.e3,
         "As": 2.0e-6,
-        "hr0": 10.e3,
+        "hr0": 7.e3,
         "k": 2.25,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
     },
-    {
-        "setting":"craton_hot",
-        "L0": 125.e3,
-        "z0": 35.e3,
-        "z1": 70.e3,
-        "As": 3.0e-6,
-        "hr0": 15.e3,
-        "k": 2.25,
-    },
-    {
-        "setting":"craton_cold",
-        "L0": 135.e3,
-        "z0": 35.e3,
-        "z1": 70.e3,
-        "As": 2.0e-6,
-        "hr0": 10.e3,
-        "k": 2.25,
-    }
 ]
 
+fig = plt.figure(figsize=(5,7))
+cmap1 = plt.cm.get_cmap("coolwarm_r")
+ax1 = plt.gca()
+ax1.set_prop_cycle(plt.cycler("color", cmap1(np.linspace(0., 1., len(tectonic_settings)))))
+for setting in tectonic_settings:
+    z0 = setting["z0"]
+    L0 = setting["L0"]
+    shortening = 1
+    z1 = setting["z1"]
+    hr0 = setting["hr0"]
+    conductivity = setting["k"]
+    Ts = setting["Ts"]
+    Tlab = setting["Tlab"]
+    As = setting["As"]
+
+    depths = np.linspace(0,1)
+    depths_sc = L0*depths
+    P =  depths_sc * crustal_rho * gravity / 1e5
+    T, qs = geotherm_steady(depths,
+                        L0*shortening,
+                        shortening,
+                        Ts=Ts,
+                        Tlab=Tlab,
+                        k=conductivity,
+                        A=As,
+                        hr0=hr0)
+    p = plt.plot(T-273.15, depths_sc/1e3, label=setting["setting"],linewidth=1, alpha=0.5)
+    color = plt.gca().lines[-1].get_color()
+    plt.plot(T[-1]-273.15, depths_sc[-1]/1e3, "x", color=color, )
+    Tmoho, _qs = geotherm_steady(z0/L0,
+                    L0*shortening,
+                    shortening,
+                    Ts=Ts,
+                    Tlab=Tlab,
+                    k=conductivity,
+                    A=As,
+                    hr0=hr0)
+    plt.plot(Tmoho-273.15, z0/1e3,'.',color=color,alpha=1)
+    
+    shortening = z1/z0
+    T, qs = geotherm_steady(depths,
+                        L0*shortening,
+                        shortening,
+                        Ts=Ts,
+                        Tlab=Tlab,
+                        k=conductivity,
+                        A=As,
+                        hr0=hr0,)
+    Tmoho, _qs = geotherm_steady(z0/L0,
+                L0*shortening,
+                shortening,
+                Ts=Ts,
+                Tlab=Tlab,
+                k=conductivity,
+                A=As,
+                hr0=hr0)
+    plt.plot(T-273.15, depths_sc/1e3*shortening, "--", color=color,alpha=0.5,linewidth=1)
+
+    Tts = np.zeros(100)
+    zts = np.zeros(100)
+    for i,t in enumerate(np.linspace(0,1,100)):
+        s = 1 + (z1/z0 - 1)*t
+        Tt, _q = geotherm_steady(z0/L0,
+                L0*s,
+                s,
+                Ts=Ts,
+                Tlab=Tlab,
+                k=conductivity,
+                A=As,
+                hr0=hr0)
+        Tts[i] = Tt
+        zts[i] = z0*s
+
+    plt.plot(np.array(Tts)-273.15,np.array(zts)/1.e3,'-',alpha=1,linewidth=1.2,color=color)
+
+    # points after shortening
+    plt.plot(Tmoho-273.15, z0/1e3*shortening,'.',color=color)
+    plt.plot(T[-1]-273.15, depths_sc[-1]/1e3*shortening, "x", color=color)
+    plt.plot(T[0]-273.15, depths_sc[0]/1e3,'ko')
+plt.legend()
+ax1.set_ylabel("depth (km)")
+ax1.set_xlabel("$T$ (°C)")
+ax1.invert_yaxis()
+output_path = Path("figs",reference,rxn_name)
+plt.savefig(Path(output_path,"{}.{}".format("geotherms", "pdf")))
+plt.savefig(Path(output_path,"{}.{}".format("geotherms", "png")))
+
 # Damkoehler numbers
-Das = [1e-3]#, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4]#, 1e5]
-compositions = ["hacker_2015_md_xenolith", "sammon_2021_deep_crust", "zhang_2022_cd07-2"]
+Das = [1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 1e0, 1e1, 1e2, 1e3]#, 1e4]#, 1e5]
+compositions = [
+    "hacker_2015_middle_crust",
+    # "sammon_2021_deep_crust",
+    "sammon_2022_M85",
+    "zhang_2006_mafic_granulite", 
+    # "sammon_2021_lower_crust",
+    # "hacker_2015_md_xenolith", 
+    "hacker_2015_fast_Vp",
+    "zhang_2022_cd07-2", # mafic
+
+
+
+
+
+
+
+]
 
 scenarios = []
 
@@ -91,8 +246,6 @@ for setting in tectonic_settings:
             scenario = setting.copy()
             scenario["Da"] = da
             scenario["composition"] = comp
-            scenario["Ts"] = 10. + 273.15
-            scenario["Tlab"] = 1330. + 273.15
             scenarios.append(scenario)
 
 processes =  mp.cpu_count()-1
@@ -127,7 +280,6 @@ ic_cache = {}
 def get_initial_composition(T0,P0,rxn,composition):
     slug = "{:.4f}-{:.4f}-{}-{}".format(T0,P0,rxn.name(),composition)
     if slug in ic_cache:
-        print("ic_cache hit")
         return ic_cache[slug]
 
     # Get equilibrium composition at arbitrary P,T
@@ -346,6 +498,85 @@ with Pool(processes) as pool:
     # blocks until all finished
     outs = pool.map(run_experiment, scenarios)
 
+
+output_path = Path("figs",reference,rxn_name)
+output_path.mkdir(parents=True, exist_ok=True)
+
+fig = plt.figure(figsize=(5,7))
+plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+import pandas as pd
+
+depths = []
+for out in outs:
+    rho = out["rho"]
+    depth_m = out["z"]
+    T = out["T"] # K
+    P = out["P"] # bar
+    rho_pyrolite = ipyrolite((T, P/1e4))/10
+
+    max_rho = np.nanmax(rho)
+    max_rho_py = np.nanmax(rho_pyrolite)
+
+    if max_rho > max_rho_py:
+        # find the greatest depth at which rho exceeds pyrolite
+        noncritical_indices = [i for i,r in enumerate(rho) if r<rho_pyrolite[i]]
+        if len(noncritical_indices) == 0:
+            critical_depth = depth_m[0]
+        else:
+            last_noncritical_index = noncritical_indices[-1]
+            critical_index = last_noncritical_index + 1
+            critical_depth = depth_m[critical_index]
+    else:
+        critical_depth = 75.e3 # approx. coesite transition?, can change this later
+    
+    depths.append(critical_depth)
+
+T0s = np.asarray([o["T0"] - 273.15 for o in outs])
+
+def T2size(T):
+    return ((1 - (T-np.min(T))/(np.max(T)-np.min(T)))*6 + 3)**2
+def size2T(s):
+    return -((np.sqrt(s)-3)/6 - 1)*(np.max(T0s)-np.min(T0s))+np.min(T0s)
+
+sizes = T2size(T0s)
+comps = [o["composition"] for o in outs]
+codes = [compositions.index(c) for c in comps]
+s = plt.scatter([o["Da"] for o in outs], np.asarray(depths)/1000., s=sizes, c=codes, cmap="tab10", alpha=0.5)
+
+# produce a legend with the unique colors from the scatter
+ax = plt.gca()
+handles, labels = s.legend_elements(
+    prop="colors",
+    #func=lambda x: comps[int(x)].capitalize().replace("_", " ")
+)
+legend1 = ax.legend(handles,
+                    [c.capitalize().replace("_"," ") for c in compositions],
+                    loc="lower left",
+                    bbox_to_anchor=(1.04,0),
+                    title="$X_{{bulk}}$")
+
+ax.add_artist(legend1)
+# produce a legend with a cross-section of sizes from the scatter
+handles, labels = s.legend_elements(
+    prop="sizes",
+    alpha=0.6,
+    fmt="{x:.0f}",
+    func=size2T
+)
+
+legend2 = ax.legend(handles, 
+                    labels, 
+                    loc="upper left",
+                    bbox_to_anchor=(1.04,1),
+                    title="$T_0$ (°C)")
+ax.set_ylim(top=76)
+plt.semilogx()
+plt.xlabel("Da")
+plt.ylabel("Critical depth (km)")
+plt.savefig(Path(output_path,"{}.{}".format("critical", "pdf")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
+plt.savefig(Path(output_path,"{}.{}".format("critical", "png")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
+
 for composition in compositions:
     for tectonic_setting in tectonic_settings:
 
@@ -453,6 +684,7 @@ for composition in compositions:
             axes["An"].plot(XAn, obj["z"])
             axes["Jd"].plot(XJd, obj["z"])
 
-        fig.suptitle("{}, {}, $R_m=${:.1f} km/Myr, $d_g=${}mm".format(composition.capitalize().replace("_"," "), setting, descent_rate/1e3*yr*1e6, dg/mm),y=0.9)
+        fig.suptitle("{}, {}, $R_m=${:.1f} km/Myr, $d_g=${}mm".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), descent_rate/1e3*yr*1e6, dg/mm),y=0.9)
         plt.savefig(Path(output_path,"{}.{}".format("results", "pdf")))
         plt.savefig(Path(output_path,"{}.{}".format("results", "png")))
+        plt.close(fig)

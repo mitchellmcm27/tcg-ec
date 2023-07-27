@@ -27,11 +27,11 @@ perplex_option.dat     | Perple_X option file
 
 begin thermodynamic component list
 NA2O  1  2.63000      0.00000      0.00000     mass  amount
-MGO   1  8.61500      0.00000      0.00000     mass  amount
+MGO   1  7.63000      0.00000      0.00000     mass  amount
 AL2O3 1  17.2000      0.00000      0.00000     mass  amount
 SIO2  1  53.3000      0.00000      0.00000     mass  amount
 CAO   1  10.1500      0.00000      0.00000     mass  amount
-FEO   1  8.10500      0.00000      0.00000     mass  amount
+FEO   1  7.12000      0.00000      0.00000     mass  amount
 end thermodynamic component list
 
 
@@ -71,8 +71,8 @@ Gt
 NaAl      
 end solution phase list
 
-   25000.0        1273.15        0.00000        0.00000        0.00000     max p, t, xco2, mu_1, mu_2
-   5000.00        773.150        0.00000        0.00000        0.00000     min p, t, xco2, mu_1, mu_2
+   25000.0        1573.15        0.00000        0.00000        0.00000     max p, t, xco2, mu_1, mu_2
+   5000.00        573.150        0.00000        0.00000        0.00000     min p, t, xco2, mu_1, mu_2
    0.00000        0.00000        0.00000        0.00000        0.00000     unused place holder post 06
 
  2  1  4  5  3   indices of 1st & 2nd independent & sectioning variables
