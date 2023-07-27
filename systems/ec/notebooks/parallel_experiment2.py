@@ -42,90 +42,90 @@ gravity = 9.81
 
 tectonic_settings = [
     {
-        "setting": "hot-0",
-        "L0": 65.e3,
-        "z0": 30.e3,
-        "z1": 70.e3,
-        "As": 2.0e-6,
-        "hr0": 12.25e3,
-        "k": 2.25,
-        "Ts": 10. + 273.15,
-        "Tlab": 1330. + 273.15
-    },
-    {
         "setting": "hot-1",
-        "L0": 70.e3,
+        "L0": 55.e3,
         "z0": 30.e3,
-        "z1": 70.e3,
-        "As": 2.0e-6,
+        "z1": 80.e3,
+        "As": 2.5e-6,
         "hr0": 11.5e3,
-        "k": 2.25,
+        "k": 3.1,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting": "hot-2",
-        "L0": 75.e3,
+        "L0": 60.e3,
         "z0": 30.e3,
-        "z1": 70.e3,
-        "As": 2.0e-6,
-        "hr0": 10.75e3,
-        "k": 2.25,
+        "z1": 80.e3,
+        "As": 2.5e-6,
+        "hr0": 11.0e3,
+        "k": 3.1,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting": "hot-3",
+        "L0": 65.e3,
+        "z0": 30.e3,
+        "z1": 80.e3,
+        "As": 2.5e-6,
+        "hr0": 10.5e3,
+        "k": 3.1,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting": "transitional-1",
-        "L0": 80.e3,
+        "L0": 70.e3,
         "z0": 30.e3,
-        "z1": 70.e3,
-        "As": 2.0e-6,
+        "z1": 80.e3,
+        "As": 2.5e-6,
         "hr0": 10.e3,
-        "k": 2.25,
+        "k": 3.1,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting": "transitional-2",
-        "L0": 85.e3,
+        "L0": 75.e3,
         "z0": 30.e3,
-        "z1": 70.e3,
-        "As": 2.0e-6,
-        "hr0": 9.25e3,
-        "k": 2.25,
+        "z1": 80.e3,
+        "As": 2.5e-6,
+        "hr0": 9.5e3,
+        "k": 3.1,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting":"cold-1",
-        "L0": 90.e3,
+        "L0": 80.e3,
         "z0": 30.e3,
-        "z1": 70.e3,
-        "As": 2.0e-6,
-        "hr0": 8.5e3,
-        "k": 2.25,
+        "z1": 80.e3,
+        "As": 2.5e-6,
+        "hr0": 9.0e3,
+        "k": 3.1,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting":"cold-2",
-        "L0": 95.e3,
+        "L0": 85.e3,
         "z0": 30.e3,
-        "z1": 70.e3,
-        "As": 2.0e-6,
-        "hr0": 7.75e3,
-        "k": 2.25,
+        "z1": 80.e3,
+        "As": 2.5e-6,
+        "hr0": 8.5e3,
+        "k": 3.1,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting":"cold-3",
-        "L0": 100.e3,
+        "L0": 90.e3,
         "z0": 30.e3,
-        "z1": 70.e3,
-        "As": 2.0e-6,
-        "hr0": 7.e3,
-        "k": 2.25,
+        "z1": 80.e3,
+        "As": 2.5e-6,
+        "hr0": 8.0e3,
+        "k": 3.1,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
@@ -215,27 +215,22 @@ ax1.set_ylabel("depth (km)")
 ax1.set_xlabel("$T$ (°C)")
 ax1.invert_yaxis()
 output_path = Path("figs",reference,rxn_name)
+output_path.mkdir(parents=True, exist_ok=True)
 plt.savefig(Path(output_path,"{}.{}".format("geotherms", "pdf")))
 plt.savefig(Path(output_path,"{}.{}".format("geotherms", "png")))
 
+
 # Damkoehler numbers
-Das = [1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 1e0, 1e1, 1e2, 1e3]#, 1e4]#, 1e5]
+Das = [1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1e0, 1e1, 1e2, 1e3]#, 1e4]#, 1e5]
 compositions = [
     "hacker_2015_middle_crust",
-    # "sammon_2021_deep_crust",
+    "sammon_2021_deep_crust",
     "sammon_2022_M85",
     "zhang_2006_mafic_granulite", 
-    # "sammon_2021_lower_crust",
-    # "hacker_2015_md_xenolith", 
+    "sammon_2021_lower_crust",
+    "hacker_2015_md_xenolith", 
     "hacker_2015_fast_Vp",
-    "zhang_2022_cd07-2", # mafic
-
-
-
-
-
-
-
+    "zhang_2022_cd07-2",
 ]
 
 scenarios = []
@@ -507,8 +502,17 @@ plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 
 import pandas as pd
 
+selected_compositions = [
+    "hacker_2015_middle_crust",
+    "sammon_2022_M85",
+    "hacker_2015_fast_Vp",
+    "zhang_2022_cd07-2", 
+]
+
+selected_outputs = [o for o in outs if o["composition"] in selected_compositions]
+
 depths = []
-for out in outs:
+for out in selected_outputs:
     rho = out["rho"]
     depth_m = out["z"]
     T = out["T"] # K
@@ -528,11 +532,11 @@ for out in outs:
             critical_index = last_noncritical_index + 1
             critical_depth = depth_m[critical_index]
     else:
-        critical_depth = 75.e3 # approx. coesite transition?, can change this later
+        critical_depth = 85.e3 # approx. coesite transition?, can change this later
     
     depths.append(critical_depth)
 
-T0s = np.asarray([o["T0"] - 273.15 for o in outs])
+T0s = np.asarray([o["T0"] - 273.15 for o in selected_outputs])
 
 def T2size(T):
     return ((1 - (T-np.min(T))/(np.max(T)-np.min(T)))*6 + 3)**2
@@ -540,9 +544,11 @@ def size2T(s):
     return -((np.sqrt(s)-3)/6 - 1)*(np.max(T0s)-np.min(T0s))+np.min(T0s)
 
 sizes = T2size(T0s)
-comps = [o["composition"] for o in outs]
-codes = [compositions.index(c) for c in comps]
-s = plt.scatter([o["Da"] for o in outs], np.asarray(depths)/1000., s=sizes, c=codes, cmap="tab10", alpha=0.5)
+
+comps = [o["composition"] for o in selected_outputs]
+codes = [selected_compositions.index(c) for c in comps]
+
+s = plt.scatter([o["Da"] for o in selected_outputs], np.asarray(depths)/1000., s=sizes, c=codes, cmap="tab10", alpha=0.5)
 
 # produce a legend with the unique colors from the scatter
 ax = plt.gca()
@@ -551,7 +557,7 @@ handles, labels = s.legend_elements(
     #func=lambda x: comps[int(x)].capitalize().replace("_", " ")
 )
 legend1 = ax.legend(handles,
-                    [c.capitalize().replace("_"," ") for c in compositions],
+                    [c.capitalize().replace("_"," ") for c in selected_compositions],
                     loc="lower left",
                     bbox_to_anchor=(1.04,0),
                     title="$X_{{bulk}}$")
@@ -570,7 +576,7 @@ legend2 = ax.legend(handles,
                     loc="upper left",
                     bbox_to_anchor=(1.04,1),
                     title="$T_0$ (°C)")
-ax.set_ylim(top=76)
+ax.set_ylim(top=86)
 plt.semilogx()
 plt.xlabel("Da")
 plt.ylabel("Critical depth (km)")
