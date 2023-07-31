@@ -320,6 +320,7 @@ def get_initial_state(rxn,scenario):
     k = scenario["k"]
     Ts = scenario["Ts"]
     Tlab = scenario["Tlab"]
+    z1 = scenario["z1"]
 
     # Temperature
     T0, qs0 = geotherm_steady(
@@ -332,12 +333,24 @@ def get_initial_state(rxn,scenario):
         A=As,
         hr0=hr0
     )
+    thickening = z1/z0
+    T1, qs1 = geotherm_steady(
+        z0/L0, # between 0 and 1
+        L0*thickening,
+        thickening=thickening, # gt 1
+        Ts=Ts,
+        Tlab=Tlab,
+        k=k,
+        A=As,
+        hr0=hr0
+    )
+
     # Pressure
     P0 = crustal_rho * gravity * z0/1e5 # bar
 
     Cik0, mi0, rho0 = get_initial_composition(T0,P0,rxn,composition)
 
-    return T0, P0, Cik0, mi0, rho0
+    return T0, P0, Cik0, mi0, rho0, qs0, T1, qs1
 
 ipyrolite = get_rho_interpolator("xu_2008_pyrolite")
 iharzburgite = get_rho_interpolator("xu_2008_harzburgite")
@@ -419,8 +432,11 @@ def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
 
 def setup_ics(scenario):
     rxn = get_reaction(rxn_name)
-    T0, P0, Cik0, mi0, rho0 = get_initial_state(rxn,scenario)
+    T0, P0, Cik0, mi0, rho0,qs0,T1,qs1 = get_initial_state(rxn,scenario)
     scenario["T0"] = T0
+    scenario["T1"] = T1
+    scenario["qs0"] = qs0
+    scenario["qs1"] = qs1
     scenario["P0"] = P0
     scenario["Cik0"] = Cik0
     scenario["mi0"] = mi0
@@ -525,18 +541,7 @@ import pandas as pd
 #    "zhang_2022_cd07-2", 
 #]
 
-selected_compositions = [
-    "hacker_2015_bin_3",
-    "zhang_2006_mafic_granuite",
-    "hacker_2015_bin_2",
-    "hacker_2015_bin_1",
-    "zhang_2022_cd07-2",
-]
-
-selected_outputs = [o for o in outs if o["composition"] in selected_compositions]
-
-depths = []
-for out in selected_outputs:
+for out in outs:
     rho = out["rho"]
     depth_m = out["z"]
     T = out["T"] # K
@@ -558,7 +563,19 @@ for out in selected_outputs:
     else:
         critical_depth = 85.e3 # approx. coesite transition?, can change this later
     
-    depths.append(critical_depth)
+    out["critical_depth"] = critical_depth
+
+selected_compositions = [
+    "hacker_2015_bin_3",
+    "zhang_2006_mafic_granuite",
+    "hacker_2015_bin_2",
+    "hacker_2015_bin_1",
+    "zhang_2022_cd07-2",
+]
+
+selected_outputs = [o for o in outs if o["composition"] in selected_compositions]
+
+depths = [o['critical_depth'] for o in selected_outputs]
 
 T0s = np.asarray([o["T0"] - 273.15 for o in selected_outputs])
 
@@ -607,6 +624,14 @@ plt.ylabel("Critical depth (km)")
 plt.savefig(Path(output_path,"{}.{}".format("_critical", "pdf")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
 plt.savefig(Path(output_path,"{}.{}".format("_critical", "png")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
 
+import csv
+with open(Path(output_path,'_critical.csv'),'w') as csvfile:
+    writer = csv.DictWriter(csvfile, ['setting','L0','z0','z1','As','hr0','k','Ts','Tlab','Da','composition','T0','T1','P0','rho0','critical_depth','qs0','qs1'],extrasaction='ignore')
+    writer.writeheader()
+    for out in outs:
+        writer.writerow(out)
+
+quit()
 for composition in compositions:
     for tectonic_setting in tectonic_settings:
 
