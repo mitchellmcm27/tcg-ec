@@ -40,6 +40,86 @@
             9.00000
         ]
     },
+    "hacker_2015_bin_1":{
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",   
+            "MGO",    
+            "AL2O3",  
+            "SIO2",   
+            "CAO",    
+            "FEO"
+        ],
+        "composition" : [
+            2.85,
+            6.87,
+            18.07,
+            48.65,
+            10.11,
+            10.44
+        ]
+    },
+    "hacker_2015_bin_2":{
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",   
+            "MGO",    
+            "AL2O3",  
+            "SIO2",   
+            "CAO",    
+            "FEO"
+        ],
+        "composition" : [
+            3.19,
+            6.32,
+            16.99,
+            52.25,
+            9.29,
+            9.48
+        ]
+    },
+    "hacker_2015_bin_3":{
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",   
+            "MGO",    
+            "AL2O3",  
+            "SIO2",   
+            "CAO",    
+            "FEO"
+        ],
+        "composition" : [
+            3.60,
+            4.45,
+            16.95,
+            57.26,
+            6.89,
+            8.05
+        ]
+    },
+    "hacker_2015_bin_4":{
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",   
+            "MGO",    
+            "AL2O3",  
+            "SIO2",   
+            "CAO",    
+            "FEO"
+        ],
+        "composition" : [
+            3.92,
+            3.14,
+            16.10,
+            61.93,
+            5.77,
+            6.52
+        ]
+    },
     "hacker_2015_fast_Vp":{
         "basis" : "wt",
         "dataset": "stx21ver",

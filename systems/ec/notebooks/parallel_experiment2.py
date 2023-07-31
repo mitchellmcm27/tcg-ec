@@ -46,9 +46,9 @@ tectonic_settings = [
         "L0": 55.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 2.5e-6,
+        "As": 1.5e-6,
         "hr0": 11.5e3,
-        "k": 3.1,
+        "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
@@ -57,9 +57,9 @@ tectonic_settings = [
         "L0": 60.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 2.5e-6,
-        "hr0": 11.0e3,
-        "k": 3.1,
+        "As": 1.5e-6,
+        "hr0": 11.25e3,
+        "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
@@ -68,64 +68,75 @@ tectonic_settings = [
         "L0": 65.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 2.5e-6,
-        "hr0": 10.5e3,
-        "k": 3.1,
+        "As": 1.5e-6,
+        "hr0": 11.0e3,
+        "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting": "transitional-1",
-        "L0": 70.e3,
+        "L0": 72.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 2.5e-6,
-        "hr0": 10.e3,
-        "k": 3.1,
+        "As": 1.5e-6,
+        "hr0": 10.5e3,
+        "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting": "transitional-2",
-        "L0": 75.e3,
+        "L0": 78.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 2.5e-6,
+        "As": 1.5e-6,
+        "hr0": 10.e3,
+        "k": 3.0,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting": "transitional-3",
+        "L0": 88.e3,
+        "z0": 30.e3,
+        "z1": 80.e3,
+        "As": 1.5e-6,
         "hr0": 9.5e3,
-        "k": 3.1,
+        "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting":"cold-1",
-        "L0": 80.e3,
+        "L0": 98.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 2.5e-6,
+        "As": 1.5e-6,
         "hr0": 9.0e3,
-        "k": 3.1,
+        "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting":"cold-2",
-        "L0": 85.e3,
+        "L0": 110.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 2.5e-6,
+        "As": 1.5e-6,
         "hr0": 8.5e3,
-        "k": 3.1,
+        "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting":"cold-3",
-        "L0": 90.e3,
+        "L0": 124.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 2.5e-6,
+        "As": 1.5e-6,
         "hr0": 8.0e3,
-        "k": 3.1,
+        "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
@@ -135,7 +146,7 @@ fig = plt.figure(figsize=(5,7))
 cmap1 = plt.cm.get_cmap("coolwarm_r")
 ax1 = plt.gca()
 ax1.set_prop_cycle(plt.cycler("color", cmap1(np.linspace(0., 1., len(tectonic_settings)))))
-for setting in tectonic_settings:
+for num_setting, setting in enumerate(tectonic_settings):
     z0 = setting["z0"]
     L0 = setting["L0"]
     shortening = 1
@@ -149,7 +160,7 @@ for setting in tectonic_settings:
     depths = np.linspace(0,1)
     depths_sc = L0*depths
     P =  depths_sc * crustal_rho * gravity / 1e5
-    T, qs = geotherm_steady(depths,
+    T, qs0 = geotherm_steady(depths,
                         L0*shortening,
                         shortening,
                         Ts=Ts,
@@ -157,9 +168,11 @@ for setting in tectonic_settings:
                         k=conductivity,
                         A=As,
                         hr0=hr0)
-    p = plt.plot(T-273.15, depths_sc/1e3, label=setting["setting"],linewidth=1, alpha=0.5)
+
+
+    p = plt.plot(T-273.15, depths_sc/1e3,linewidth=1, alpha=0.5)
     color = plt.gca().lines[-1].get_color()
-    plt.plot(T[-1]-273.15, depths_sc[-1]/1e3, "x", color=color, )
+    #plt.plot(T[-1]-273.15, depths_sc[-1]/1e3, "x", color=color, )
     Tmoho, _qs = geotherm_steady(z0/L0,
                     L0*shortening,
                     shortening,
@@ -171,7 +184,7 @@ for setting in tectonic_settings:
     plt.plot(Tmoho-273.15, z0/1e3,'.',color=color,alpha=1)
     
     shortening = z1/z0
-    T, qs = geotherm_steady(depths,
+    T, qs1 = geotherm_steady(depths,
                         L0*shortening,
                         shortening,
                         Ts=Ts,
@@ -203,33 +216,36 @@ for setting in tectonic_settings:
                 hr0=hr0)
         Tts[i] = Tt
         zts[i] = z0*s
-
-    plt.plot(np.array(Tts)-273.15,np.array(zts)/1.e3,'-',alpha=1,linewidth=1.2,color=color)
+    
+    label = setting["setting"].replace("hot","H").replace("transitional","T").replace("cold","C")
+    label = "{} ({:.0f} mW/m$^3$)".format(label,qs0*1e3)
+    
+    plt.plot(np.array(Tts)-273.15,np.array(zts)/1.e3,'-',alpha=1,linewidth=1.2,color=color,label=label)
 
     # points after shortening
     plt.plot(Tmoho-273.15, z0/1e3*shortening,'.',color=color)
-    plt.plot(T[-1]-273.15, depths_sc[-1]/1e3*shortening, "x", color=color)
-    plt.plot(T[0]-273.15, depths_sc[0]/1e3,'ko')
+    #plt.plot(T[-1]-273.15, depths_sc[-1]/1e3*shortening, "x", color=color)
+    #plt.plot(T[0]-273.15, depths_sc[0]/1e3,'kx')
 plt.legend()
 ax1.set_ylabel("depth (km)")
 ax1.set_xlabel("$T$ (°C)")
 ax1.invert_yaxis()
 output_path = Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
-plt.savefig(Path(output_path,"{}.{}".format("geotherms", "pdf")))
-plt.savefig(Path(output_path,"{}.{}".format("geotherms", "png")))
-
+plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "pdf")))
+plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "png")))
 
 # Damkoehler numbers
 Das = [1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1e0, 1e1, 1e2, 1e3]#, 1e4]#, 1e5]
 compositions = [
-    "hacker_2015_middle_crust",
-    "sammon_2021_deep_crust",
-    "sammon_2022_M85",
-    "zhang_2006_mafic_granulite", 
+    "hacker_2015_bin_4",
+    "hacker_2015_bin_3",
+    "bhowany_2018_hol2a",
+    "zhang_2006_mafic_granulite",
     "sammon_2021_lower_crust",
-    "hacker_2015_md_xenolith", 
-    "hacker_2015_fast_Vp",
+    "hacker_2015_bin_2",
+    "hacker_2015_md_xenolith",
+    "hacker_2015_bin_1",
     "zhang_2022_cd07-2",
 ]
 
@@ -502,11 +518,19 @@ plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 
 import pandas as pd
 
+#selected_compositions = [
+#    "hacker_2015_middle_crust",
+#    "sammon_2022_M85",
+#    "hacker_2015_fast_Vp",
+#    "zhang_2022_cd07-2", 
+#]
+
 selected_compositions = [
-    "hacker_2015_middle_crust",
-    "sammon_2022_M85",
-    "hacker_2015_fast_Vp",
-    "zhang_2022_cd07-2", 
+    "hacker_2015_bin_3",
+    "zhang_2006_mafic_granuite",
+    "hacker_2015_bin_2",
+    "hacker_2015_bin_1",
+    "zhang_2022_cd07-2",
 ]
 
 selected_outputs = [o for o in outs if o["composition"] in selected_compositions]
@@ -580,8 +604,8 @@ ax.set_ylim(top=86)
 plt.semilogx()
 plt.xlabel("Da")
 plt.ylabel("Critical depth (km)")
-plt.savefig(Path(output_path,"{}.{}".format("critical", "pdf")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
-plt.savefig(Path(output_path,"{}.{}".format("critical", "png")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
+plt.savefig(Path(output_path,"{}.{}".format("_critical", "pdf")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
+plt.savefig(Path(output_path,"{}.{}".format("_critical", "png")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
 
 for composition in compositions:
     for tectonic_setting in tectonic_settings:
@@ -609,10 +633,7 @@ for composition in compositions:
         dg = 3.*mm # grain size
         reaction_rate_per_surface = [r*dg for r in r0] # r0 (kg/m2/s), assumes 1mm grains
         reaction_rate_per_surface_gcm = [r/10*yr for r in reaction_rate_per_surface] # g/cm2/yr
-
         #print(reaction_rate_per_surface_gcm)
-        output_path = Path("figs",reference,rxn_name,setting,composition)
-        output_path.mkdir(parents=True, exist_ok=True)
 
         # plot 
         num_subplots = 3 + len(phase_names) + 2
@@ -639,7 +660,7 @@ for composition in compositions:
 
         ax.plot(rho_pyrolite/10, outs_c[0]["z"], "r:")
         ax.plot(rho_harzburgite/10, outs_c[0]["z"], "m:")
-        ax.legend(["$r_0 = ${:.1e} g/cm$^2$/yr".format(r) for r in reaction_rate_per_surface_gcm] +  (["pyrolite", "harzburgite"]), loc="upper right")
+        ax.legend(["$Da = ${:.1e}".format(d) for d in _Das] +  (["pyrolite", "harzburgite"]), loc="upper right")
 
         ax.set_ylabel("Depth (km)")
         ax.set_xlabel("Density")
@@ -682,7 +703,6 @@ for composition in compositions:
         ax.set_yticklabels([])
         ax.set_xlabel("$X_{\mathrm{Jd}}$")
 
-
         for j, obj in enumerate(outs_c):
             XAn = [x[3][0] for x in obj["Xik"]]
             XJd = [x[0][4] for x in obj["Xik"]]
@@ -691,6 +711,6 @@ for composition in compositions:
             axes["Jd"].plot(XJd, obj["z"])
 
         fig.suptitle("{}, {}, $R_m=${:.1f} km/Myr, $d_g=${}mm".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), descent_rate/1e3*yr*1e6, dg/mm),y=0.9)
-        plt.savefig(Path(output_path,"{}.{}".format("results", "pdf")))
-        plt.savefig(Path(output_path,"{}.{}".format("results", "png")))
+        plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"pdf")))
+        plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"png")))
         plt.close(fig)

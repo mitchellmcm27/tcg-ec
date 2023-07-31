@@ -22,19 +22,21 @@ melt_model = "melt(G)"
 force_pseudosection = false
 if "-f" in ARGS
     force_pseudosection = true
+    ARGS = filter(x->x!="-f",ARGS)
 end
 
 compositions = JSON.parsefile("compositions.json")
-
+all_comp_names = collect(keys(compositions))
+comp_names = []
 if length(ARGS)>0
-    comp_names = []
     for arg in ARGS
-        if arg in keys(compositions)
-            push!(comp_names, arg)
+        comp_matches = filter(contains(Regex(arg)), all_comp_names)
+        if length(comp_matches) > 0
+            global comp_names = vcat(comp_names, comp_matches)
         end
     end
 else 
-    comp_names = keys(compositions)
+    global comp_names = all_comp_names
 end
 
 for name in comp_names
