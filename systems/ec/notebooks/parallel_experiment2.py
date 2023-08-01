@@ -193,6 +193,18 @@ cmap1 = plt.cm.get_cmap("coolwarm_r")
 ax1 = plt.gca()
 ax1.set_prop_cycle(plt.cycler("color", cmap1(np.linspace(0., 1., len(tectonic_settings)))))
 
+geotherm_latex_table = {
+    "heading": ["" for s in tectonic_settings],
+    "As": np.zeros(len(tectonic_settings)),
+    "L0": np.zeros(len(tectonic_settings)),
+    "z0": np.zeros(len(tectonic_settings)),
+    "hr0": np.zeros(len(tectonic_settings)),
+    "qs0": np.zeros(len(tectonic_settings)),
+    "qs1": np.zeros(len(tectonic_settings)),
+    "T0": np.zeros(len(tectonic_settings)),
+    "T1": np.zeros(len(tectonic_settings)),
+}
+
 for num_setting, setting in enumerate(tectonic_settings):
     z0 = setting["z0"]
     L0 = setting["L0"]
@@ -220,7 +232,7 @@ for num_setting, setting in enumerate(tectonic_settings):
     p = plt.plot(T-273.15, depths_sc/1e3,linewidth=1, alpha=0.5)
     color = plt.gca().lines[-1].get_color()
     #plt.plot(T[-1]-273.15, depths_sc[-1]/1e3, "x", color=color, )
-    Tmoho, _qs = geotherm_steady(z0/L0,
+    T0, _qs = geotherm_steady(z0/L0,
                     L0*shortening,
                     shortening,
                     Ts=Ts,
@@ -228,7 +240,7 @@ for num_setting, setting in enumerate(tectonic_settings):
                     k=conductivity,
                     A=As,
                     hr0=hr0)
-    plt.plot(Tmoho-273.15, z0/1e3,'.',color=color,alpha=1)
+    plt.plot(T0-273.15, z0/1e3,'.',color=color,alpha=1)
     
     shortening = z1/z0
     T, qs1 = geotherm_steady(depths,
@@ -239,7 +251,7 @@ for num_setting, setting in enumerate(tectonic_settings):
                         k=conductivity,
                         A=As,
                         hr0=hr0,)
-    Tmoho, _qs = geotherm_steady(z0/L0,
+    T1, _qs = geotherm_steady(z0/L0,
                 L0*shortening,
                 shortening,
                 Ts=Ts,
@@ -270,9 +282,20 @@ for num_setting, setting in enumerate(tectonic_settings):
     plt.plot(np.array(Tts)-273.15,np.array(zts)/1.e3,'-',alpha=1,linewidth=1.2,color=color,label=label)
 
     # points after shortening
-    plt.plot(Tmoho-273.15, z0/1e3*shortening,'.',color=color)
+    plt.plot(T1-273.15, z0/1e3*shortening,'.',color=color)
     #plt.plot(T[-1]-273.15, depths_sc[-1]/1e3*shortening, "x", color=color)
     #plt.plot(T[0]-273.15, depths_sc[0]/1e3,'kx')
+    geotherm_latex_table["heading"][num_setting] = setting["setting"].replace("hot","H").replace("cold","C").replace("transitional","T")
+    geotherm_latex_table["As"][num_setting] = As*1.e6
+    geotherm_latex_table["L0"][num_setting] = L0/1.e3
+    geotherm_latex_table["z0"][num_setting] = z0/1.e3
+    geotherm_latex_table["hr0"][num_setting] = hr0/1.e3
+    geotherm_latex_table["qs0"][num_setting] = qs0*1.e3
+    geotherm_latex_table["qs1"][num_setting] = qs1*1.e3
+    geotherm_latex_table["T0"][num_setting] = T0-273.15
+    geotherm_latex_table["T1"][num_setting] = T1-273.15
+
+
 plt.legend()
 ax1.set_ylabel("depth (km)")
 ax1.set_xlabel("$T$ (°C)")
@@ -281,6 +304,40 @@ output_path = Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "pdf")), metadata=pdf_metadata)
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "png")))
+
+table_body = """\\begin{{tabular}}{{cc{}}}
+\\toprule
+& & {} \\\\
+\\midrule
+$A_{{s}}$ & \\si{{\\uW\\per\\m\\cubed}} & {} \\\\
+$L_{{0}}$ & \\si{{\\km}} & {} \\\\
+$z_{{0}}$ & \\si{{\\km}} & {} \\\\
+$h_{{r0}}$ & \\si{{\\km}} & {} \\\\
+\\midrule
+$q_{{s0}}$ & \\si{{\\mW\\per\\m\\squared}} & {} \\\\
+$q_{{s1}}$ & \\si{{\\mW\\per\\m\\squared}} & {} \\\\
+$T_{{0}}$ & \\si{{\\degreeCelsius}} & {} \\\\
+$T_{{1}}$ & \\si{{\\degreeCelsius}} & {} \\\\
+\\bottomrule
+\\end{{tabular}}
+""".format(
+    "c"*len(geotherm_latex_table["heading"]),
+    " & ".join(geotherm_latex_table["heading"]),
+    " & ".join(["{:.2f}".format(val) for val in geotherm_latex_table["As"]]),
+    " & ".join(["{:.0f}".format(val) for val in geotherm_latex_table["L0"]]),
+    " & ".join(["{:.0f}".format(val) for val in geotherm_latex_table["z0"]]),
+    " & ".join(["{:.1f}".format(val) for val in geotherm_latex_table["hr0"]]),
+    " & ".join(["{:.0f}".format(val) for val in geotherm_latex_table["qs0"]]),
+    " & ".join(["{:.0f}".format(val) for val in geotherm_latex_table["qs1"]]),
+    " & ".join(["{:.0f}".format(val) for val in geotherm_latex_table["T0"]]),
+    " & ".join(["{:.0f}".format(val) for val in geotherm_latex_table["T1"]]),
+
+)
+
+with open(Path(output_path,"_geotherms_table.tex"), "w") as fil:
+    fil.writelines(table_body)
+
+quit()
 
 scenarios = []
 
