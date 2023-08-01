@@ -41,6 +41,7 @@ end_t = 1e5
 
 # limit the maximum number of steps taken by the solver
 # defaults to infinity, which can exhaust memory if solver doesn't converge
+# a default of 4e3 seems to work well
 max_steps = 4e3
 
 # regularization parameter for compositions
@@ -54,17 +55,17 @@ atol = 1.e-9 # absolute tolerance, default 1e-9
 Da = 1.0 # Damkhoeler num, default 1.0
 
 Pmin, Pmax = [0.5, 2.5] # Gpa
-Tmin, Tmax = [773.15, 1273.15] # K
+Tmin, Tmax = [300+273.15, 1300+273.15] # K
 
 # number of processes
 processes = mp.cpu_count()-1
 
 # Plotting options
 phasetol = 1.e-5 # # phases less than this won't plot, default 1.e-2
-density_levels = np.arange(28.5, 37.6, 0.1)
-density_ticks = np.asarray([28.,30.,32.,34.,36.,38.])
+density_levels = np.arange(26.,38.2,0.2)
+density_ticks = np.asarray([26.,28.,30.,32.,34.,36.,38.])
 
-T_ticks = np.arange(Tmin-273.15+100, Tmax-273.15-100, 100.)
+T_ticks = np.arange(Tmin-273.15, Tmax-273.15, 100.)
 T_limits = [Tmin-273.15, Tmax-273.15]
 
 P_ticks = np.arange(Pmin, Pmax+0.5, 0.5)
@@ -126,10 +127,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.composition is not None:
+        print("Using composition {}".format(args.composition))
         composition = args.composition
     if args.end_t is not None:
+        print("Using end time {}".format(args.end_t))
         end_t = args.end_t
     if args.rxn_name is not None:
+        print("Using reaction {}".format(args.rxn_name))
         rxn_name = args.rxn_name
 
 #====================================================

@@ -38,7 +38,28 @@ max_steps = 3e4
 shortening_rate = 3.0 *mm/yr # m/s
 
 crustal_rho = 2780.
-gravity = 9.81 
+gravity = 9.81
+
+# multiproc
+processes =  mp.cpu_count()-1
+pdf_metadata = {'creationDate': None}
+
+# Damkoehler numbers
+Das = [1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1e0, 1e1, 1e2, 1e3]#, 1e4]#, 1e5]
+
+# Compositions
+compositions = [
+    "hacker_2015_bin_4",
+    "hacker_2015_bin_3",
+    "bhowany_2018_hol2a",
+    "zhang_2006_mafic_granulite",
+    "sammon_2021_lower_crust",
+    "hacker_2015_bin_2",
+    "hacker_2015_md_xenolith",
+    "hacker_2015_bin_1",
+    "zhang_2022_cd07-2",
+]
+
 
 tectonic_settings = [
     {
@@ -142,10 +163,36 @@ tectonic_settings = [
     },
 ]
 
+# ------------------------------------------
+
+# ============= Parse arguments for CLI =============
+
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--composition")
+    parser.add_argument("-r", "--rxn_name")
+    parser.add_argument("-q", "--quick", default=False, action="store_true")
+    args = parser.parse_args()
+
+    if args.composition is not None:
+        print("Using composition {}".format(args.composition))
+        compositions = [args.composition]
+    if args.rxn_name is not None:
+        print("Using reaction {}".format(args.rxn_name))
+        rxn_name = args.rxn_name
+    if args.quick:
+        print("Running in quick mode")
+        Das = Das[0:4]
+
+#====================================================
+
 fig = plt.figure(figsize=(5,7))
 cmap1 = plt.cm.get_cmap("coolwarm_r")
 ax1 = plt.gca()
 ax1.set_prop_cycle(plt.cycler("color", cmap1(np.linspace(0., 1., len(tectonic_settings)))))
+
 for num_setting, setting in enumerate(tectonic_settings):
     z0 = setting["z0"]
     L0 = setting["L0"]
@@ -232,22 +279,8 @@ ax1.set_xlabel("$T$ (°C)")
 ax1.invert_yaxis()
 output_path = Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
-plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "pdf")))
+plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "pdf")), metadata=pdf_metadata)
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "png")))
-
-# Damkoehler numbers
-Das = [1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1e0, 1e1, 1e2, 1e3]#, 1e4]#, 1e5]
-compositions = [
-    "hacker_2015_bin_4",
-    "hacker_2015_bin_3",
-    "bhowany_2018_hol2a",
-    "zhang_2006_mafic_granulite",
-    "sammon_2021_lower_crust",
-    "hacker_2015_bin_2",
-    "hacker_2015_md_xenolith",
-    "hacker_2015_bin_1",
-    "zhang_2022_cd07-2",
-]
 
 scenarios = []
 
@@ -259,33 +292,15 @@ for setting in tectonic_settings:
             scenario["composition"] = comp
             scenarios.append(scenario)
 
-processes =  mp.cpu_count()-1
-# ------------------------------------------
-
-# ============= Parse arguments for CLI =============
-
-if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--composition")
-    parser.add_argument("-r", "--rxn_name")
-
-    args = parser.parse_args()
-
-    if args.composition is not None:
-        compositions = [args.composition]
-    if args.rxn_name is not None:
-        rxn_name = args.rxn_name
-
-#====================================================
+ipyrolite = get_rho_interpolator("xu_2008_pyrolite")
+iharzburgite = get_rho_interpolator("xu_2008_harzburgite")
 
 rxn = get_reaction(rxn_name)
 
 phase_names, endmember_names = get_names(rxn)
 I = len(rxn.phases())
-Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
-K = sum(Kis)
+_Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
+K = sum(_Kis)
 
 ic_cache = {}
 def get_initial_composition(T0,P0,rxn,composition):
@@ -300,7 +315,7 @@ def get_initial_composition(T0,P0,rxn,composition):
 
     # Equilibrate model at initial (T0, P0)
     ode = ScipyPDReactiveODE(rxn)
-    ode.solve(T0, P0,_mi0,_Cik0,1,Da=1e6,eps=eps)
+    ode.solve(T0, P0,_mi0,_Cik0,1,Da=1e5,eps=eps)
     
     rho0 = ode.final_rho()*100 # kg/m3
     Cik0 = ode.sol.y[ode.I:ode.I+ode.K,-1] # -1 = final time step
@@ -351,11 +366,6 @@ def get_initial_state(rxn,scenario):
     Cik0, mi0, rho0 = get_initial_composition(T0,P0,rxn,composition)
 
     return T0, P0, Cik0, mi0, rho0, qs0, T1, qs1
-
-ipyrolite = get_rho_interpolator("xu_2008_pyrolite")
-iharzburgite = get_rho_interpolator("xu_2008_harzburgite")
-
-_Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
 
 def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
 
@@ -493,7 +503,7 @@ def run_experiment(scenario):
     def reshape_C(Cik):
         C = rxn.zero_C()
         k = 0
-        for i,Ki in enumerate(Kis):
+        for i,Ki in enumerate(_Kis):
             C[i] = Cik[k:k+Ki]
             k = k+Ki
         return C
@@ -513,7 +523,7 @@ def run_experiment(scenario):
     scenario["Cik"] = Cik_times
     scenario["Xik"] = np.asarray([rxn.C_to_X(c) for c in Cs_times], dtype="object")
     scenario["z"] = depth_m
-
+    scenario["time"] = t
     return scenario
 
 print("Preparing to run {} scenarios".format(len(scenarios)))
@@ -529,10 +539,36 @@ with Pool(processes) as pool:
 output_path = Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
 
+
+fig = plt.figure()
+max_da = [out for out in outs if out["Da"] == Das[-1]]
+def calc_densification_rate(o):
+    rho = np.array(o['rho'])
+    # same setting, same composition
+    # different Da
+    rho0 = o["rho0"]
+    L0 = o["L0"]
+    z0 = o["z0"]
+    z1 = o["z1"]
+    da = o["Da"]
+    descent_rate = z0/L0 * shortening_rate # m/s
+    max_t = (z1-z0)/descent_rate
+    r0 = da*rho0/max_t # Gamma0 (kg/m3/s)
+    time = np.linspace(0,1, rho.size) * max_t # seconds
+    time_Myr = time/Myr
+    densification_rate = np.diff(rho*1000)/np.diff(time_Myr) # kg/m3/Myr
+    return time_Myr, densification_rate
+
+time_Myr, densification_rate = [calc_densification_rate(o) for o in outs]
+plt.scatter(time_Myr, densification_rate, s=[o['Da'] for o in outs], c=[o['composition'] for o in outs], alpha=0.2)
+plt.savefig(Path(output_path,"{}.{}".format("_densification", "pdf")), metadata=pdf_metadata)
+plt.savefig(Path(output_path,"{}.{}".format("_densification", "png")))
+
+quit()
+
+
 fig = plt.figure(figsize=(5,7))
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-
-import pandas as pd
 
 #selected_compositions = [
 #    "hacker_2015_middle_crust",
@@ -542,7 +578,7 @@ import pandas as pd
 #]
 
 for out in outs:
-    rho = out["rho"]
+    rho = [out["rho"] for out in outs]
     depth_m = out["z"]
     T = out["T"] # K
     P = out["P"] # bar
@@ -621,7 +657,7 @@ ax.set_ylim(top=86)
 plt.semilogx()
 plt.xlabel("Da")
 plt.ylabel("Critical depth (km)")
-plt.savefig(Path(output_path,"{}.{}".format("_critical", "pdf")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
+plt.savefig(Path(output_path,"{}.{}".format("_critical", "pdf")), metadata=pdf_metadata, bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
 plt.savefig(Path(output_path,"{}.{}".format("_critical", "png")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
 
 import csv
@@ -631,7 +667,6 @@ with open(Path(output_path,'_critical.csv'),'w') as csvfile:
     for out in outs:
         writer.writerow(out)
 
-quit()
 for composition in compositions:
     for tectonic_setting in tectonic_settings:
 
@@ -736,6 +771,6 @@ for composition in compositions:
             axes["Jd"].plot(XJd, obj["z"])
 
         fig.suptitle("{}, {}, $R_m=${:.1f} km/Myr, $d_g=${}mm".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), descent_rate/1e3*yr*1e6, dg/mm),y=0.9)
-        plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"pdf")))
+        plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"pdf")), metadata=pdf_metadata)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"png")))
         plt.close(fig)
