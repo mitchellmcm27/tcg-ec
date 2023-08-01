@@ -277,7 +277,6 @@ for num_setting, setting in enumerate(tectonic_settings):
         zts[i] = z0*s
     
     label = setting["setting"].replace("hot","H").replace("transitional","T").replace("cold","C")
-    label = "{} ({:.0f} mW/m$^3$)".format(label,qs0*1e3)
     
     plt.plot(np.array(Tts)-273.15,np.array(zts)/1.e3,'-',alpha=1,linewidth=1.2,color=color,label=label)
 
@@ -336,8 +335,6 @@ $T_{{1}}$ & \\si{{\\degreeCelsius}} & {} \\\\
 
 with open(Path(output_path,"_geotherms_table.tex"), "w") as fil:
     fil.writelines(table_body)
-
-quit()
 
 scenarios = []
 
@@ -598,31 +595,33 @@ output_path.mkdir(parents=True, exist_ok=True)
 
 
 fig = plt.figure()
+ax = plt.gca()
 max_da = [out for out in outs if out["Da"] == Das[-1]]
-def calc_densification_rate(o):
+def calc_time(o):
     rho = np.array(o['rho'])
-    # same setting, same composition
-    # different Da
-    rho0 = o["rho0"]
     L0 = o["L0"]
     z0 = o["z0"]
     z1 = o["z1"]
-    da = o["Da"]
     descent_rate = z0/L0 * shortening_rate # m/s
     max_t = (z1-z0)/descent_rate
-    r0 = da*rho0/max_t # Gamma0 (kg/m3/s)
     time = np.linspace(0,1, rho.size) * max_t # seconds
     time_Myr = time/Myr
-    densification_rate = np.diff(rho*1000)/np.diff(time_Myr) # kg/m3/Myr
-    return time_Myr, densification_rate
+    return time_Myr
 
-time_Myr, densification_rate = [calc_densification_rate(o) for o in outs]
-plt.scatter(time_Myr, densification_rate, s=[o['Da'] for o in outs], c=[o['composition'] for o in outs], alpha=0.2)
+def calc_densification_rate(o):
+    time_Myr = calc_time(o)
+    rho = np.array(o['rho'])
+    densification_rate = np.diff(rho*1000)/np.diff(time_Myr) # kg/m3/Myr
+    return densification_rate, time_Myr[0:-1]
+
+for o in outs:
+    densification_rate, time_Myr = calc_densification_rate(o)
+    ax.plot(time_Myr, densification_rate, 'k', alpha=0.2)
+plt.semilogy()
 plt.savefig(Path(output_path,"{}.{}".format("_densification", "pdf")), metadata=pdf_metadata)
 plt.savefig(Path(output_path,"{}.{}".format("_densification", "png")))
 
 quit()
-
 
 fig = plt.figure(figsize=(5,7))
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
