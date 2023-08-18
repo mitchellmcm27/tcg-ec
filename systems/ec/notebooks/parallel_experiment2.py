@@ -593,51 +593,14 @@ with Pool(processes) as pool:
 output_path = Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
 
-
-fig = plt.figure()
-ax = plt.gca()
-max_da = [out for out in outs if out["Da"] == Das[-1]]
-def calc_time(o):
-    rho = np.array(o['rho'])
-    L0 = o["L0"]
-    z0 = o["z0"]
-    z1 = o["z1"]
-    descent_rate = z0/L0 * shortening_rate # m/s
-    max_t = (z1-z0)/descent_rate
-    time = np.linspace(0,1, rho.size) * max_t # seconds
-    time_Myr = time/Myr
-    return time_Myr
-
-def calc_densification_rate(o):
-    time_Myr = calc_time(o)
-    rho = np.array(o['rho'])
-    densification_rate = np.diff(rho*1000)/np.diff(time_Myr) # kg/m3/Myr
-    return densification_rate, time_Myr[0:-1]
-
-for o in outs:
-    densification_rate, time_Myr = calc_densification_rate(o)
-    ax.plot(time_Myr, densification_rate, 'k', alpha=0.2)
-plt.semilogy()
-plt.savefig(Path(output_path,"{}.{}".format("_densification", "pdf")), metadata=pdf_metadata)
-plt.savefig(Path(output_path,"{}.{}".format("_densification", "png")))
-
-quit()
-
-fig = plt.figure(figsize=(5,7))
-plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-
-#selected_compositions = [
-#    "hacker_2015_middle_crust",
-#    "sammon_2022_M85",
-#    "hacker_2015_fast_Vp",
-#    "zhang_2022_cd07-2", 
-#]
-
 for out in outs:
-    rho = [out["rho"] for out in outs]
+    rho = np.array(out["rho"])
     depth_m = out["z"]
     T = out["T"] # K
     P = out["P"] # bar
+    z1 = out["z1"]
+    z0 = out["z0"]
+    
     rho_pyrolite = ipyrolite((T, P/1e4))/10
 
     max_rho = np.nanmax(rho)
@@ -645,7 +608,7 @@ for out in outs:
 
     if max_rho > max_rho_py:
         # find the greatest depth at which rho exceeds pyrolite
-        noncritical_indices = [i for i,r in enumerate(rho) if r<rho_pyrolite[i]]
+        noncritical_indices = [i for i,r in enumerate(rho) if r < rho_pyrolite[i]]
         if len(noncritical_indices) == 0:
             critical_depth = depth_m[0]
         else:
@@ -655,7 +618,17 @@ for out in outs:
     else:
         critical_depth = 85.e3 # approx. coesite transition?, can change this later
     
+
     out["critical_depth"] = critical_depth
+
+    descent_rate = z0/L0 * shortening_rate # m/s
+    max_t = (z1-z0)/descent_rate
+    time = np.linspace(0,1, rho.size) * max_t # seconds
+    time_Myr = time/Myr
+    densification_rate = np.diff(rho*1000)/np.diff(time_Myr) # kg/m3/Myr
+    densification_rate = np.insert(densification_rate, 0, 0.)
+    out["densification_rate"] = densification_rate
+    out["time_Myr"] = time_Myr
 
 selected_compositions = [
     "hacker_2015_bin_3",
