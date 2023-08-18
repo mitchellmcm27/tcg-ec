@@ -55,7 +55,6 @@ Endmembers and stoichiometric compounds:
         c2/c          implicit    implicit                 
         mfer          implicit    implicit                 
         aki           implicit    implicit                 
-        maj           implicit    implicit                 
         perov         implicit    implicit                 
         ring          implicit    implicit                 
         ts            implicit    implicit                 
@@ -63,7 +62,6 @@ Endmembers and stoichiometric compounds:
         mnal          implicit    implicit                 
         ppv           implicit    implicit                 
         nfer          implicit    implicit                 
-        namj          implicit    implicit                 
         neph          implicit    implicit                 
         nnal          implicit    implicit                 
         odi           implicit    implicit                 

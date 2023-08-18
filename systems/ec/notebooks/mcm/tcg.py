@@ -250,8 +250,7 @@ class EcModel():
 def x2c(rxn, Xik0):
     return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
 
-def phi2m(rxn, phii0, Cik0, T=900.,p=10000.):
-    '''Converts phase modes in volume fraction to mass fraction given an intial EM composition in mass fractions.'''    
+def phi2m(rxn, phii0, Cik0, T=900.,p=10000.,eps=1e-5):
     densities = []
     C = rxn.zero_C()
     Ki = 0
@@ -259,14 +258,13 @@ def phi2m(rxn, phii0, Cik0, T=900.,p=10000.):
         n = len(ph.endmembers())
         C[i] = Cik0[Ki:Ki+n]
         Ki = Ki+n
-
+    # regularize C
     C = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
     C = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
 
     densities = [ph.rho(T, p, C[i]) for i,ph in enumerate(rxn.phases())]
-    mass = np.sum(np.asarray(densities) * np.asarray(phii0))
-    mi0 = np.asarray([v*densities[i]/mass for (i, v) in enumerate(phii0)])
-
+    mass_tot = np.sum(np.asarray(densities) * np.asarray(phii0))
+    mi0 = np.asarray([v*densities[i]/mass_tot for (i, v) in enumerate(phii0)])
     return mi0
 
 def get_reaction(rxnName):
@@ -367,3 +365,22 @@ def latex_reactions(rxn):
     # 1 & $\ce{2/3 CaFeSi2O6}^\text{cpx} + \ce{1/3 Mg2Si2O6}^\text{opx} = \ce{2/3 CaMgSi2O6}^\text{cpx} + \ce{1/3 Fe2Si2O6}^\text{opx}$ \\
     table = "\n".join(["{} & {} \\\\".format(names[i], reactions[i]) for i in range(len(names))])
     return table
+
+def composition_to_label(c):
+    default = c.replace("_", " ").capitalize()
+    dic = {
+        "hacker_2015_md_xenolith": "Hacker et al. (2015) median xenolith",
+        "hacker_2015_bin_1": "Hacker et al. (2015) bin-1",
+        "hacker_2015_bin_2": "Hacker et al. (2015) bin-2",
+        "hacker_2015_bin_3": "Hacker et al. (2015) bin-3",
+        "hacker_2015_bin_4": "Hacker et al. (2015) bin-4",
+        "sammon_2021_lower_crust": "Sammon & McDonough (2021) lower crust",
+        "sammon_2021_deep_crust": "Sammon & McDonough (2021) deep crust",
+        "xu_2008_basalt": "Xu et al. (2008) basalt",
+        "xu_2008_pyrolite": "Xu et al. (2008) pyrolite",
+        "xu_2008_harzburgite": "Xu et al. (2008) harzburgite",
+        "zhang_2022_cd07-2": "Zhang et al. (2022) granulite",
+        "zhang_2006_mafic_granulite": "Zhang et al. (2006) granulite",
+        "bhowany_2018_hol2a": "Bhowany et al. (2018) eclogite (hol2a)"
+    }
+    return dic.get(c, default)

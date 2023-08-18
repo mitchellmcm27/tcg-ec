@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from io import StringIO
 
-def get_rho_interpolator(name):
+def get_rho_interpolator(name, unit="100kg/m3"):
     filepath = "perple_x/output/{}/{}_2.tab".format(name,name)
     try:
         with open(filepath, 'r') as fp:
@@ -44,7 +44,13 @@ def get_rho_interpolator(name):
         print(e)
         return None
  
-    rho = df["rho"].to_numpy()/100 # convert to 100 kg/m3
+    if(unit=="100kg/m3"):
+        rho = df["rho"].to_numpy()/100. # convert to 100 kg/m3 (default for SLB)
+    elif(unit=="1000kg/m3"):
+        rho = df["rho"].to_numpy()/1000. # convert to 1000 kg/m3
+    else:
+        rho = df["rho"].to_numpy() # convert to kg/m3
+
     rho_g = np.reshape(rho,(nx,ny), order='F')
     interp = RegularGridInterpolator((T_range, P_range/1e4), rho_g, bounds_error=False, fill_value=np.nan)
     return interp

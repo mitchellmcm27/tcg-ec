@@ -20,16 +20,17 @@ T_surf = 273.15
 melt_model = "melt(G)"
 
 force_pseudosection = false
+args = ARGS
 if "-f" in ARGS
     force_pseudosection = true
-    ARGS = filter(x->x!="-f",ARGS)
+    args = filter(x->x!="-f", args)
 end
 
 compositions = JSON.parsefile("compositions.json")
 all_comp_names = collect(keys(compositions))
 comp_names = []
-if length(ARGS)>0
-    for arg in ARGS
+if length(args)>0
+    for arg in args
         comp_matches = filter(contains(Regex(arg)), all_comp_names)
         if length(comp_matches) > 0
             global comp_names = vcat(comp_names, comp_matches)

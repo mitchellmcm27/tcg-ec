@@ -14,8 +14,8 @@ FEO
 
 n
 2
-773.15
-1273.15
+573.15
+1573.15
 5000
 25000
 n
@@ -23,6 +23,9 @@ n
 n
 y
 n
+maj
+namaj
+namj
 
 y
 solution_model.dat
