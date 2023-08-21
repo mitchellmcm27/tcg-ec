@@ -17,14 +17,14 @@ rxn_name = 'eclogitization_agu17_stx21_rx'
 # number of x-nodes
 #nT = 100
 
-# end time of reactions
-end_t = 1e6
+# end time of reactions, change with -e argument
+end_t = 1
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-3 # 1.e-2
 
-# Damkhoeler number
-Da = 1.0 # 1.0
+# Damkhoeler number, change with -d argument
+Da = 1e5 # 1.0
 # regularization parameter for compositions
 eps = 1.e-5 # 1.e-2
 # these numbers seem to work very well with eps = 1e-5??
@@ -51,15 +51,17 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--composition")
     parser.add_argument("-e", "--end_t")
     parser.add_argument("-r", "--rxn_name")
-
+    parser.add_argument("-d", "--da")
     args = parser.parse_args()
 
     if args.composition is not None:
         composition = args.composition
     if args.end_t is not None:
-        end_t = args.end_t
+        end_t = float(args.end_t)
     if args.rxn_name is not None:
         rxn_name = args.rxn_name
+    if args.da is not None:
+        Da = float(args.da)
 
 #====================================================
 
@@ -82,11 +84,19 @@ if(pdiff > tdiff):
     xvar = P_range
     xlabel = "Pressure (GPa)"
     xlimits = [Pmin, Pmax]
+
+    x2var = T_range-273.15
+    x2label = "Temperature (°C)"
+    x2limits = [Tmin-273.15, Tmax-273.15]
 else:
     xvar = T_range-273.15
     xaxis = "temperature"
     xlabel = "Temperature (°C)"
     xlimits = [Tmin-273.15, Tmax-273.15]
+
+    x2var = P_range
+    x2label = "Pressure (GPa)"
+    x2limits = [Pmin, Pmax]
 
 
 rxn = get_reaction(rxn_name)
@@ -176,8 +186,8 @@ plt.suptitle(composition.replace("_", " ").capitalize())
 plt.savefig(Path(outputPath,'density.png'))
 
 fig = plt.figure(figsize=(10,8))
-axi = plt.gca()
-axi2 = axi.twinx()
+ax = plt.gca()
+ax3 = ax.twiny()
 df = pp.get_profile_data(composition)
 
 # T(K), P(bar), Pl, Pl, Cpx, Opx, qtz, Gt, ky  
@@ -194,16 +204,15 @@ phase_name_to_col_name = {
 hs = []
 
 for i, phase in enumerate(rxn.phases()):
-    h = axi.plot(xvar,phi_final[:,i],':' if i>9 else '-', linewidth=3,alpha=0.5)
+    h = ax.plot(xvar,phi_final[:,i],':' if i>9 else '-', linewidth=3,alpha=0.5)
     hs.append(h)
 
-axi.legend(phase_names)
-plt.xlim(xlimits)
-axi.set_xlabel(xlabel)
-axi.set_ylabel("Phase vol. mode")
-axi.set_ylim([0,1])
-axi2.set_ylabel('abs. diff.')  # we already handled the x-label with ax1
-axi2.set_ylim([0.02,0])
+ax.set_xlabel(xlabel)
+ax.set_xlim(xlimits)
+ax3.set_xlabel(x2label)
+ax3.set_xlim(x2limits)
+ax.set_ylabel("Phase vol. mode")
+ax.set_ylim([0,1])
 if(df is not None):
     for i, phase in enumerate(rxn.phases()):
         pname = phase.name()
@@ -214,19 +223,40 @@ if(df is not None):
         y = df[col]/100
         y1 = phi_final[:,i]
         diff = y-y1
-        axi.plot(xvar,y,"--",linewidth=1, color=h[-1].get_color())
-        axi2.plot(xvar, np.abs(diff),"-",color=h[-1].get_color(),linewidth=0.5)
+        ax.plot(xvar,y,"--",linewidth=1, color=h[-1].get_color())
+        if(i==0):
+            ax.legend(phase_names + ["(EQ)"])
+            ax3.plot(x2var,y,alpha=0)
+
 
 if(df is not None):
     if("O" in df.columns):
         y = df["O"]/100
-        axi.plot(xvar,y,"-",linewidth=1,alpha=0.5,color="black")
+        ax.plot(xvar,y,"-",linewidth=1,alpha=0.5,color="black")
     if("Aki" in df.columns):
         y = df["Aki"]/100
-        axi.plot(xvar,y,"-",linewidth=1,alpha=0.5,color="black")
+        ax.plot(xvar,y,"-",linewidth=1,alpha=0.5,color="black")
 
 plt.suptitle(composition.replace("_", " ").capitalize())
 plt.savefig(Path(outputPath,"phases.png"))
+
+ax2 = ax.twinx()
+ax2.set_ylabel('abs. diff.')  # we already handled the x-label with ax1
+ax2.set_ylim([0.02,0])
+if(df is not None):
+    for i, phase in enumerate(rxn.phases()):
+        pname = phase.name()
+        col = phase_name_to_col_name[pname]
+        if col not in df.columns:
+            continue
+        h = hs[i]
+        y = df[col]/100
+        y1 = phi_final[:,i]
+        diff = y-y1
+        ax2.plot(xvar, np.abs(diff),"-",color=h[-1].get_color(),linewidth=0.5)
+
+plt.suptitle(composition.replace("_", " ").capitalize())
+plt.savefig(Path(outputPath,"phases_errors.png"))           
 
 fig = plt.figure(figsize=(12,12))
 axi = fig.add_subplot(1,1,1)
