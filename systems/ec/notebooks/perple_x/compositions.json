@@ -121,6 +121,7 @@
         ]
     },
     "hacker_2015_fast_Vp":{
+        "comment": "Also in Sammon et al. 2022 Table 4",
         "basis" : "wt",
         "dataset": "stx21ver",
         "elements" : [
@@ -222,6 +223,7 @@
         ]
     },
     "sammon_2022_M85": {
+        "comment": "From Sammon et al. 2022, Table 4",
         "basis" : "wt",
         "dataset": "stx21ver",
         "elements" : [
@@ -239,6 +241,48 @@
             53.3,
             7.76,
             8.75
+        ]
+    },
+    "liu_2001":{
+        "comment": "For North China Craton, from Sammon et al. 2022, Table 4",
+        "basis":"wt",
+        "dataset":"stx21ver",
+        "elements" : [
+            "NA2O",
+            "MGO",
+            "AL2O3",
+            "SIO2",
+            "CAO",
+            "FEO"
+        ],
+        "composition" : [
+            2.54,
+            9.58,
+            13.6,
+            58.3,
+            4.54,
+            5.32
+        ]
+    },
+    "jagoutz_2012":{
+        "comment": "mafic; from Sammon et al. 2022, Table 4",
+        "basis":"wt",
+        "dataset":"stx21ver",
+        "elements" : [
+            "NA2O",
+            "MGO",
+            "AL2O3",
+            "SIO2",
+            "CAO",
+            "FEO"
+        ],
+        "composition" : [
+            2.56,
+            5.86,
+            18.7,
+            52.2,
+            10.8,
+            8.41
         ]
     },
     "sammon_2021_eclogite_terrains" : {

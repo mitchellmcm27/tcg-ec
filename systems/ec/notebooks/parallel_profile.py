@@ -12,10 +12,7 @@ import from_perplex as pp
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
 composition = 'hacker_2015_md_xenolith'
-rxn_name = 'eclogitization_agu17_stx21_rx'
-
-# number of x-nodes
-#nT = 100
+rxn_name = 'eclogitization_agu21_stx21_rx'
 
 # end time of reactions, change with -e argument
 end_t = 1
@@ -34,11 +31,8 @@ atol = 1.e-9 # absolute tolerance, default 1e-9
 # large number
 max_steps = 1e5 # 4e3 is reasonable
 
-#Pmin, Pmax = [2.5, 0.5]
-#Tmin, Tmax = [773.15, 1273.15]
-
-# number of processes
-processes = mp.cpu_count()-1
+# number of processes, edit with -n argument
+processes = mp.cpu_count()
 
 # ------------------------------------------
 
@@ -52,6 +46,8 @@ if __name__ == "__main__":
     parser.add_argument("-e", "--end_t")
     parser.add_argument("-r", "--rxn_name")
     parser.add_argument("-d", "--da")
+    parser.add_argument("-n", "--num_procs")
+
     args = parser.parse_args()
 
     if args.composition is not None:
@@ -62,6 +58,8 @@ if __name__ == "__main__":
         rxn_name = args.rxn_name
     if args.da is not None:
         Da = float(args.da)
+    if args.num_procs is not None:
+        processes = int(args.num_procs)
 
 #====================================================
 
@@ -109,30 +107,13 @@ mi0, Xik0, phii0, Cik0 = pp.get_point_composition(rxn, composition)
 
 phase_names, endmember_names = get_names(rxn)
 
-def x2c(rxn, Xik0):
-    return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
-def phi2m(rxn, phii0, Cik0, T=900.,p=10000.):
-    '''Converts phase modes in volume fraction to mass fraction given an intial EM composition in mass fractions.'''    
-
-    densities = []
-    C = rxn.zero_C()
-    Ki = 0
-    for i,ph in enumerate(rxn.phases()):
-        n = len(ph.endmembers())
-        C[i] = Cik0[Ki:Ki+n]
-        Ki = Ki+n
-
-    C = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
-    C = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
-
-    densities = [ph.rho(T, p, C[i]) for i,ph in enumerate(rxn.phases())]
-    mass = np.sum(np.asarray(densities) * np.asarray(phii0))
-    mi0 = np.asarray([v*densities[i]/mass for (i, v) in enumerate(phii0)])
-
-    return mi0
-
 Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
 mi0 = phi2m(rxn, phii0, Cik0) if mi0 is None else mi0
+
+print([p.abbrev() for p in rxn.phases()])
+print(Cik0)
+print(phase_names)
+
 
 I = len(rxn.phases())
 Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
@@ -198,13 +179,14 @@ phase_name_to_col_name = {
     "Feldspar_slb_ph":"Pl2",
     "Garnet_slb_ph":"Gt2",
     "Kyanite_slb_ph":"ky",
-    "Spinel_slb_ph":"Sp"
+    "Spinel_slb_ph":"Sp",
+    "Olivine_slb_ph": "O"
 }
 
 hs = []
 
 for i, phase in enumerate(rxn.phases()):
-    h = ax.plot(xvar,phi_final[:,i],':' if i>9 else '-', linewidth=3,alpha=0.5)
+    h = ax.plot(xvar,phi_final[:,i],'-', linewidth=3,alpha=0.5)
     hs.append(h)
 
 ax.set_xlabel(xlabel)
@@ -218,6 +200,7 @@ if(df is not None):
         pname = phase.name()
         col = phase_name_to_col_name[pname]
         if col not in df.columns:
+            print(col)
             continue
         h = hs[i]
         y = df[col]/100
@@ -226,11 +209,10 @@ if(df is not None):
         ax.plot(xvar,y,"--",linewidth=1, color=h[-1].get_color())
         if(i==0):
             ax.legend(phase_names + ["(EQ)"])
-            ax3.plot(x2var,y,alpha=0)
 
 
 if(df is not None):
-    if("O" in df.columns):
+    if("O" in df.columns and "Olivine_slb_ph" not in [p.name() for p in rxn.phases()]):
         y = df["O"]/100
         ax.plot(xvar,y,"-",linewidth=1,alpha=0.5,color="black")
     if("Aki" in df.columns):
@@ -281,7 +263,9 @@ line_style_by_endmember = {
     'MgMajorite':"--", 
     'NaMajorite':"--",
     'MgSpinel':"-",
-    'Hercynite':"-"
+    'Hercynite':"-",
+    "Forsterite":":",
+    "Fayalite":":"
     }
 
 for k in range(K):

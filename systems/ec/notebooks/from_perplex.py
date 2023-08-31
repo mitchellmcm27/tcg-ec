@@ -59,6 +59,7 @@ def get_profile_data(name):
     filepath = "perple_x/output/{}/{}_1.tab".format(name,name)
     try:
         df = pd.read_csv(filepath, delimiter='\s+', skiprows=8, header=0)
+        print(df)
         df.fillna(0, inplace=True)
         pl0 = df["Pl"]
         pl1 = 0 if not "Pl.1" in df.columns else df["Pl.1"]
@@ -70,6 +71,7 @@ def get_profile_data(name):
         df["Pl2"] = pl0 + pl1
         df["Cpx3"] = cpx0 + cpx1 + cpx2
         df["Gt2"] = gt0 + gt1
+ 
         return df
     except Exception as e:
         print("Error parsing perple_x profile:")

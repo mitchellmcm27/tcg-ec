@@ -60,7 +60,6 @@ compositions = [
     "zhang_2022_cd07-2",
 ]
 
-
 tectonic_settings = [
     {
         "setting": "hot-1",
