@@ -2162,6 +2162,151 @@ def generate_reactions(outdir):
     
     generate_reaction(
         outdir,
+        'eclogitization_agu26',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+            'Olivine',
+            'Spinel'
+        ],
+        [
+
+            # AGU20 = Add Spinel
+            #([sp, an, oEn], [gs, pyp]),
+            #([hc, an, fs], [gs, alm]),
+            #([ab, oEn, sp], [jd, pyp]),
+            #([ab, fs, hc], [jd, alm]),
+#
+            # AGU21 another attempt at spinel
+            # cpx + opx + gt -> plag + fe-olivine
+            
+            # CaFeSi2O6                     CaAl2Si2O8
+            #       Fe2Si2O6                         Fe2SiO4
+            #             Fe3Al2Si3O12
+
+            #  2 CaFeSi2O6 + 2 MgAl2SiO6  =  Fe2SiO4 + 2 CaAl2Si2O8 + Mg2SiO4
+            ([hed, mgts], [fo, fa, an]),
+
+            # AGU 26 - grt + cpx -> plag + ol + opx
+            ([pyp, di],[an, fo, oEn]),
+            ([alm, hed], [an, fa, fs]),
+
+            # AGU 25 - consume garnet +- spinel, produce olivine +- feldspar
+            ([di, sp, qz],[an, fo]), # agu25 - by analogy w mark1
+            ([oEn, cats],[an, fo]),
+            ([fs, cats], [an, fa]),
+            ([oEn],[fo, qz]),
+            ([fs], [fa, qz]),
+            ([sp,qz], [mgts]),
+            #([gs,oEn,mgts,ky,qz],[an,fo]),
+
+            # AGU 22 - use olivine instead of spinel
+            # AGU 23 - add olivine reactions from GR j,k,l,m
+            # AGU 24 - adding reactions by analogy
+            ([fo,an], [di, cats, oEn]), # GR67 (j)
+            ([fa,an], [hed,cats,fs]), # by analogy
+            
+            # Mg2SiO4 + CaAl2Si2O8 = CaMgSi2O6 + MgAl2SiO6 + MgSiO3
+            ([fo, an], [di, mgts, oEn]),#, cats]), # GR67 (j)
+            #([fa, an], [hed,mgts,fs]), # by analogy - doesn't balance
+
+            ([fo, an],[di, oEn, sp]), # GR67 (k)
+
+            # also added in AGU 24
+            # Fe2SiO4 + CaAl2Si2O8 =  FeAl2O4 + CaFeSi2O6 + SiO2
+            ([fa, an], [hc, hed, qz]), # mark1
+
+            ([fa, an],[gs, alm]), # GR67 (l), Fe
+            ([fo, an],[gs, pyp]), # GR67 (l), Mg
+            ([sp, an, oEn],[gs, pyp]), # GR67 (m), Mg
+            ([hc, an, fs],[gs, alm]), # GR67 (m), Fe
+            ([ab, oEn, sp], [jd, pyp]), # GR67 (n), Mg
+            ([ab, fs, hc], [jd, alm]), # GR67 (n), Fe
+            
+            # Fe-Mg exchange w/ Spinels
+            ([hc,oEn],[sp,fs]), # opx-sp
+            ([hc,di],[sp,hed]), # cpx-sp
+            ([hc,pyp],[sp,alm]), # Gt-sp
+            ([hc,fo],[sp,fa]), # ol-sp
+
+            # Fe-Mg exchange w/ Olivine
+            ([fa,oEn],[fo,fs]), # opx-ol
+            ([fa,di],[fo,hed]), # cpx-ol
+            ([fa,pyp],[fo,alm]), # Gt-ol
+
+            # Start from AGU 13
+            # take out all the majorites
+            # ([namaj],[jd]),
+    
+            ([hed, oEn],[di, fs]), # Fe-Mg exchange, Cpx-Opx
+            #([di, pyp], [oEn, gs]),
+            #([di, cats],[gs, pyp]), #NOTE: this was in AGU3, which produced too much cpx at the time
+            ([pyp, fs],[alm, oEn]), # Fe-Mg exchange, Grt-Opx
+
+            ([pyp, hed], [alm, di]), # Ellis & Green 1979 (1), #Fe-Mg exchange, Grt-Cpx
+            ([oEn],[cEn]),
+            ([oDi],[di]),
+            #([mgmaj, gs],[di, pyp]),
+            ([cats, pyp], [gs, mgts]), # Ca-Mg exchange with Tschermaks/Garnet
+                
+            # AGU 1
+            # plag + opx => gt + cpx
+            ([an], [cats, qz]), # Paria et al (paragraph 2, cites Herzberg 1978), GR67b
+            ([an, oEn], [di, mgts, qz]), # Green & Ringwood 1967 (a) - GR67a
+            ([an, oEn], [pyp, di, qz]),  # GR67c, Paria et al (B)
+            ([an, oEn], [pyp, gs, qz]), # GR67d
+            ([an, fs], [alm, hed, qz]), # Paria et al (A), GR67c
+            ([an, fs], [alm, gs, qz]),  # GR67d
+
+            ([oEn, mgts], [pyp]), # Paria et al (paragraph 2, cites RWood 1974), GR67e, Wood & Banno 1973 (1)
+            ([oEn, cats], [gs, pyp]), # GR67f
+            ([ab], [jd, qz]), # Paria et al (paragraph 2, Reinsch 1977 cited in Newton 1983), GR67g
+
+            # Starting over from AGU1
+
+            # problems: Cpx needs to => Plag at HighT+LowP
+            #         : Gt => Cpx, Qz, Ky at moderate T,P
+
+            # From AGU4
+            # Gt = Cpx + Qz + Ky
+            ([gs, pyp, qz], [di, ky]),
+            ([gs, alm, qz], [hed, ky]),
+
+            # ADDED to AGU 14 to make 16 - trying to produce more garnet, less CPX at high p/t
+            # analagous to the above 2 reactions
+            ([pyp, qz], [cEn, ky]), # this was from 15 - test separately
+            # Added to AGU 15 to make 16
+            ([gs, ky], [cats, qz]),
+
+          
+
+            # formation of kyanite
+            # Plg + Gt = Cpx + ky
+            ([an], [ky, gs, qz]),  # Koziol et al 1988 (paragraph 1), GR67o
+
+            # AGU3 was bad?
+            
+            # From AGU2
+            # allows breakdown of plag without Opx present
+            # Opx + Tsch = Grt
+            ([fs, mgts], [pyp, alm]), # analagous to oEn + mgts => pyp
+            ([fs, cats], [gs, pyp, alm]),  # analogous to oEn + cats => gs + pyp
+            # Cpx + Plg = Grt + Qtz
+            ([an, mgts], [pyp, gs, qz]), # MgTs is technically Opx
+            ([di, an], [gs, pyp, qz]), 
+            ([hed, an], [gs, alm, qz]),
+            ([cats, an], [gs, qz]),
+            # Added to 16 to make 17
+            #([ab, cats],[an, jd]),
+            ([an, cEn], [gs, pyp, qz]),
+        ], database="tcg_stx21_database.tar.gz")
+    
+    generate_reaction(
+        outdir,
         'eclogitization_matlab',
         [
             'Clinopyroxene',

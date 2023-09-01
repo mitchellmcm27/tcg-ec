@@ -75,7 +75,8 @@ highlight_diffs= np.asarray([0.] )
 density_cmap = plt.get_cmap("Spectral_r")
 diff_cmap = plt.get_cmap("bwr_r")
 stime_cmap = plt.get_cmap("bwr")
-variance_cmap = plt.get_cmap("Blues")
+stime_cmap.set_bad(color='black') # make NaNs show up as black
+variance_cmap = plt.get_cmap("Blues_r")
 contour_kwargs = {
     "colors": "#333333",
     "linewidths": 1,
@@ -186,10 +187,16 @@ for rho, phases, stime, variance, i , j in sols:
     stime_g[i][j] = stime
     variance_g[i][j] = variance
 
-# Interplate any NaNs in density
+
+# Find nans in density (solution timed out)
 x,y = np.indices(rho_g.shape)
 rhonan = np.isnan(rho_g)
-rho_g[np.isnan(rho_g)] = griddata((x[~rhonan], y[~rhonan]),rho_g[~rhonan],(x[rhonan], y[rhonan]))
+
+# For points that timed out, give them a solution time of NaN
+stime_g[rhonan] = np.nan
+
+# Interpolate NaNs in density
+rho_g[rhonan] = griddata((x[~rhonan], y[~rhonan]),rho_g[~rhonan],(x[rhonan], y[rhonan]))
 
 # Generate unique phase assemblage indices
 uniquestrs = sorted(list(set([phstr for phstrl in phases_g for phstr in phstrl if phstr != ""])))
@@ -264,7 +271,8 @@ fig = plt.figure(figsize=(12,14))
 axi = fig.add_subplot(1,1,1)
 max_variance = np.nanmax(variance_g)
 min_variance = np.nanmin(variance_g)
-s = axi.scatter(T_g-273.15,P_g,c=variance_g,s=50,cmap=variance_cmap,alpha=0.5,vmin=min_variance-1,vmax=max_variance+1)
+#s = axi.scatter(T_g-273.15,P_g,c=variance_g,s=50,cmap=variance_cmap,alpha=0.5,vmin=min_variance-1,vmax=max_variance+1)
+s=axi.imshow(variance_g,cmap=variance_cmap, vmin=min_variance-1, vmax=max_variance+1,**imshow_kwargs)
 plot_phase_labels(axi)
 plt.xlabel("Temperature (°C)", labelpad=2)
 plt.ylabel("Pressure (GPa)")
@@ -279,8 +287,8 @@ save_current_fig_as("phase-variance")
 
 fig = plt.figure(figsize=(12,14))
 axi = fig.add_subplot(1,1,1)
-#s = plt.imshow(stime_g,cmap=stime_cmap,norm=mpl.colors.LogNorm(), **imshow_kwargs)
-s = plt.scatter(T_g-273.15,P_g,c=stime_g,s=100,alpha=0.75,cmap=stime_cmap)#,norm=mpl.colors.LogNorm(),)
+s = plt.imshow(stime_g, cmap=stime_cmap,**imshow_kwargs)
+#s = plt.scatter(T_g-273.15,P_g,c=stime_g,s=100,alpha=0.75,cmap=stime_cmap)#,norm=mpl.colors.LogNorm(),)
 fig.colorbar(s,location="left",ax=axi, label="sol time (s)")
 plt.xlabel("Temperature (°C)", labelpad=2)
 plt.ylabel("Pressure (GPa)")
