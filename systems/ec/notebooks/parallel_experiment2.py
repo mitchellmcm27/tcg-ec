@@ -24,7 +24,7 @@ cm = 1e-2
 
 ## save/load
 save_output = True
-load_output = False
+load_output = True
 
 reference= "parallel_experiment2"
 rxn_name = "eclogitization_agu17_stx21_rx"
@@ -585,72 +585,94 @@ def run_experiment(scenario):
     scenario["time"] = t
     return scenario
 
-print("Preparing to run {} scenarios".format(len(scenarios)))
-
-scenarios = [setup_ics(s) for s in scenarios]
-
 output_path = Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
-pickle_path = Path(output_path,"output.pickle")
+pickle_path = Path(output_path,"_outs.pickle")
+
 if load_output:
+    print("Loading pickle from file file {}".format(pickle_path))
     with open(pickle_path, 'rb') as pickle_file:
-        outs = pickle.load(pickle_path)
+        outs = pickle.load(pickle_file)
 else:
+    print("Preparing to run {} scenarios".format(len(scenarios)))
+    scenarios = [setup_ics(s) for s in scenarios]
+
     # run for varying damkhoeler numbers
     with Pool(processes) as pool:
         # blocks until all finished
         outs = pool.map(run_experiment, scenarios)
 
-    for out in outs:
-        rho = np.array(out["rho"])
-        depth_m = out["z"]
-        T = out["T"] # K
-        P = out["P"] # bar
-        z1 = out["z1"]
-        z0 = out["z0"]
-        
-        rho_pyrolite = ipyrolite((T, P/1e4))/10
+if save_output:
+    with open(pickle_path, 'wb') as pickle_file:
+        pickle.dump(outs, pickle_file)
 
-        max_rho = np.nanmax(rho)
-        max_rho_py = np.nanmax(rho_pyrolite)
+for out in outs:
+    rho = np.array(out["rho"])
+    depth_m = out["z"]
+    T = out["T"] # K
+    P = out["P"] # bar
+    z1 = out["z1"]
+    z0 = out["z0"]
+    
+    rho_pyrolite = ipyrolite((T, P/1e4))/10
 
-        if max_rho > max_rho_py:
-            # find the greatest depth at which rho exceeds pyrolite
-            noncritical_indices = [i for i,r in enumerate(rho) if r < rho_pyrolite[i]]
-            if len(noncritical_indices) == 0:
-                critical_depth = depth_m[0]
-                critical_pressure = P[0] # bar
-                critical_temperature = T[0] # K
-            else:
-                last_noncritical_index = noncritical_indices[-1]
-                critical_index = last_noncritical_index + 1
-                critical_depth = depth_m[critical_index]
-                critical_pressure = P[critical_index] # bar
-                critical_temperature = T[critical_index] # K
+    max_rho = np.nanmax(rho)
+    max_rho_py = np.nanmax(rho_pyrolite)
+
+    if max_rho > max_rho_py:
+        # find the greatest depth at which rho exceeds pyrolite
+        noncritical_indices = [i for i,r in enumerate(rho) if r < rho_pyrolite[i]]
+        if len(noncritical_indices) == 0:
+            critical_depth = depth_m[0]
+            critical_pressure = P[0] # bar
+            critical_temperature = T[0] # K
         else:
-            critical_depth = 85.e3 # approx. coesite transition?, can change this later
-            critical_pressure = 30e3 # bar
-            critical_temperature = T[-1] # K
-        
+            last_noncritical_index = noncritical_indices[-1]
+            critical_index = last_noncritical_index + 1
+            critical_depth = depth_m[critical_index]
+            critical_pressure = P[critical_index] # bar
+            critical_temperature = T[critical_index] # K
+    else:
+        critical_depth = 85.e3 # approx. coesite transition?, can change this later
+        critical_pressure = 30e3 # bar
+        critical_temperature = T[-1] # K
+    
 
-        out["critical_depth"] = critical_depth
-        out["critical_pressure"] = critical_pressure
-        out["critical_temperature"] = critical_temperature
+    out["critical_depth"] = critical_depth
+    out["critical_pressure"] = critical_pressure
+    out["critical_temperature"] = critical_temperature
 
-        descent_rate = z0/L0 * shortening_rate  - erosion_rate # m/s
-        max_t = (z1-z0)/descent_rate
-        time = np.linspace(0,1, rho.size) * max_t # seconds
-        time_Myr = time/Myr
-        densification_rate = np.diff(rho*1000)/np.diff(time_Myr) # kg/m3/Myr
-        densification_rate = np.insert(densification_rate, 0, 0.)
-        out["max_densification_rate"] = np.nanmax(densification_rate)
-        out["densification_rate"] = densification_rate
-        out["time_Myr"] = time_Myr
+    descent_rate = z0/L0 * shortening_rate  - erosion_rate # m/s
+    max_t = (z1-z0)/descent_rate
+    time = np.linspace(0,1, rho.size) * max_t # seconds
+    time_Myr = time/Myr
+    densification_rate = np.diff(rho*1000)/np.diff(time_Myr) # kg/m3/Myr
+    densification_rate = np.insert(densification_rate, 0, 0.)
+    out["densification_rate"] = densification_rate
+    out["time_Myr"] = time_Myr
 
-    if save_output:
-        with open(pickle_path, 'wb') as pickle_file:
-            pickle.dump(outs, pickle_file)
+    # max densification rate, binned and averaged over 50 kyr
+    bin_width = 50*kyr
+    bins =np.arange(0, max_t+bin_width, bin_width)
+    digitized = np.digitize(densification_rate, bins)
+    bin_means = [np.nanmean(densification_rate[digitized == i]) for i in range(1, len(bins))]
+    out["max_densification_rate"] = np.nanmax(bin_means)
 
+    for i,phase in enumerate(phase_names):
+        if(phase=='Feldspar'):
+            plag_frac = out["mi"][:,i]
+            # find the index at which plagioclase drops below 1 wt%
+            plag_out_indices = [i for i,X in enumerate(plag_frac) if X < 0.01]
+            if len(plag_out_indices) == 0:
+                out['plag_out_depth'] = np.nan 
+                out['plag_out_pressure'] = np.nan # bar
+                out['plag_out_temperature'] = np.nan # K
+            else:
+                first_plag_out = plag_out_indices[0]
+                plag_out_index = first_plag_out
+                out['plag_out_depth'] = depth_m[plag_out_index]
+                out['plag_out_pressure'] = P[plag_out_index] # bar
+                out['plag_out_temperature'] = T[plag_out_index] # K
 
 selected_compositions = [
     "hacker_2015_bin_3",
@@ -713,7 +735,7 @@ plt.savefig(Path(output_path,"{}.{}".format("_critical", "png")),bbox_extra_arti
 
 import csv
 with open(Path(output_path,'_critical.csv'),'w') as csvfile:
-    writer = csv.DictWriter(csvfile, ['setting','L0','z0','z1','As','hr0','k','Ts','Tlab','Da','composition','T0','T1','P0','rho0','critical_depth','critical_pressure','critical_temperature','max_densification_rate','qs0','qs1'],extrasaction='ignore')
+    writer = csv.DictWriter(csvfile, ['setting','L0','z0','z1','As','hr0','k','Ts','Tlab','Da','composition','T0','T1','P0','rho0','critical_depth','critical_pressure','critical_temperature','plag_out_pressure','plag_out_temperature','plag_out_depth','max_densification_rate','qs0','qs1'],extrasaction='ignore')
     writer.writeheader()
     for out in outs:
         writer.writerow(out)
