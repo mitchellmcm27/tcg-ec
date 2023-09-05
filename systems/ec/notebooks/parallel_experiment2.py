@@ -23,8 +23,8 @@ cm = 1e-2
 ### ------------ INPUTS -------------------
 
 ## save/load
-save_output = False
-load_output = True
+save_output = True
+load_output = False
 
 reference= "parallel_experiment2"
 rxn_name = "eclogitization_agu17_stx21_rx"
@@ -40,18 +40,18 @@ atol = 1.e-9 # absolute tolerance, default 1e-9
 max_steps = 3e4
 
 # Calc descent rate of Moho
-shortening_rate = 30.0 *mm/yr # m/s
+shortening_rate = 15.0 *mm/yr # m/s
 erosion_rate = 1.0 * mm/yr # m/s
 
 crustal_rho = 2780.
 gravity = 9.81
 
 # multiproc
-processes =  mp.cpu_count()
+num_processes =  mp.cpu_count()
 pdf_metadata = {'creationDate': None}
 
 # Damkoehler numbers
-Das = [1e-2, 3e-1, 1e-1, 3e-1, 1e0, 3e0, 1e1, 1e2, 1e3, 1e4]#, 1e5]#, 1e6]
+Das = [1e-3, 3e-2, 1e-2, 3e-1, 1e-1, 3e0, 1e0, 1e1, 1e2, 1e3]#, 1e5]#, 1e6]
 
 # Compositions
 compositions = [
@@ -179,6 +179,7 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--composition")
     parser.add_argument("-r", "--rxn_name")
     parser.add_argument("-q", "--quick", default=False, action="store_true")
+    parser.add_argument("-n", "--num_processes")
     args = parser.parse_args()
 
     if args.composition is not None:
@@ -190,6 +191,8 @@ if __name__ == "__main__":
     if args.quick:
         print("Running in quick mode")
         Das = Das[0:4]
+    if args.num_processes is not None:
+        num_processes = int(args.num_processes)
 
 #====================================================
 
@@ -598,7 +601,7 @@ else:
     scenarios = [setup_ics(s) for s in scenarios]
 
     # run for varying damkhoeler numbers
-    with Pool(processes) as pool:
+    with Pool(num_processes) as pool:
         # blocks until all finished
         outs = pool.map(run_experiment, scenarios)
 
@@ -739,7 +742,6 @@ with open(Path(output_path,'_critical.csv'),'w') as csvfile:
     writer.writeheader()
     for out in outs:
         writer.writerow(out)
-quit()
 
 for composition in compositions:
     for tectonic_setting in tectonic_settings:
