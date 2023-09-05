@@ -665,7 +665,7 @@ for out in outs:
         if(phase=='Feldspar'):
             plag_frac = out["mi"][:,i]
             # find the index at which plagioclase drops below 1 wt%
-            plag_out_indices = [i for i,X in enumerate(plag_frac) if X < 0.01]
+            plag_out_indices = [i for i,X in enumerate(plag_frac) if X < 0.025]
             if len(plag_out_indices) == 0:
                 out['plag_out_depth'] = np.nan 
                 out['plag_out_pressure'] = np.nan # bar
