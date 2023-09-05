@@ -23,7 +23,7 @@ cm = 1e-2
 ### ------------ INPUTS -------------------
 
 ## save/load
-save_output = True
+save_output = False
 load_output = True
 
 reference= "parallel_experiment2"
@@ -651,11 +651,11 @@ for out in outs:
     out["densification_rate"] = densification_rate
     out["time_Myr"] = time_Myr
 
-    # max densification rate, binned and averaged over 50 kyr
+    # max densification rate, binned and averaged over 25 kyr
     bin_width = 50*kyr
-    bins =np.arange(0, max_t+bin_width, bin_width)
-    digitized = np.digitize(densification_rate, bins)
-    bin_means = [np.nanmean(densification_rate[digitized == i]) for i in range(1, len(bins))]
+    bins = np.arange(0., max_t, int(bin_width))
+    digitized_t = np.digitize(time, bins)
+    bin_means = [np.nanmean(densification_rate[digitized_t == i]) for i in range(len(bins))]
     out["max_densification_rate"] = np.nanmax(bin_means)
 
     for i,phase in enumerate(phase_names):
@@ -739,6 +739,7 @@ with open(Path(output_path,'_critical.csv'),'w') as csvfile:
     writer.writeheader()
     for out in outs:
         writer.writerow(out)
+quit()
 
 for composition in compositions:
     for tectonic_setting in tectonic_settings:
