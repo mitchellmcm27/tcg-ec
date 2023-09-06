@@ -23,8 +23,8 @@ cm = 1e-2
 ### ------------ INPUTS -------------------
 
 ## save/load
-save_output = False
-load_output = True
+save_output = True
+load_output = False
 
 reference= "parallel_experiment2"
 rxn_name = "eclogitization_agu17_stx21_rx"
@@ -40,8 +40,17 @@ atol = 1.e-9 # absolute tolerance, default 1e-9
 max_steps = 3e4
 
 # Calc descent rate of Moho
-shortening_rate = 15.0 *mm/yr # m/s
-erosion_rate = 1.0 * mm/yr # m/s
+shortening_rate = 10.0 *mm/yr # m/s
+
+# thickening rate depends on the 
+# width of the region being shortened
+# and the thickness of the lithosphere
+# here we assume that the thickness is 1/3 the width
+# e.g. 100 km lithospehre, 300 km region
+# this gives a thickening rate of ~3 km/Myr
+# and a crustal thickening rate of ~1 km/Myr
+# which roughly matches Wang et al. 2015 Arizaro
+thickening_rate = shortening_rate / 3. # m/s
 
 crustal_rho = 2780.
 gravity = 9.81
@@ -51,7 +60,7 @@ num_processes =  mp.cpu_count()
 pdf_metadata = {'creationDate': None}
 
 # Damkoehler numbers
-Das = [1e-3, 3e-2, 1e-2, 3e-1, 1e-1, 3e0, 1e0, 1e1, 1e2, 1e3]#, 1e5]#, 1e6]
+Das = [1e-3, 3e-2, 1e-2, 3e-1, 1e-1, 3e0, 1e0, 1e1, 1e2, 1e3]#, 1e6]
 
 # Compositions
 compositions = [
@@ -644,7 +653,7 @@ for out in outs:
     out["critical_pressure"] = critical_pressure
     out["critical_temperature"] = critical_temperature
 
-    descent_rate = z0/L0 * shortening_rate  - erosion_rate # m/s
+    descent_rate = z0/L0 * thickening_rate # m/s
     max_t = (z1-z0)/descent_rate
     time = np.linspace(0,1, rho.size) * max_t # seconds
     time_Myr = time/Myr
@@ -763,7 +772,7 @@ for composition in compositions:
 
         _Das = [o["Da"] for o in outs_c]
         
-        descent_rate = z0/L0 * shortening_rate # m/s
+        descent_rate = z0/L0 * thickening_rate # m/s
         max_t = (z1-z0)/descent_rate
         r0 = [da*rho0/max_t for da in _Das] # Gamma0 (kg/m3/s)
         dg = 3.*mm # grain size
@@ -846,7 +855,7 @@ for composition in compositions:
             axes["An"].plot(XAn, obj["z"])
             axes["Jd"].plot(XJd, obj["z"])
 
-        fig.suptitle("{}, {}, $R_m=${:.1f} km/Myr, $d_g=${}mm".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), descent_rate/1e3*yr*1e6, dg/mm),y=0.9)
+        fig.suptitle("{}, {}, $R_s=${:.1f} km/Myr, $d_g=${}mm".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), shortening_rate/1e3*yr*1e6, dg/mm),y=0.9)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"pdf")), metadata=pdf_metadata)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"png")))
         plt.close(fig)
