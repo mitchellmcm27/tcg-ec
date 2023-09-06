@@ -1,0 +1,8 @@
+#  Environment file for singularity containers
+
+# Standard paths
+LIB_PREFIX=/workspaces/tcg-ec/systems/ec/database/install/eclogitization_agu24_stx21_rx
+LIBRARY_PATH="$LIB_PREFIX/lib:\$LIBRARY_PATH"
+PYTHONPATH="$LIB_PREFIX/lib/python3.8/site-packages:\$PYTHONPATH"
+LD_LIBRARY_PATH="$LIB_PREFIX/lib:\$LD_LIBRARY_PATH"
+CPLUS_INCLUDE_PATH="$LIB_PREFIX/include:$LIB_PREFIX/include/coder:\$CPLUS_INCLUDE_PATH"

@@ -1,11 +1,7 @@
 ## added manually
 .DS_Store
 *.pickle
-**/*.build/
-**/install/
-**/database/phases/
-**/database/endmembers/
-**/database/reactions/
+*.build/
 **/notebooks/*.png
 
 ### CMake ###

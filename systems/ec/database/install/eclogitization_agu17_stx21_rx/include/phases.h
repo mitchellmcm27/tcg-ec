@@ -1,0 +1,8 @@
+#include "phases/Clinopyroxene_slb_ph.h"
+#include "phases/Feldspar_slb_ph.h"
+#include "phases/Garnet_slb_ph.h"
+#include "phases/Kyanite_slb_ph.h"
+#include "phases/Orthopyroxene_slb_ph.h"
+#include "phases/Quartz_slb_ph.h"
+#include "phases/Albite_slb_ph.h"
+#include "phases/Anorthite_slb_ph.h"

@@ -1,0 +1,16 @@
+#%Module1.0
+proc ModulesHelp { } {
+        global dotversion
+
+        puts stderr "	Sets environment for custom thermocodegen libraries."
+}
+module-whatis "Sets environment for interaction with custom thermocodegen libraries"
+
+
+# Standard paths
+setenv	  LIB_PREFIX				/workspaces/tcg-ec/systems/ec/database/install/eclogitization_agu23_stx21_rx
+prepend-path	  LIBRARY_PATH			/workspaces/tcg-ec/systems/ec/database/install/eclogitization_agu23_stx21_rx/lib
+
+prepend-path  PYTHONPATH		     /workspaces/tcg-ec/systems/ec/database/install/eclogitization_agu23_stx21_rx/lib/python3.8/site-packages
+prepend-path  LD_LIBRARY_PATH	     /workspaces/tcg-ec/systems/ec/database/install/eclogitization_agu23_stx21_rx/lib
+prepend-path  CPLUS_INCLUDE_PATH  /workspaces/tcg-ec/systems/ec/database/install/eclogitization_agu23_stx21_rx/include:/workspaces/tcg-ec/systems/ec/database/install/eclogitization_agu23_stx21_rx/include/coder
