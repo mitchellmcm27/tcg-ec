@@ -1,5 +1,6 @@
 from mcm.tcg import *
 import numpy as np
+import numpy.ma as ma
 from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -23,8 +24,8 @@ cm = 1e-2
 ### ------------ INPUTS -------------------
 
 ## save/load
-save_output = True
-load_output = False
+save_output = False
+load_output = True
 
 reference= "parallel_experiment2"
 rxn_name = "eclogitization_agu17_stx21_rx"
@@ -662,16 +663,10 @@ for out in outs:
     out["densification_rate"] = densification_rate
     out["time_Myr"] = time_Myr
 
-    # max densification rate, binned and averaged over 25 kyr
-    bin_width = 50*kyr
-    bins = np.arange(0., max_t, int(bin_width))
-    digitized_t = np.digitize(time, bins)
-    bin_means = [np.nanmean(densification_rate[digitized_t == i]) for i in range(len(bins))]
-    out["max_densification_rate"] = np.nanmax(bin_means)
-
     for i,phase in enumerate(phase_names):
+        phase_mis = out["mi"][:,i] # wt%
         if(phase=='Feldspar'):
-            plag_frac = out["mi"][:,i]
+            plag_frac = phase_mis.copy()
             # find the index at which plagioclase drops below 1 wt%
             plag_out_indices = [i for i,X in enumerate(plag_frac) if X < 0.025]
             if len(plag_out_indices) == 0:
@@ -684,6 +679,17 @@ for out in outs:
                 out['plag_out_depth'] = depth_m[plag_out_index]
                 out['plag_out_pressure'] = P[plag_out_index] # bar
                 out['plag_out_temperature'] = T[plag_out_index] # K
+
+    # max densification rate, binned and averaged over 10 kyr
+    # limited to the plag-out reaction region (not the garnet-in region)
+    # where there is no Opx
+    bin_width = 10*kyr
+    bins = np.arange(0., max_t, int(bin_width))
+    digitized_t = np.digitize(time, bins)
+    plag_out_mask = P/1.e4 < 0.5 + 1./1000.*(T-273.15-300.)
+    dens_rate_masked = ma.masked_array(densification_rate,mask=plag_out_mask)
+    bin_means = [dens_rate_masked[digitized_t == i].mean() for i in range(len(bins))]
+    out["max_densification_rate"] = np.nanmax(bin_means)
 
 selected_compositions = [
     "hacker_2015_bin_3",
@@ -751,7 +757,7 @@ with open(Path(output_path,'_critical.csv'),'w') as csvfile:
     writer.writeheader()
     for out in outs:
         writer.writerow(out)
-
+quit()
 for composition in compositions:
     for tectonic_setting in tectonic_settings:
 
