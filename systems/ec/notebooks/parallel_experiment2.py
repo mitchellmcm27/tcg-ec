@@ -23,8 +23,8 @@ cm = 1e-2
 ### ------------ INPUTS -------------------
 
 ## save/load
-save_output = True
-load_output = False
+save_output = False
+load_output = True
 
 reference= "parallel_experiment2"
 rxn_name = "eclogitization_agu17_stx21_rx"
@@ -64,6 +64,7 @@ compositions = [
     "hacker_2015_md_xenolith",
     "hacker_2015_bin_1",
     "zhang_2022_cd07-2",
+    "mackwell_1998_maryland_diabase"
 ]
 
 tectonic_settings = [
@@ -196,6 +197,10 @@ if __name__ == "__main__":
 
 #====================================================
 
+output_path = Path("figs",reference,rxn_name)
+output_path.mkdir(parents=True, exist_ok=True)
+pickle_path = Path(output_path,"_outs.pickle")
+
 fig = plt.figure(figsize=(5,7))
 cmap1 = plt.cm.get_cmap("coolwarm_r")
 ax1 = plt.gca()
@@ -307,8 +312,6 @@ plt.legend()
 ax1.set_ylabel("depth (km)")
 ax1.set_xlabel("$T$ (°C)")
 ax1.invert_yaxis()
-output_path = Path("figs",reference,rxn_name)
-output_path.mkdir(parents=True, exist_ok=True)
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "pdf")), metadata=pdf_metadata)
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "png")))
 
@@ -588,10 +591,6 @@ def run_experiment(scenario):
     scenario["time"] = t
     return scenario
 
-output_path = Path("figs",reference,rxn_name)
-output_path.mkdir(parents=True, exist_ok=True)
-pickle_path = Path(output_path,"_outs.pickle")
-
 if load_output:
     print("Loading pickle from file file {}".format(pickle_path))
     with open(pickle_path, 'rb') as pickle_file:
@@ -679,10 +678,10 @@ for out in outs:
 
 selected_compositions = [
     "hacker_2015_bin_3",
-    "zhang_2006_mafic_granuite",
+    "zhang_2006_mafic_granulite",
     "hacker_2015_bin_2",
-    "hacker_2015_bin_1",
     "zhang_2022_cd07-2",
+    "mackwell_1998_maryland_diabase"
 ]
 
 selected_outputs = [o for o in outs if o["composition"] in selected_compositions]
@@ -701,7 +700,8 @@ sizes = T2size(T0s)
 comps = [o["composition"] for o in selected_outputs]
 codes = [selected_compositions.index(c) for c in comps]
 
-s = plt.scatter([o["Da"] for o in selected_outputs], np.asarray(depths)/1000., s=sizes, c=codes, cmap="tab10", alpha=0.5)
+fig = plt.figure(figsize=(5,7))
+s = plt.scatter([o["Da"] for o in selected_outputs], np.asarray(depths)/1e3, s=sizes, c=codes, cmap="tab10", alpha=0.5)
 
 # produce a legend with the unique colors from the scatter
 ax = plt.gca()
@@ -729,7 +729,7 @@ legend2 = ax.legend(handles,
                     loc="upper left",
                     bbox_to_anchor=(1.04,1),
                     title="$T_0$ (°C)")
-ax.set_ylim(top=86)
+ax.set_ylim(top=30, bottom=85)
 plt.semilogx()
 plt.xlabel("Da")
 plt.ylabel("Critical depth (km)")
