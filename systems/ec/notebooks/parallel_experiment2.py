@@ -61,19 +61,20 @@ num_processes =  mp.cpu_count()
 pdf_metadata = {'creationDate': None}
 
 # Damkoehler numbers
-Das = [1e-3, 3e-2, 1e-2, 3e-1, 1e-1, 3e0, 1e0, 1e1, 1e2, 1e3]#, 1e6]
+Das = [1e-3, 3e-2, 1e-2, 3e-1, 1e-1, 3e0, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5]#, 1e6]
 
 # Compositions
 compositions = [
     "hacker_2015_bin_4",
     "hacker_2015_bin_3",
-    "bhowany_2018_hol2a",
-    "zhang_2006_mafic_granulite",
+    #"bhowany_2018_hol2a",
+    #"zhang_2006_mafic_granulite",
     "sammon_2021_lower_crust",
+    "sammon_2021_deep_crust",
     "hacker_2015_bin_2",
     "hacker_2015_md_xenolith",
     "hacker_2015_bin_1",
-    "zhang_2022_cd07-2",
+    #"zhang_2022_cd07-2",
     "mackwell_1998_maryland_diabase"
 ]
 
@@ -191,6 +192,7 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--rxn_name")
     parser.add_argument("-q", "--quick", default=False, action="store_true")
     parser.add_argument("-n", "--num_processes")
+    parser.add_argument("-f", "--force", default=False, action="store_true")
     args = parser.parse_args()
 
     if args.composition is not None:
@@ -204,6 +206,9 @@ if __name__ == "__main__":
         Das = Das[0:4]
     if args.num_processes is not None:
         num_processes = int(args.num_processes)
+    if args.force:
+        save_output = True
+        load_output = False
 
 #====================================================
 
@@ -618,6 +623,8 @@ if save_output:
     with open(pickle_path, 'wb') as pickle_file:
         pickle.dump(outs, pickle_file)
 
+bin_widths = {"1Myr":1*Myr, "100kyr":100*kyr, "50kyr":50*kyr, "10kyr":10*kyr}
+
 for out in outs:
     rho = np.array(out["rho"])
     depth_m = out["z"]
@@ -680,16 +687,16 @@ for out in outs:
                 out['plag_out_pressure'] = P[plag_out_index] # bar
                 out['plag_out_temperature'] = T[plag_out_index] # K
 
-    # max densification rate, binned and averaged over 10 kyr
+    # max densification rate, binned and averaged over time bins
     # limited to the plag-out reaction region (not the garnet-in region)
     # where there is no Opx
-    bin_width = 10*kyr
-    bins = np.arange(0., max_t, int(bin_width))
-    digitized_t = np.digitize(time, bins)
-    plag_out_mask = P/1.e4 < 0.5 + 1./1000.*(T-273.15-300.)
-    dens_rate_masked = ma.masked_array(densification_rate,mask=plag_out_mask)
-    bin_means = [dens_rate_masked[digitized_t == i].mean() for i in range(len(bins))]
-    out["max_densification_rate"] = np.nanmax(bin_means)
+    for bin_width_string, bin_width in bin_widths.items():
+        bins = np.arange(0., max_t, int(bin_width))
+        digitized_t = np.digitize(time, bins) # assign the index of each bin
+        plag_out_mask = P/1.e4 < 0.5 + 1./1000.*(T-273.15-300.) # 'True' means mask it out (nan)
+        dens_rate_masked = ma.masked_array(densification_rate,mask=plag_out_mask)
+        bin_means = [dens_rate_masked[digitized_t == i].mean() for i in range(len(bins))]
+        out["max_densification_rate_"+bin_width_string] = np.nanmax(bin_means)
 
 selected_compositions = [
     "hacker_2015_bin_3",
@@ -753,11 +760,15 @@ plt.savefig(Path(output_path,"{}.{}".format("_critical", "png")),bbox_extra_arti
 
 import csv
 with open(Path(output_path,'_critical.csv'),'w') as csvfile:
-    writer = csv.DictWriter(csvfile, ['setting','L0','z0','z1','As','hr0','k','Ts','Tlab','Da','composition','T0','T1','P0','rho0','critical_depth','critical_pressure','critical_temperature','plag_out_pressure','plag_out_temperature','plag_out_depth','max_densification_rate','qs0','qs1'],extrasaction='ignore')
+    fieldnames = ['setting','L0','z0','z1','As','hr0','k','Ts','Tlab','Da','composition','T0','T1','P0','rho0','critical_depth','critical_pressure','critical_temperature','plag_out_pressure','plag_out_temperature','plag_out_depth','qs0','qs1']
+    for key,val in bin_widths.items():
+        fieldnames.append('max_densification_rate_'+key)
+    writer = csv.DictWriter(csvfile, fieldnames,extrasaction='ignore')
     writer.writeheader()
     for out in outs:
         writer.writerow(out)
-quit()
+    print("wrote _critical.csv")
+
 for composition in compositions:
     for tectonic_setting in tectonic_settings:
 

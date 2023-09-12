@@ -12,7 +12,7 @@ import from_perplex as pp
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
 composition = 'hacker_2015_md_xenolith'
-rxn_name = 'eclogitization_agu21_stx21_rx'
+rxn_name = 'eclogitization_agu17_stx21_rx'
 
 # end time of reactions, change with -e argument
 end_t = 1
