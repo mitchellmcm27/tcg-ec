@@ -61,7 +61,7 @@ num_processes =  mp.cpu_count()
 pdf_metadata = {'creationDate': None}
 
 # Damkoehler numbers
-Das = [1e-3, 3e-2, 1e-2, 3e-1, 1e-1, 3e0, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5]#, 1e6]
+Das = [1e-4, 3e-3, 1e-3, 3e-2, 1e-2, 3e-1, 1e-1, 1e0, 3e0, 1e2, 3e2, 1e3]#, 1e6]
 
 # Compositions
 compositions = [
@@ -81,33 +81,44 @@ compositions = [
 tectonic_settings = [
     {
         "setting": "hot-1",
-        "L0": 55.e3,
+        "L0": 56.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 1.5e-6,
-        "hr0": 11.5e3,
+        "As": 1.8e-6,
+        "hr0": 13.e3,
         "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
-    },
+    },    
     {
         "setting": "hot-2",
-        "L0": 60.e3,
+        "L0": 59.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 1.5e-6,
-        "hr0": 11.25e3,
+        "As": 1.75e-6,
+        "hr0": 12.0e3,
         "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting": "hot-3",
+        "L0": 62.e3,
+        "z0": 30.e3,
+        "z1": 80.e3,
+        "As": 1.65e-6,
+        "hr0": 11.e3,
+        "k": 3.0,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting": "hot-4",
         "L0": 65.e3,
         "z0": 30.e3,
         "z1": 80.e3,
         "As": 1.5e-6,
-        "hr0": 11.0e3,
+        "hr0": 10.e3,
         "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
@@ -326,9 +337,16 @@ for num_setting, setting in enumerate(tectonic_settings):
 plt.legend()
 ax1.set_ylabel("depth (km)")
 ax1.set_xlabel("$T$ (°C)")
+
 ax1.invert_yaxis()
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "pdf")), metadata=pdf_metadata)
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "png")))
+
+ax1.set_ylim([30,80])
+plt.savefig(Path(output_path,"{}.{}".format("_geotherms_inverted", "pdf")), metadata=pdf_metadata)
+plt.savefig(Path(output_path,"{}.{}".format("_geotherms_inverted", "png")))
+
+quit()
 
 table_body = """\\begin{{tabular}}{{cc{}}}
 \\toprule
@@ -553,7 +571,7 @@ def run_experiment(scenario):
     Tlab = scenario["Tlab"]
 
     rxn = get_reaction(rxn_name)
-    rxn.set_parameter("T0",T0)
+    rxn.set_parameter("T0",1500+273.15) # assume 1500 C for good fit to data
 
     scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0)}
     print(scale)
