@@ -61,7 +61,7 @@ num_processes =  mp.cpu_count()
 pdf_metadata = {'creationDate': None}
 
 # Damkoehler numbers
-Das = [1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]#, 1e6]
+Das = [1e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]#, 1e6]
 
 # Compositions
 compositions = [
@@ -113,7 +113,7 @@ tectonic_settings = [
         "Tlab": 1330. + 273.15
     },
     {
-        "setting": "transitional-1",
+        "setting": "hot-4",
         "L0": 65.e3,
         "z0": 30.e3,
         "z1": 80.e3,
@@ -124,7 +124,7 @@ tectonic_settings = [
         "Tlab": 1330. + 273.15
     },
     {
-        "setting": "transitional-2",
+        "setting": "transitional-1",
         "L0": 72.e3,
         "z0": 30.e3,
         "z1": 80.e3,
@@ -135,7 +135,7 @@ tectonic_settings = [
         "Tlab": 1330. + 273.15
     },
     {
-        "setting": "transitional-3",
+        "setting": "transitional-2",
         "L0": 78.e3,
         "z0": 30.e3,
         "z1": 80.e3,
@@ -146,7 +146,7 @@ tectonic_settings = [
         "Tlab": 1330. + 273.15
     },
     {
-        "setting": "cold-1",
+        "setting": "transitional-3",
         "L0": 88.e3,
         "z0": 30.e3,
         "z1": 80.e3,
@@ -157,7 +157,7 @@ tectonic_settings = [
         "Tlab": 1330. + 273.15
     },
     {
-        "setting":"cold-2",
+        "setting":"cold-1",
         "L0": 98.e3,
         "z0": 30.e3,
         "z1": 80.e3,
@@ -168,7 +168,7 @@ tectonic_settings = [
         "Tlab": 1330. + 273.15
     },
     {
-        "setting":"cold-3",
+        "setting":"cold-2",
         "L0": 110.e3,
         "z0": 30.e3,
         "z1": 80.e3,
@@ -179,7 +179,7 @@ tectonic_settings = [
         "Tlab": 1330. + 273.15
     },
     {
-        "setting":"cold-4",
+        "setting":"cold-3",
         "L0": 124.e3,
         "z0": 30.e3,
         "z1": 80.e3,
