@@ -86,10 +86,10 @@ compositions = [
 tectonic_settings = [
     {
         "setting": "hot-1",
-        "L0": 56.e3,
+        "L0": 55.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 1.8e-6,
+        "As": 2.0e-6,
         "hr0": 13.e3,
         "k": 3.0,
         "Ts": 10. + 273.15,
@@ -97,40 +97,51 @@ tectonic_settings = [
     },    
     {
         "setting": "hot-2",
-        "L0": 59.e3,
+        "L0": 60.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 1.75e-6,
-        "hr0": 12.0e3,
+        "As": 1.9e-6,
+        "hr0": 12.5e3,
         "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting": "hot-3",
-        "L0": 62.e3,
-        "z0": 30.e3,
-        "z1": 80.e3,
-        "As": 1.65e-6,
-        "hr0": 11.e3,
-        "k": 3.0,
-        "Ts": 10. + 273.15,
-        "Tlab": 1330. + 273.15
-    },
-    {
-        "setting": "hot-4",
         "L0": 65.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 1.5e-6,
-        "hr0": 10.e3,
+        "As": 1.8e-6,
+        "hr0": 12.e3,
         "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
         "setting": "transitional-1",
-        "L0": 72.e3,
+        "L0": 70.e3,
+        "z0": 30.e3,
+        "z1": 80.e3,
+        "As": 1.7e-6,
+        "hr0": 11.5e3,
+        "k": 3.0,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting": "transitional-2",
+        "L0": 75.e3,
+        "z0": 30.e3,
+        "z1": 80.e3,
+        "As": 1.6e-6,
+        "hr0": 11.0e3,
+        "k": 3.0,
+        "Ts": 10. + 273.15,
+        "Tlab": 1330. + 273.15
+    },
+    {
+        "setting": "transitional-3",
+        "L0": 80.e3,
         "z0": 30.e3,
         "z1": 80.e3,
         "As": 1.5e-6,
@@ -140,60 +151,49 @@ tectonic_settings = [
         "Tlab": 1330. + 273.15
     },
     {
-        "setting": "transitional-2",
-        "L0": 78.e3,
+        "setting": "cold-1",
+        "L0": 85.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 1.5e-6,
+        "As": 1.4e-6,
         "hr0": 10.e3,
         "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
-        "setting": "transitional-3",
-        "L0": 88.e3,
+        "setting":"cold-2",
+        "L0": 90.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 1.5e-6,
+        "As": 1.3e-6,
         "hr0": 9.5e3,
         "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
     {
-        "setting":"cold-1",
-        "L0": 98.e3,
-        "z0": 30.e3,
-        "z1": 80.e3,
-        "As": 1.5e-6,
-        "hr0": 9.0e3,
-        "k": 3.0,
-        "Ts": 10. + 273.15,
-        "Tlab": 1330. + 273.15
-    },
-    {
-        "setting":"cold-2",
-        "L0": 110.e3,
-        "z0": 30.e3,
-        "z1": 80.e3,
-        "As": 1.5e-6,
-        "hr0": 8.5e3,
-        "k": 3.0,
-        "Ts": 10. + 273.15,
-        "Tlab": 1330. + 273.15
-    },
-    {
         "setting":"cold-3",
-        "L0": 124.e3,
+        "L0": 95.e3,
         "z0": 30.e3,
         "z1": 80.e3,
-        "As": 1.5e-6,
-        "hr0": 8.0e3,
+        "As": 1.2e-6,
+        "hr0": 9.e3,
         "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
     },
+   #{
+   #    "setting":"cold-3",
+   #    "L0": 124.e3,
+   #    "z0": 30.e3,
+   #    "z1": 80.e3,
+   #    "As": 1.5e-6,
+   #    "hr0": 8.0e3,
+   #    "k": 3.0,
+   #    "Ts": 10. + 273.15,
+   #    "Tlab": 1330. + 273.15
+   #},
 ]
 
 # ------------------------------------------
@@ -368,7 +368,8 @@ ax1.invert_yaxis()
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "pdf")), metadata=pdf_metadata)
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "png")))
 
-ax1.set_ylim([30,80])
+ax1.set_ylim([0,120])
+ax1.set_xlim([150,1000])
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms_inverted", "pdf")), metadata=pdf_metadata)
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms_inverted", "png")))
 
