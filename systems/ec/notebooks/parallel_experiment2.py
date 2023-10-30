@@ -610,8 +610,7 @@ def run_experiment(scenario):
     rxn = get_reaction(rxn_name)
     rxn.set_parameter("T0",2000+273.15) # assume 1500 C for good fit to data
 
-    ti = 0
-    scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0), "t":(t0-ti)}
+    scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0), "t":(t0)}
     print(scale)
 
     u0=np.empty(I+K+2)
@@ -628,9 +627,9 @@ def run_experiment(scenario):
     _da = Da * t0
     args = (rxn,scale,_da,L0,z0,As,hr0,k,Ts,Tlab)
     max_step = 0.00001 if pulsed_fluid else np.inf
-    sol = solve_ivp(rhs, [ti,t0], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None,max_step=max_step)
+    sol = solve_ivp(rhs, [0,t0], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None,max_step=max_step)
     
-    t = np.linspace(ti,t0,1000)
+    t = np.linspace(0,t0,1000)
     y = sol.sol(t)
 
     T = y[-2]*scale["T"] # K
@@ -701,15 +700,23 @@ for out in outs:
 
     if max_rho > max_rho_py:
         # find the greatest depth at which rho exceeds pyrolite
-        noncritical_indices = [i for i,r in enumerate(rho) if r < rho_pyrolite[i]]
-        if len(noncritical_indices) == 0:
+        critical_indices = [i for i,r in enumerate(rho) if r > rho_pyrolite[i]]
+        if len(critical_indices) == 0:
+            # never goes critical
+            critical_depth = 85.e3 # approx. coesite transition?, can change this later
+            critical_pressure = 30e3 # bar
+            critical_temperature = T[-1] # K
+            critical_time = t0+1
+        elif len(critical_indices) == len(rho):
+            # always critical
             critical_depth = depth_m[0]
             critical_pressure = P[0] # bar
             critical_temperature = T[0] # K
             critical_time = t[0]
         else:
-            last_noncritical_index = noncritical_indices[-1]
-            critical_index = last_noncritical_index + 1
+            # interesting 
+            first_critical_index = critical_indices[0]
+            critical_index = first_critical_index
             critical_depth = depth_m[critical_index]
             critical_pressure = P[critical_index] # bar
             critical_temperature = T[critical_index] # K
