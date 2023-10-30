@@ -25,7 +25,7 @@ cm = 1e-2
 
 ## save/load
 save_output = False
-load_output = True
+load_output = False
 
 reference= "parallel_experiment2"
 rxn_name = "eclogitization_agu17_stx21_rx"
@@ -62,6 +62,11 @@ pdf_metadata = {'creationDate': None}
 
 # Damkoehler numbers
 Das = [1e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]#, 1e6]
+
+t0 = 1
+
+# pulsed fluid model
+pulsed_fluid = False
 
 # Compositions
 compositions = [
@@ -204,8 +209,13 @@ if __name__ == "__main__":
     parser.add_argument("-q", "--quick", default=False, action="store_true")
     parser.add_argument("-n", "--num_processes")
     parser.add_argument("-f", "--force", default=False, action="store_true")
+    parser.add_argument("-e", "--end_time")
+    parser.add_argument("-p", "--pulsed_fluid", default=False, action="store_true")
     args = parser.parse_args()
 
+    if args.end_time is not None:
+        print("Using custom end time of {}".format(args.end_time))
+        t0 = float(args.end_time)
     if args.composition is not None:
         print("Using composition {}".format(args.composition))
         compositions = [args.composition]
@@ -214,16 +224,32 @@ if __name__ == "__main__":
         rxn_name = args.rxn_name
     if args.quick:
         print("Running in quick mode")
-        Das = Das[0:4]
+        Das = [d for d in Das if d <= 1e3]
+        compositions = [
+        "sammon_2021_lower_crust",
+        "sammon_2021_deep_crust",
+        "hacker_2015_md_xenolith",
+        "mackwell_1998_maryland_diabase"
+    ] if args.composition is None else [args.composition]
     if args.num_processes is not None:
         num_processes = int(args.num_processes)
     if args.force:
         save_output = True
         load_output = False
+    if args.pulsed_fluid:
+        print("Using pulsed fluid flow model")
+        pulsed_fluid = True
+        Das = [3e5]
+        compositions = [
+            "sammon_2021_lower_crust",
+            "sammon_2021_deep_crust",
+            "hacker_2015_md_xenolith",
+            "mackwell_1998_maryland_diabase"
+        ] if args.composition is None else [args.composition]
 
 #====================================================
 
-output_path = Path("figs",reference,rxn_name)
+output_path = Path("figs",reference,rxn_name,"pulsed") if pulsed_fluid  else Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
 pickle_path = Path(output_path,"_outs.pickle")
 
@@ -463,7 +489,15 @@ def get_initial_state(rxn,scenario):
 
     return T0, P0, Cik0, mi0, rho0, qs0, T1, qs1
 
+fluid_infil_times = [(n, n+0.0001) for n in np.arange(0,100)/100]
+
 def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
+
+    # modulate damk here if wanted
+    if(pulsed_fluid):
+        _da = Da if any(t>=tup[0] and t<tup[1] for tup in fluid_infil_times) else 0.01
+    else:
+        _da = Da
 
     # Extract variables
     mi = u[:I]
@@ -474,8 +508,12 @@ def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
     # scale Temperature and pressure
     Ts = scale["T"]*T
     Ps = scale["P"]*P
-    dz = scale["h"] # m per unit time
     rho0 = scale["rho"]
+    t0 = scale["t"]
+
+    # length scale
+    dz = scale["h"]
+
 
     C = rxn.zero_C()
     
@@ -508,20 +546,20 @@ def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
     du = np.zeros(u.shape)
     sKi = 0
     for i in range(I):
-        du[i] = Da*rho0*Gammai[i]*v
+        du[i] = _da*rho0*Gammai[i]*v
         for k in range(_Kis[i]):
             GikcGi = Gammaik[sKi+k] - C[i][k]*Gammai[i]
-            du[I+sKi+k] = Da*rho0*GikcGi*v/mis[i]
+            du[I+sKi+k] = _da*rho0*GikcGi*v/mis[i]
         sKi += _Kis[i]
     
   
     # linear temperature
     # dT_linear = (T_moho_f - T_moho_i)/scale["T"]
 
-    dP = crustal_rho * gravity / 1e5 * dz # bar 
+    dP = crustal_rho * gravity / 1e5 * dz if t < 1 else 0 # bar 
     dP = dP/scale["P"]
 
-    shortening = 1 + ((dz+z0)/z0 - 1)*t
+    shortening = 1 + ((dz+z0)/z0 - 1)*t if t<1 else 1+((dz+z0)/z0-1)
     T_steady, q_s = geotherm_steady(z0/L0,
                                     L0*shortening,
                                     shortening,
@@ -571,7 +609,8 @@ def run_experiment(scenario):
     rxn = get_reaction(rxn_name)
     rxn.set_parameter("T0",2000+273.15) # assume 1500 C for good fit to data
 
-    scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0)}
+    ti = 0
+    scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0), "t":(t0-ti)}
     print(scale)
 
     u0=np.empty(I+K+2)
@@ -583,10 +622,14 @@ def run_experiment(scenario):
     #print(Pmax)
     #event = lambda t,y,rxn,scale,Da: Pmax - y[-1]*scale["P"] # when pressure = Pmax
     #event.terminal = True
-    args = (rxn,scale,Da,L0,z0,As,hr0,k,Ts,Tlab)
-    sol = solve_ivp(rhs, [0,1], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None)
+
+    # Rescale damkohler number in case the end time is not 1
+    _da = Da * t0
+    args = (rxn,scale,_da,L0,z0,As,hr0,k,Ts,Tlab)
+    max_step = 0.00001 if pulsed_fluid else np.inf
+    sol = solve_ivp(rhs, [ti,t0], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None,max_step=max_step)
     
-    t = np.linspace(0,1,1000)
+    t = np.linspace(ti,t0,1000)
     y = sol.sol(t)
 
     T = y[-2]*scale["T"] # K
@@ -645,6 +688,7 @@ for out in outs:
     rho = np.array(out["rho"])
     depth_m = out["z"]
     T = out["T"] # K
+    t = out["time"] # unitless
     P = out["P"] # bar
     z1 = out["z1"]
     z0 = out["z0"]
@@ -661,25 +705,29 @@ for out in outs:
             critical_depth = depth_m[0]
             critical_pressure = P[0] # bar
             critical_temperature = T[0] # K
+            critical_time = t[0]
         else:
             last_noncritical_index = noncritical_indices[-1]
             critical_index = last_noncritical_index + 1
             critical_depth = depth_m[critical_index]
             critical_pressure = P[critical_index] # bar
             critical_temperature = T[critical_index] # K
+            critical_time = t[critical_index]
     else:
         critical_depth = 85.e3 # approx. coesite transition?, can change this later
         critical_pressure = 30e3 # bar
         critical_temperature = T[-1] # K
+        critical_time = t0+1
     
 
     out["critical_depth"] = critical_depth
     out["critical_pressure"] = critical_pressure
     out["critical_temperature"] = critical_temperature
+    out["critical_time"] = critical_time 
 
     descent_rate = z0/L0 * thickening_rate # m/s
     max_t = (z1-z0)/descent_rate
-    time = np.linspace(0,1, rho.size) * max_t # seconds
+    time = np.linspace(0,t0, rho.size) * max_t # seconds
     time_Myr = time/Myr
     densification_rate = np.diff(rho*1000)/np.diff(time_Myr) # kg/m3/Myr
     densification_rate = np.insert(densification_rate, 0, 0.)
