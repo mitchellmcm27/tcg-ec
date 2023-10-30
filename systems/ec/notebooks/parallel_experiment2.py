@@ -369,7 +369,7 @@ plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "pdf")), metadata=pdf_
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms", "png")))
 
 ax1.set_ylim([0,120])
-ax1.set_xlim([150,1000])
+ax1.set_xlim([150,1100])
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms_inverted", "pdf")), metadata=pdf_metadata)
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms_inverted", "png")))
 
