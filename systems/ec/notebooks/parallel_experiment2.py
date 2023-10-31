@@ -24,7 +24,7 @@ cm = 1e-2
 ### ------------ INPUTS -------------------
 
 ## save/load
-save_output = False
+save_output = True
 load_output = False
 
 reference= "parallel_experiment2"
@@ -63,6 +63,7 @@ pdf_metadata = {'creationDate': None}
 # Damkoehler numbers
 Das = [1e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]#, 1e6]
 
+# default end time (scaled) is 1
 t0 = 1
 
 # pulsed fluid model
@@ -182,18 +183,7 @@ tectonic_settings = [
         "k": 3.0,
         "Ts": 10. + 273.15,
         "Tlab": 1330. + 273.15
-    },
-   #{
-   #    "setting":"cold-3",
-   #    "L0": 124.e3,
-   #    "z0": 30.e3,
-   #    "z1": 80.e3,
-   #    "As": 1.5e-6,
-   #    "hr0": 8.0e3,
-   #    "k": 3.0,
-   #    "Ts": 10. + 273.15,
-   #    "Tlab": 1330. + 273.15
-   #},
+    }
 ]
 
 # ------------------------------------------
