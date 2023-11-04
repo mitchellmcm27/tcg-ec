@@ -24,12 +24,8 @@ RUN cd ~/resources/perplex-stable\
     && cp optionfiles/* .
 
 # R Stuff
-
-RUN apt-get install -y r-base
-
-RUN R -e "install.packages(c('tidyverse', 'ggthemes', 'colorspace', 'latex2exp', 'latex2exp'),
-                           dependencies=TRUE, 
-                           repos='http://cran.rstudio.com/')"
+#RUN apt-get install -y r-base
+#RUN R -e "install.packages(c('tidyverse', 'ggthemes', 'colorspace', 'latex2exp', 'latex2exp'))"
 
 ENV DISPLAY=host.docker.internal:0
 EXPOSE 8888:8888
