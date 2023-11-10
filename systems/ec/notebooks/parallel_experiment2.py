@@ -53,6 +53,12 @@ shortening_rate = 10.0 *mm/yr # m/s
 # which roughly matches Wang et al. 2015 Arizaro
 thickening_rate = shortening_rate / 3. # m/s
 
+# when crust is ~ 1/3 of lithosphere, this gives a descent rate of approx:
+moho_descent_rate = 1.0 * mm/yr
+h0 = 50. * km # thicken the crust by 50 km
+v0 = moho_descent_rate
+t0 = h0 / v0
+
 crustal_rho = 2780.
 gravity = 9.81
 
@@ -64,7 +70,7 @@ pdf_metadata = {'creationDate': None}
 Das = [1e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]#, 1e6]
 
 # default end time (scaled) is 1
-t0 = 1
+end_t = 1
 
 # pulsed fluid model
 pulsed_fluid = False
@@ -205,7 +211,7 @@ if __name__ == "__main__":
 
     if args.end_time is not None:
         print("Using custom end time of {}".format(args.end_time))
-        t0 = float(args.end_time)
+        end_t = float(args.end_time)
     if args.composition is not None:
         print("Using composition {}".format(args.composition))
         compositions = [args.composition]
@@ -500,11 +506,8 @@ def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
     Ts = scale["T"]*T
     Ps = scale["P"]*P
     rho0 = scale["rho"]
-    t0 = scale["t"]
-
     # length scale
     dz = scale["h"]
-
 
     C = rxn.zero_C()
     
@@ -600,7 +603,7 @@ def run_experiment(scenario):
     rxn = get_reaction(rxn_name)
     rxn.set_parameter("T0",2000+273.15) # assume 1500 C for good fit to data
 
-    scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0), "t":(t0)}
+    scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0)}
     print(scale)
 
     u0=np.empty(I+K+2)
@@ -614,12 +617,12 @@ def run_experiment(scenario):
     #event.terminal = True
 
     # Rescale damkohler number in case the end time is not 1
-    _da = Da * t0
+    _da = Da * end_t
     args = (rxn,scale,_da,L0,z0,As,hr0,k,Ts,Tlab)
     max_step = 0.00001 if pulsed_fluid else np.inf
-    sol = solve_ivp(rhs, [0,t0], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None,max_step=max_step)
+    sol = solve_ivp(rhs, [0, end_t], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None,max_step=max_step)
     
-    t = np.linspace(0,t0,1000)
+    t = np.linspace(0,end_t,1000)
     y = sol.sol(t)
 
     T = y[-2]*scale["T"] # K
@@ -675,7 +678,7 @@ if save_output:
 bin_widths = {"1Myr":1*Myr, "100kyr":100*kyr, "50kyr":50*kyr, "10kyr":10*kyr}
 
 for out in outs:
-    rho = np.array(out["rho"])
+    rho = np.array(out["rho"]) # g/cm3
     depth_m = out["z"]
     T = out["T"] # K
     t = out["time"] # unitless
@@ -696,7 +699,7 @@ for out in outs:
             critical_depth = 85.e3 # approx. coesite transition?, can change this later
             critical_pressure = 30e3 # bar
             critical_temperature = T[-1] # K
-            critical_time = t0+1
+            critical_time = end_t+1
         elif len(critical_indices) == len(rho):
             # always critical
             critical_depth = depth_m[0]
@@ -715,17 +718,23 @@ for out in outs:
         critical_depth = 85.e3 # approx. coesite transition?, can change this later
         critical_pressure = 30e3 # bar
         critical_temperature = T[-1] # K
-        critical_time = t0+1
+        critical_time = end_t+1
     
 
     out["critical_depth"] = critical_depth
     out["critical_pressure"] = critical_pressure
     out["critical_temperature"] = critical_temperature
-    out["critical_time"] = critical_time 
+    out["critical_time"] = critical_time
 
-    descent_rate = z0/L0 * thickening_rate # m/s
-    max_t = (z1-z0)/descent_rate
-    time = np.linspace(0,t0, rho.size) * max_t # seconds
+    delta_rho = rho - rho_pyrolite
+    delta_rho[delta_rho < 0] = np.nan
+
+    # Average density contrast of the unstable layer
+    effective_delta_rho = np.nanmean(delta_rho)
+    out["effective_delta_rho"] = effective_delta_rho
+    out["max_rho"] = max_rho
+
+    time = np.linspace(0,end_t, rho.size) * t0 # seconds
     time_Myr = time/Myr
     densification_rate = np.diff(rho*1000)/np.diff(time_Myr) # kg/m3/Myr
     densification_rate = np.insert(densification_rate, 0, 0.)
@@ -753,7 +762,7 @@ for out in outs:
     # limited to the plag-out reaction region (not the garnet-in region)
     # where there is no Opx
     for bin_width_string, bin_width in bin_widths.items():
-        bins = np.arange(0., max_t, int(bin_width))
+        bins = np.arange(0., t0, int(bin_width))
         digitized_t = np.digitize(time, bins) # assign the index of each bin
         plag_out_mask = P/1.e4 < 0.5 + 1./1000.*(T-273.15-300.) # 'True' means mask it out (nan)
         dens_rate_masked = ma.masked_array(densification_rate,mask=plag_out_mask)
@@ -822,7 +831,7 @@ plt.savefig(Path(output_path,"{}.{}".format("_critical", "png")),bbox_extra_arti
 
 import csv
 with open(Path(output_path,'_critical.csv'),'w') as csvfile:
-    fieldnames = ['setting','L0','z0','z1','As','hr0','k','Ts','Tlab','Da','composition','T0','T1','P0','rho0','critical_depth','critical_pressure','critical_temperature','plag_out_pressure','plag_out_temperature','plag_out_depth','qs0','qs1']
+    fieldnames = ['setting','L0','z0','z1','As','hr0','k','Ts','Tlab','Da','composition','T0','T1','P0','rho0','critical_depth','critical_pressure','critical_temperature','plag_out_pressure','plag_out_temperature','plag_out_depth','qs0','qs1','effective_delta_rho','max_rho']
     for key,val in bin_widths.items():
         fieldnames.append('max_densification_rate_'+key)
     writer = csv.DictWriter(csvfile, fieldnames,extrasaction='ignore')
@@ -851,12 +860,10 @@ for composition in compositions:
 
         _Das = [o["Da"] for o in outs_c]
         
-        descent_rate = z0/L0 * thickening_rate # m/s
-        max_t = (z1-z0)/descent_rate
-        r0 = [da*rho0/max_t for da in _Das] # Gamma0 (kg/m3/s)
-        dg = 3.*mm # grain size
-        reaction_rate_per_surface = [r*dg for r in r0] # r0 (kg/m2/s), assumes 1mm grains
-        reaction_rate_per_surface_gcm = [r/10*yr for r in reaction_rate_per_surface] # g/cm2/yr
+        r0 = [da*rho0/t0 for da in _Das] # Gamma0 (kg/m3/s)
+        S0 = 6000 # 1/m
+        reaction_rate_per_surface = [r/S0 for r in r0] # r0 (kg/m2/s)
+        reaction_rate_per_surface_gcm = [r*1000/100/100*yr for r in reaction_rate_per_surface] # g/cm2/yr
         #print(reaction_rate_per_surface_gcm)
 
         # plot 
@@ -934,7 +941,7 @@ for composition in compositions:
             axes["An"].plot(XAn, obj["z"])
             axes["Jd"].plot(XJd, obj["z"])
 
-        fig.suptitle("{}, {}, $R_s=${:.1f} km/Myr, $d_g=${}mm".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), shortening_rate/1e3*yr*1e6, dg/mm),y=0.9)
+        fig.suptitle("{}, {}, $R_s=${:.1f} km/Myr, $S0=${} /m".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), shortening_rate/1e3*yr*1e6, S0),y=0.9)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"pdf")), metadata=pdf_metadata)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"png")))
         plt.close(fig)
