@@ -24,7 +24,7 @@ cm = 1e-2
 ### ------------ INPUTS -------------------
 
 ## save/load
-save_output = True
+save_output = False
 load_output = False
 
 reference= "parallel_experiment2"
@@ -70,10 +70,7 @@ pdf_metadata = {'creationDate': None}
 Das = [1e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]#, 1e6]
 
 # default end time (scaled) is 1
-end_t = 1
-
-# pulsed fluid model
-pulsed_fluid = False
+end_t = 1.
 
 # Compositions
 compositions = [
@@ -206,7 +203,6 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--num_processes")
     parser.add_argument("-f", "--force", default=False, action="store_true")
     parser.add_argument("-e", "--end_time")
-    parser.add_argument("-p", "--pulsed_fluid", default=False, action="store_true")
     args = parser.parse_args()
 
     if args.end_time is not None:
@@ -232,20 +228,10 @@ if __name__ == "__main__":
     if args.force:
         save_output = True
         load_output = False
-    if args.pulsed_fluid:
-        print("Using pulsed fluid flow model")
-        pulsed_fluid = True
-        Das = [3e5]
-        compositions = [
-            "sammon_2021_lower_crust",
-            "sammon_2021_deep_crust",
-            "hacker_2015_md_xenolith",
-            "mackwell_1998_maryland_diabase"
-        ] if args.composition is None else [args.composition]
 
 #====================================================
 
-output_path = Path("figs",reference,rxn_name,"pulsed") if pulsed_fluid  else Path("figs",reference,rxn_name)
+output_path = Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
 pickle_path = Path(output_path,"_outs.pickle")
 
@@ -490,11 +476,7 @@ fluid_infil_times = [(n, n+0.0001) for n in np.arange(0,100)/100]
 
 def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
 
-    # modulate damk here if wanted
-    if(pulsed_fluid):
-        _da = Da if any(t>=tup[0] and t<tup[1] for tup in fluid_infil_times) else 0.01
-    else:
-        _da = Da
+    _da = Da
 
     # Extract variables
     mi = u[:I]
@@ -619,8 +601,7 @@ def run_experiment(scenario):
     # Rescale damkohler number in case the end time is not 1
     _da = Da * end_t
     args = (rxn,scale,_da,L0,z0,As,hr0,k,Ts,Tlab)
-    max_step = 0.00001 if pulsed_fluid else np.inf
-    sol = solve_ivp(rhs, [0, end_t], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None,max_step=max_step)
+    sol = solve_ivp(rhs, [0, end_t], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None)
     
     t = np.linspace(0,end_t,1000)
     y = sol.sol(t)
