@@ -196,13 +196,13 @@ tectonic_settings = [
     }
 ]
 
-# ------------------------------------------
 
-# ============= Parse arguments for CLI =============
+#######################
+# Parse CLI arguments #
+#######################
 
 if __name__ == "__main__":
     import argparse
-    
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--composition")
     parser.add_argument("-r", "--rxn_name")
@@ -236,11 +236,18 @@ if __name__ == "__main__":
         save_output = True
         load_output = False
 
-#====================================================
+##########################
+# Ready output directory #
+##########################
 
 output_path = Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
 pickle_path = Path(output_path,"_outs.pickle")
+
+
+######################################
+# Plot pressure-temperature profiles #
+######################################
 
 fig = plt.figure(figsize=(5,7))
 cmap1 = plt.cm.get_cmap("coolwarm_r")
@@ -348,7 +355,6 @@ for num_setting, setting in enumerate(tectonic_settings):
     geotherm_latex_table["T0"][num_setting] = T0-273.15
     geotherm_latex_table["T1"][num_setting] = T1-273.15
 
-
 plt.legend()
 ax1.set_ylabel("depth (km)")
 ax1.set_xlabel("$T$ (°C)")
@@ -361,6 +367,10 @@ ax1.set_ylim([0,120])
 ax1.set_xlim([150,1100])
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms_inverted", "pdf")), metadata=pdf_metadata)
 plt.savefig(Path(output_path,"{}.{}".format("_geotherms_inverted", "png")))
+
+############################################
+# Write LaTeX for 'tectonic setting' table #
+############################################
 
 table_body = """\\begin{{tabular}}{{cc{}}}
 \\toprule
@@ -394,8 +404,13 @@ $T_{{1}}$ & \\si{{\\degreeCelsius}} & {} \\\\
 with open(Path(output_path,"_geotherms_table.tex"), "w") as fil:
     fil.writelines(table_body)
 
-scenarios = []
+############################
+# Setup initial conditions #
+############################
 
+# Create scenarios for all combinations 
+# of setting, composition, and Da       
+scenarios = []
 for setting in tectonic_settings:
     for da in Das:
         for comp in compositions:
@@ -404,16 +419,18 @@ for setting in tectonic_settings:
             scenario["composition"] = comp
             scenarios.append(scenario)
 
+# Get equilibrium mantle densities
 ipyrolite = get_rho_interpolator("xu_2008_pyrolite")
 iharzburgite = get_rho_interpolator("xu_2008_harzburgite")
 
+# Get reaction/phase/endmember parameters
 rxn = get_reaction(rxn_name)
-
 phase_names, endmember_names = get_names(rxn)
 I = len(rxn.phases())
 _Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
 K = sum(_Kis)
 
+# Get equilibrated initial condition (with cache to avoid repeating work)
 ic_cache = {}
 def get_initial_composition(T0,P0,rxn,composition):
     slug = "{:.4f}-{:.4f}-{}-{}".format(T0,P0,rxn.name(),composition)
@@ -436,7 +453,7 @@ def get_initial_composition(T0,P0,rxn,composition):
     ic_cache[slug] = (Cik0, mi0, rho0)
     return Cik0, mi0, rho0
 
-# initial temperature and pressure in K and bars
+# Get full initial conditions
 def get_initial_state(rxn,scenario):
 
     composition = scenario['composition']
@@ -449,7 +466,7 @@ def get_initial_state(rxn,scenario):
     Tlab = scenario["Tlab"]
     z1 = scenario["z1"]
 
-    # Temperature
+    # Initial temperature
     T0, qs0 = geotherm_steady(
         z0/L0, # between 0 and 1
         L0,
@@ -460,6 +477,8 @@ def get_initial_state(rxn,scenario):
         A=As,
         hr0=hr0
     )
+
+    # Final temperature
     thickening = z1/z0
     T1, qs1 = geotherm_steady(
         z0/L0, # between 0 and 1
@@ -472,91 +491,15 @@ def get_initial_state(rxn,scenario):
         hr0=hr0
     )
 
-    # Pressure
+    # Initial pressure
     P0 = crustal_rho * gravity * z0/1e5 # bar
 
+    # Initial composition (equilibrium at T0,P0)
     Cik0, mi0, rho0 = get_initial_composition(T0,P0,rxn,composition)
 
     return T0, P0, Cik0, mi0, rho0, qs0, T1, qs1
 
-fluid_infil_times = [(n, n+0.0001) for n in np.arange(0,100)/100]
-
-def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
-
-    _da = Da
-
-    # Extract variables
-    mi = u[:I]
-    Cik = u[I:I+K]
-    T = u[I+K]
-    P = u[I+K+1] 
- 
-    # scale Temperature and pressure
-    Ts = scale["T"]*T
-    Ps = scale["P"]*P
-    rho0 = scale["rho"]
-    # length scale
-    dz = scale["h"]
-
-    C = rxn.zero_C()
-    
-    # reshape C
-    Kis = 0
-    for i,Ki in enumerate(_Kis):
-        C[i] = Cik[Kis:Kis+Ki]
-        Kis = Kis+Ki
-
-    # regularize C
-    Cs = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
-    Cs = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
-
-    rhoi = np.array(rxn.rho(Ts, Ps, Cs))
-    v = np.sum(mi/rhoi)
-    
-    # regularize m
-    mis = np.asarray(mi)
-    mis = mi + eps
-
-    Gammai = np.asarray(rxn.Gamma_i(Ts,Ps,Cs,mi))
-    gamma_ik = rxn.Gamma_ik(Ts,Ps,Cs,mi)
-    Gammaik = np.zeros(K)
-    sKi = 0
-    for i in range(I):
-        for k in range(_Kis[i]):
-            Gammaik[sKi+k] = gamma_ik[i][k]
-        sKi += _Kis[i]
-    
-    du = np.zeros(u.shape)
-    sKi = 0
-    for i in range(I):
-        du[i] = _da*rho0*Gammai[i]*v
-        for k in range(_Kis[i]):
-            GikcGi = Gammaik[sKi+k] - C[i][k]*Gammai[i]
-            du[I+sKi+k] = _da*rho0*GikcGi*v/mis[i]
-        sKi += _Kis[i]
-    
-  
-    # linear temperature
-    # dT_linear = (T_moho_f - T_moho_i)/scale["T"]
-
-    dP = crustal_rho * gravity / 1e5 * dz if t < 1 else 0 # bar 
-    dP = dP/scale["P"]
-
-    shortening = 1 + ((dz+z0)/z0 - 1)*t if t<1 else 1+((dz+z0)/z0-1)
-    T_steady, q_s = geotherm_steady(z0/L0,
-                                    L0*shortening,
-                                    shortening,
-                                    Ts=T_surf,
-                                    Tlab=Tlab,
-                                    k=conductivity,
-                                    A=As,
-                                    hr0=hr0)
-    dT = (T_steady-Ts)*dz/scale["T"]
-
-    du[I+K:] = np.array([dT, dP])
-    
-    return du
-
+# Gets all initial conditions and save to scenario
 def setup_ics(scenario):
     rxn = get_reaction(rxn_name)
     T0, P0, Cik0, mi0, rho0,qs0,T1,qs1 = get_initial_state(rxn,scenario)
@@ -570,7 +513,94 @@ def setup_ics(scenario):
     scenario["rho0"] = rho0
     return scenario
 
-# function to run in parallel
+#############################################
+# Define RHS of differential system of eqns #
+#############################################
+
+def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
+
+    # Damkholer number could be modulated here if wanted
+
+    # Extract variables
+
+    # NOTE: this is here called Fi for consistency with the paper. Elsewhere in the file it is called mi
+    Fi = u[:I] # phase mass fractions
+    
+    # NOTE: this is here called cik for consistency with the paper. Elsewhere in the file it's called Cik
+    cik = u[I:I+K] # endmember mass fractions
+
+    T = u[I+K]
+    P = u[I+K+1] 
+ 
+    # Scalings
+    Ts = scale["T"]*T
+    Ps = scale["P"]*P
+    rho0 = scale["rho"]
+    dz = scale["h"] # length scale h0
+
+    # reshape C
+    C = rxn.zero_C() # object with correct shape
+    Kis = 0
+    for i,Ki in enumerate(_Kis):
+        C[i] = cik[Kis:Kis+Ki]
+        Kis = Kis+Ki
+
+    # regularize C by taking max of C and eps
+    Cs = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
+    Cs = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
+
+    rhoi = np.array(rxn.rho(Ts, Ps, Cs)) # phase densities $\rho_i$
+    V = np.sum(Fi/rhoi) # total volume
+    
+    # regularize F by adding eps
+    Fis = np.asarray(Fi)
+    Fis = Fi + eps
+
+    # Get dimensionless Gammas from reaction
+    Gammai = np.asarray(rxn.Gamma_i(Ts,Ps,Cs,Fi))
+    gamma_ik = rxn.Gamma_ik(Ts,Ps,Cs,Fi)
+    Gammaik = np.zeros(K)
+    sKi = 0
+    for i in range(I):
+        for k in range(_Kis[i]):
+            Gammaik[sKi+k] = gamma_ik[i][k]
+        sKi += _Kis[i]
+    
+    # Calculate reactive mass flux (scaled Gammas)
+    du = np.zeros(u.shape)
+    sKi = 0
+    for i in range(I):
+        du[i] = Da*rho0*Gammai[i]*V
+        for k in range(_Kis[i]):
+            GikcGi = Gammaik[sKi+k] - C[i][k]*Gammai[i]
+            du[I+sKi+k] = Da*rho0*GikcGi*V/Fis[i]
+        sKi += _Kis[i]
+
+    # dT/dt
+    shortening = 1 + ((dz+z0)/z0 - 1)*t
+    T_steady, q_s = geotherm_steady(z0/L0,
+                                    L0*shortening,
+                                    shortening,
+                                    Ts=T_surf,
+                                    Tlab=Tlab,
+                                    k=conductivity,
+                                    A=As,
+                                    hr0=hr0)
+    dT = (T_steady-Ts)*dz/scale["T"]
+
+    # dP/dt
+    dP = crustal_rho * gravity / 1e5 * dz # bar 
+    dP = dP/scale["P"]
+
+    # add dT and dP to outputs
+    du[I+K:] = np.array([dT, dP])
+
+    return du
+
+############################################
+# Function that runs scenarios in parallel #
+############################################
+
 def run_experiment(scenario):
 
     # print("Running ", scenario, "...\n")
@@ -590,34 +620,38 @@ def run_experiment(scenario):
     Tlab = scenario["Tlab"]
 
     rxn = get_reaction(rxn_name)
-    rxn.set_parameter("T0",2000+273.15) # assume 1500 C for good fit to data
+
+    # Set reaction's characteristic Arrhenius temperature (T_r in paper)
+    rxn.set_parameter("T0",2000+273.15) # 2000 C gives a good fit to data
 
     scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0)}
-    print(scale)
 
-    u0=np.empty(I+K+2)
-    u0[:I] = mi0
-    u0[I:I+K] = Cik0
-    u0[I+K:] = np.array([1., 1.]) # T/T0, P/P0
-    
-    #Pmax = crustal_rho * gravity * z1/1e5 # bar
-    #print(Pmax)
+    # Set up vector of initial conditions
+    u0=np.empty(I+K+2) # each endmember, each phase, pressure, temperature
+    u0[:I] = mi0 # intial phase mass fractions
+    u0[I:I+K] = Cik0 # initial endmember mass fractions
+    u0[I+K:] = np.array([1., 1.]) # scaled T0 and P0 (T/T0 = P/P0 = 1)
+
     #event = lambda t,y,rxn,scale,Da: Pmax - y[-1]*scale["P"] # when pressure = Pmax
     #event.terminal = True
 
     # Rescale damkohler number in case the end time is not 1
     _da = Da * end_t
     args = (rxn,scale,_da,L0,z0,As,hr0,k,Ts,Tlab)
+
+    # Solve IVP using BDF method
     sol = solve_ivp(rhs, [0, end_t], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None)
     
+    # resample solution
     t = np.linspace(0,end_t,1000)
     y = sol.sol(t)
 
+    # Dimensionalize back T,P
     T = y[-2]*scale["T"] # K
     P = y[-1]*scale["P"] # bar
 
-    mi_times  = y[:I].T
-    Cik_times = y[I:I+K].T
+    mi_times  = y[:I].T # vector for each timestep
+    Cik_times = y[I:I+K].T # 2d array for each timestep
 
     # reshape C
     def reshape_C(Cik):
@@ -628,45 +662,57 @@ def run_experiment(scenario):
             k = k+Ki
         return C
     
-    Cs_times = [reshape_C(Cik) for Cik in Cik_times]
+    Cs_times = [reshape_C(Cik) for Cik in Cik_times] # vector for each timestep
 
+    # Calculate rho for each timestep as 1/sum_i(F_i/rho_i)
+    # for which we need the endmember compositions as a vector for each phase (Cs_times)
     rho = [1/sum(mi_times[t]/rxn.rho(T[t], P[t], Cs))/10 for t,Cs in enumerate(Cs_times)]
 
     print("{} P_end = {:.2f} Gpa. T_end = {:.2f} K. Used {:n} steps: ".format(sol.message,P[-1]/1e4,T[-1],len(sol.t)))
 
+    # Back-calculate depth from pressure
     depth_m = (P*1e5) / gravity / crustal_rho
     
     scenario["T"] = T # K
     scenario["P"] = P # bar
     scenario["rho"] = rho # g/cm3
-    scenario["mi"] = mi_times
-    scenario["Cik"] = Cik_times
-    scenario["Xik"] = np.asarray([rxn.C_to_X(c) for c in Cs_times], dtype="object")
+    scenario["mi"] = mi_times # phase mass fractions
+    scenario["Cik"] = Cik_times # endmember mass fractions
+    scenario["Xik"] = np.asarray([rxn.C_to_X(c) for c in Cs_times], dtype="object") # endmember mol. fractions
     scenario["z"] = depth_m
     scenario["time"] = t
     return scenario
 
+#####################################
+# Deal with result loading & saving #
+#####################################
+
 if load_output:
     print("Loading pickle from file file {}".format(pickle_path))
     with open(pickle_path, 'rb') as pickle_file:
-        outs = pickle.load(pickle_file)
+        scenarios_out = pickle.load(pickle_file)
 else:
     print("Preparing to run {} scenarios".format(len(scenarios)))
-    scenarios = [setup_ics(s) for s in scenarios]
+    scenarios_in = [setup_ics(s) for s in scenarios]
 
     # run for varying damkhoeler numbers
     with Pool(num_processes) as pool:
         # blocks until all finished
-        outs = pool.map(run_experiment, scenarios)
+        scenarios_out = pool.map(run_experiment, scenarios_in)
 
 if save_output:
     with open(pickle_path, 'wb') as pickle_file:
-        pickle.dump(outs, pickle_file)
+        pickle.dump(scenarios_out, pickle_file)
 
+###################
+# Post processing #
+###################
+
+# this needs to be in global scope
 bin_widths = {"1Myr":1*Myr, "100kyr":100*kyr, "50kyr":50*kyr, "10kyr":10*kyr}
 
-for out in outs:
-    # Post processing
+for out in scenarios_out:
+    # Process each scenario output
     rho = np.array(out["rho"]) # g/cm3
     depth_m = out["z"]
     T = out["T"] # K
@@ -763,7 +809,7 @@ selected_compositions = [
     "sammon_2021_deep_crust"
 ]
 
-selected_outputs = [o for o in outs if o["composition"] in selected_compositions]
+selected_outputs = [o for o in scenarios_out if o["composition"] in selected_compositions]
 
 depths = [o['critical_depth'] for o in selected_outputs]
 
@@ -848,7 +894,7 @@ with open(Path(output_path,'_critical.csv'),'w') as csvfile:
         fieldnames.append('max_densification_rate_'+key)
     writer = csv.DictWriter(csvfile, fieldnames,extrasaction='ignore')
     writer.writeheader()
-    for out in outs:
+    for out in scenarios_out:
         writer.writerow(out)
     print("wrote _critical.csv")
 
@@ -859,7 +905,7 @@ for composition in compositions:
 
         # Find outputs with same setting & same composition,
         # and sort by Da
-        outs_c = sorted([out for out in outs if (out["composition"] == composition and out["setting"] == setting)], key=lambda out: out["Da"])
+        outs_c = sorted([out for out in scenarios_out if (out["composition"] == composition and out["setting"] == setting)], key=lambda out: out["Da"])
         
         # grab 'constants' from first output
         base = outs_c[0] 
