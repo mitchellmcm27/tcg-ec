@@ -11,6 +11,11 @@ import multiprocessing as mp
 from from_perplex import *
 from scipy.integrate import solve_ivp
 from geotherm_steady import geotherm_steady
+import csv
+
+####################
+# Unit conversions #
+####################
 
 yr = 3.154e7
 kyr = 1e3*yr
@@ -21,24 +26,24 @@ km = 1e3
 g = 1e-3
 cm = 1e-2
 
-### ------------ INPUTS -------------------
+##########
+# Inputs #
+##########
 
-## save/load
 save_output = False
-load_output = False
+load_output = True
 
 reference= "parallel_experiment2"
 rxn_name = "eclogitization_agu17_stx21_rx"
 
 # only phases greater than this fraction will be plotted
-phasetol = 1.e-5 # 1.e-2
+phasetol = 1.e-5 # default 1.e-2
 
 # regularization parameter for compositions
-eps = 1.e-5 # 1.e-2
+eps = 1.e-5 # default 1.e-2
 # these numbers seem to work very well with eps = 1e-5??
 rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
-max_steps = 3e4
 
 # Calc descent rate of Moho
 shortening_rate = 10.0 *mm/yr # m/s
@@ -62,9 +67,11 @@ t0 = h0 / v0
 crustal_rho = 2780.
 gravity = 9.81
 
-# multiproc
+# multiprocessing
 num_processes =  mp.cpu_count()
-pdf_metadata = {'creationDate': None}
+
+# allows deterministic PDFs
+pdf_metadata = {'CreationDate': None}
 
 # Damkoehler numbers
 Das = [1e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]#, 1e6]
@@ -659,6 +666,7 @@ if save_output:
 bin_widths = {"1Myr":1*Myr, "100kyr":100*kyr, "50kyr":50*kyr, "10kyr":10*kyr}
 
 for out in outs:
+    # Post processing
     rho = np.array(out["rho"]) # g/cm3
     depth_m = out["z"]
     T = out["T"] # K
@@ -672,6 +680,7 @@ for out in outs:
     max_rho = np.nanmax(rho)
     max_rho_py = np.nanmax(rho_pyrolite)
 
+    # find the critical depth (pressure, temperature, etc)
     if max_rho > max_rho_py:
         # find the greatest depth at which rho exceeds pyrolite
         critical_indices = [i for i,r in enumerate(rho) if r > rho_pyrolite[i]]
@@ -700,28 +709,25 @@ for out in outs:
         critical_pressure = 30e3 # bar
         critical_temperature = T[-1] # K
         critical_time = end_t+1
-    
-
     out["critical_depth"] = critical_depth
     out["critical_pressure"] = critical_pressure
     out["critical_temperature"] = critical_temperature
     out["critical_time"] = critical_time
 
+    # Average density contrast of any unstable root
     delta_rho = rho - rho_pyrolite
     delta_rho[delta_rho < 0] = np.nan
-
-    # Average density contrast of the unstable layer
     effective_delta_rho = np.nanmean(delta_rho)
     out["effective_delta_rho"] = effective_delta_rho
     out["max_rho"] = max_rho
 
+    # Densification rate
     time = np.linspace(0,end_t, rho.size) * t0 # seconds
     time_Myr = time/Myr
     densification_rate = np.diff(rho*1000)/np.diff(time_Myr) # kg/m3/Myr
     densification_rate = np.insert(densification_rate, 0, 0.)
     out["densification_rate"] = densification_rate
     out["time_Myr"] = time_Myr
-
     for i,phase in enumerate(phase_names):
         phase_mis = out["mi"][:,i] # wt%
         if(phase=='Feldspar'):
@@ -739,23 +745,22 @@ for out in outs:
                 out['plag_out_pressure'] = P[plag_out_index] # bar
                 out['plag_out_temperature'] = T[plag_out_index] # K
 
-    # max densification rate, binned and averaged over time bins
-    # limited to the plag-out reaction region (not the garnet-in region)
-    # where there is no Opx
+    # Max densification rate, binned and averaged over time bins,
+    # limited to the P-T space of the plag-out reaction (not the garnet-in reaction)
     for bin_width_string, bin_width in bin_widths.items():
         bins = np.arange(0., t0, int(bin_width))
-        digitized_t = np.digitize(time, bins) # assign the index of each bin
-        plag_out_mask = P/1.e4 < 0.5 + 1./1000.*(T-273.15-300.) # 'True' means mask it out (nan)
+        digitized_t = np.digitize(time, bins) # assigns the index of a bin to each point
+        plag_out_mask = P/1.e4 < 0.5 + 1./1000.*(T-273.15-300.) # NOTE: 'True' signifies masking OUT (nan)
         dens_rate_masked = ma.masked_array(densification_rate,mask=plag_out_mask)
         bin_means = [dens_rate_masked[digitized_t == i].mean() for i in range(len(bins))]
         out["max_densification_rate_"+bin_width_string] = np.nanmax(bin_means)
 
+# Create '_critical' plot
 selected_compositions = [
-    "hacker_2015_bin_3",
-    "zhang_2006_mafic_granulite",
-    "hacker_2015_bin_2",
-    "zhang_2022_cd07-2",
-    "mackwell_1998_maryland_diabase"
+    "mackwell_1998_maryland_diabase",
+    "hacker_2015_md_xenolith",
+    "sammon_2021_lower_crust",
+    "sammon_2021_deep_crust"
 ]
 
 selected_outputs = [o for o in outs if o["composition"] in selected_compositions]
@@ -810,9 +815,35 @@ plt.ylabel("Critical depth (km)")
 plt.savefig(Path(output_path,"{}.{}".format("_critical", "pdf")), metadata=pdf_metadata, bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
 plt.savefig(Path(output_path,"{}.{}".format("_critical", "png")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
 
-import csv
+# Write summary data to CSV
 with open(Path(output_path,'_critical.csv'),'w') as csvfile:
-    fieldnames = ['setting','L0','z0','z1','As','hr0','k','Ts','Tlab','Da','composition','T0','T1','P0','rho0','critical_depth','critical_pressure','critical_temperature','plag_out_pressure','plag_out_temperature','plag_out_depth','qs0','qs1','effective_delta_rho','max_rho']
+    fieldnames = [
+        'setting',
+        'L0',
+        'z0',
+        'z1',
+        'As',
+        'hr0',
+        'k',
+        'Ts',
+        'Tlab',
+        'Da',
+        'composition',
+        'T0',
+        'T1',
+        'P0',
+        'rho0',
+        'critical_depth',
+        'critical_pressure',
+        'critical_temperature',
+        'plag_out_pressure',
+        'plag_out_temperature',
+        'plag_out_depth',
+        'qs0',
+        'qs1',
+        'effective_delta_rho',
+        'max_rho'
+    ]
     for key,val in bin_widths.items():
         fieldnames.append('max_densification_rate_'+key)
     writer = csv.DictWriter(csvfile, fieldnames,extrasaction='ignore')
@@ -821,17 +852,17 @@ with open(Path(output_path,'_critical.csv'),'w') as csvfile:
         writer.writerow(out)
     print("wrote _critical.csv")
 
+# Output plots for every composition & tectonic setting
 for composition in compositions:
     for tectonic_setting in tectonic_settings:
-
         setting = tectonic_setting["setting"]
 
-        # same setting, same composition
-        # different Da
-        
+        # Find outputs with same setting & same composition,
+        # and sort by Da
         outs_c = sorted([out for out in outs if (out["composition"] == composition and out["setting"] == setting)], key=lambda out: out["Da"])
-
-        base = outs_c[0]
+        
+        # grab 'constants' from first output
+        base = outs_c[0] 
         T = base["T"]
         P = base["P"]
         rho0 = base["rho0"]
@@ -841,28 +872,30 @@ for composition in compositions:
 
         _Das = [o["Da"] for o in outs_c]
         
+        # Back-calculate reaction coefficient from Da
         r0 = [da*rho0/t0 for da in _Das] # Gamma0 (kg/m3/s)
         S0 = 6000 # 1/m
         reaction_rate_per_surface = [r/S0 for r in r0] # r0 (kg/m2/s)
         reaction_rate_per_surface_gcm = [r*1000/100/100*yr for r in reaction_rate_per_surface] # g/cm2/yr
-        #print(reaction_rate_per_surface_gcm)
 
-        # plot 
+        # Setup subplots and figure
         num_subplots = 3 + len(phase_names) + 2
-        subplot_mosaic = [["rho","rho"] + phase_names + ["An", "Jd", "T"]]
-
+        subplot_mosaic = [["rho","rho"] + phase_names + ["An", "Jd", "T"]] # axes are named
         fig = plt.figure(figsize=(3*num_subplots,12))
         plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
         axes = fig.subplot_mosaic(subplot_mosaic)
+
+        # Invert y axis because it represents depth
         [ax.invert_yaxis() for label,ax in axes.items()]
 
+        # Setup color cycling through all Das
         num_lines = len(_Das)
-   
         greys = plt.cm.get_cmap("Greys")
         axes["rho"].set_prop_cycle(plt.cycler("color", greys(np.linspace(0.2, 1, num_lines))))
         axes["An"].set_prop_cycle(plt.cycler("color", greys(np.linspace(0.2, 1, num_lines))))
         axes["Jd"].set_prop_cycle(plt.cycler("color", greys(np.linspace(0.2, 1, num_lines))))
 
+        # Plot density vs depth
         for i, obj in enumerate(outs_c):
             ax = axes["rho"]
             ax.plot(obj["rho"], obj["z"])
@@ -878,7 +911,7 @@ for composition in compositions:
         ax.set_xlabel("Density")
         ax.set_xlim([2.8, 3.8])
 
-        # Plot temperature profile
+        # Plot temperature vs depth
         ax = axes["T"]
         ax.plot(T-273.15, base["z"]/1e3, linewidth=2)
         ax.set_xlabel("T (°C)")
@@ -887,7 +920,7 @@ for composition in compositions:
         ax2.invert_yaxis()
         ax2.set_ylabel("P (GPa)")
 
-        # plot all phases
+        # Plot all phase mis (mass fractions)
         cmaps = [plt.cm.get_cmap(name) for name in ["Blues", "YlOrBr", "Greens","Reds","Purples","copper_r"]]
         for i,phase in enumerate(phase_names):
             ax = axes[phase]
@@ -902,19 +935,21 @@ for composition in compositions:
             for j, obj in enumerate(outs_c):
                 ax.plot(obj["mi"][:,i]*100, obj["z"])
 
-        # Plot plagioclase composition
+        # get Plagioclase anorthite composition
         ax = axes["An"]
         ax.set_xlim([0., 1.0])
         ax.set_ylabel(None)
         ax.set_yticklabels([])
         ax.set_xlabel("$X_{\mathrm{An}}$")
 
+        # get Cpx jadeite content
         ax = axes["Jd"]
         ax.set_xlim([0., 1.0])
         ax.set_ylabel(None)
         ax.set_yticklabels([])
         ax.set_xlabel("$X_{\mathrm{Jd}}$")
 
+        # Plot X_An and X_Jd vs depth
         for j, obj in enumerate(outs_c):
             XAn = [x[3][0] for x in obj["Xik"]]
             XJd = [x[0][4] for x in obj["Xik"]]
@@ -922,7 +957,7 @@ for composition in compositions:
             axes["An"].plot(XAn, obj["z"])
             axes["Jd"].plot(XJd, obj["z"])
 
-        fig.suptitle("{}, {}, $R_s=${:.1f} km/Myr, $S0=${} /m".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), shortening_rate/1e3*yr*1e6, S0),y=0.9)
+        fig.suptitle("{}, {}, $v_0=${:.1f} km/Myr, $S0=${} 1/m".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), moho_descent_rate/1e3*yr*1e6, S0),y=0.9)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"pdf")), metadata=pdf_metadata)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"png")))
         plt.close(fig)
