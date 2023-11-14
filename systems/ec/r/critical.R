@@ -901,11 +901,10 @@ dat %>%
 
 
 selected_settings <- c('hot-1','hot-2','hot-3')
-T0s <- c(900,800,700)
+T0s <- c(900,960,1000)
 for (i in seq_along(selected_settings)) {
   selected_setting <- selected_settings[i]
   print(selected_setting)
-  T0 <- T0s[i]+273.15
   
   drho1 <- dat %>%
     filter(
@@ -978,36 +977,79 @@ for (i in seq_along(selected_settings)) {
     select(effective_delta_rho)
   drho12 <- drho12$effective_delta_rho * 1000
   
-  # Jull & Kelemen
+  print(drho1)
+  print(drho2)
+  print(drho3)
+  print(drho4)
+  print(drho5)
+  print(drho6)
+  print(drho7)
+  print(drho8)
+  print(drho9)
+  print(drho10)
+  print(drho11)
+  print(drho12)
+  # Jull & Kelemen using Hirth 2003 dry olivine disl.
   
-  tb <- function(h, drho) {
-    h_m <- h / 1000
+  Temp = T0s[i]+273.15
+  
+  tb <- function(h_km, drho) {
+    if (is.nan(drho)) {
+      return(NaN)
+    }
+    
+    # h in meters
+    h = h_km * 1000
+    # drho in kg/m3
+    
     R = 8.3145 # J/mol/K
-    g = 9.81
+    g = 9.81 # m/s2
     n = 3.5
-    A_Mpa = exp(15.4) # MPa^-n s^-1, wet olivine
-    Q = 515e3 # J/mol wet olivine
-    B = (A_Mpa ^ (-1 / n)) / 1e6 * exp(Q / n / R / T0)
-    Tb = (B / (2 * drho * g * h_m)) ^ n
+    
+    Q = 535e3 # J/mol, wet olivine
+
+    #Q = 530e3
+    #A = 1.1e5 # MPa^(-n) s^(-1)
     
     # need to better constrain these
-    zfactor = 0.01 # size of initial perturbation as fraction of layer thickness
-    qprime = 0.2 # growth rate
+    z0prime = 0.01 # initial displacement in layer thicknesses
+    zprime = 1 # downward displacement in layer thicknesses
+    qprime = 0.25 # growth rate
+
+    # Newtonian
+    n=1
+    A_Mpa = 1.5e9 # Mpa^-n s^-1
+    A = A_Mpa*1e6^(-n) # Pa^-n s^-1
+    B = A^(-1/n) * exp(Q /(n*R*Temp)) # Pa s = kg/m/s
+    Tb = (B / (2 * drho * g * h)) ^ n # s
+    tbn = (-1 / qprime) * log(z0prime/zprime) * Tb # seconds
+    tbn = tbn/3.154e7 # yrs
+  
+    # non-Newtonian
+    n = 3.5
+    Cprime = 20 # ?
+    A_Mpa = exp(10.8) # MPa^-n s^-1, wet olivine
+    A = A_Mpa*(1e6^(-n)) # Pa^-n s^-1
+    B = A^(-1/n) * exp(Q /(n*R*T0)) # Pa s = kg/m/s
+    Tb = (B / (2 * drho * g * h)) ^ n # s
+    tbnn = (n/Cprime)^n*(z0prime^(1-n))/(n-1)*Tb # seconds
+    tbnn = tbnn/3.154e7 # yr
     
-    tb = (-1 / qprime) * log(zfactor) * Tb
-    return(tb)
+    return(tbn)
   }
   
-  tyr <- 10 ^ (seq(4, 10, .01))
-  rate <- 1. # m/yr
+  tyr <- 10 ^ (seq(4, 8, .01)) # 10,000 to 100,000,000
   
+  rate <- 1e-3 # m/yr
+  hs <- tyr * rate / 1000
+
   tryCatch(expr={
-  ggplot() +
+    ggplot() +
     geom_ribbon(
       aes(
-        xmin = tb(tyr * rate / 1e3 / 1e3, drho9),
-        xmax = tb(tyr * rate / 1e3 / 1e3, drho12),
-        y = tyr,
+        ymin = tb(hs, drho12),
+        ymax = tb(hs, drho9),
+        x = hs,
         fill = 'ILC'
       ),
       alpha = 0.1,
@@ -1015,9 +1057,9 @@ for (i in seq_along(selected_settings)) {
     ) +
     geom_ribbon(
       aes(
-        xmin = tb(tyr * rate / 1e3 / 1e3, drho5),
-        xmax = tb(tyr * rate / 1e3 / 1e3, drho8),
-        y = tyr,
+        ymin = tb(hs, drho8),
+        ymax = tb(hs, drho5),
+        x = hs,
         fill = 'MX'
       ),
       alpha = 0.1,
@@ -1026,87 +1068,90 @@ for (i in seq_along(selected_settings)) {
     
     geom_ribbon(
       aes(
-        xmin = tb(tyr * rate / 1e3 / 1e3, drho4),
-        xmax = tb(tyr * rate / 1e3 / 1e3, drho1),
-        y = tyr,
+        ymin = tb(hs, drho4),
+        ymax = tb(hs, drho1),
+        x = hs,
         fill = 'MD'
       ),
       alpha = 0.1,
       show.legend = FALSE
     ) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho1),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho1),
       colour = 'MD',
       linetype = 'A'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho2),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho2),
       colour = 'MD',
       linetype = 'B'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho3),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho3),
       colour = 'MD',
       linetype = 'C'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho4),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho4),
       colour = 'MD',
       linetype = 'D'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho5),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho5),
       colour = 'MX',
       linetype = 'A'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho6),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho6),
       colour = 'MX',
       linetype = 'B'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho7),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho7),
       colour = 'MX',
       linetype = 'C'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho8),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho8),
       colour = 'MX',
       linetype = 'D'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho9),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho9),
       colour = 'ILC',
       linetype = 'A'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho10),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho10),
       colour = 'ILC',
       linetype = 'B'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho11),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho11),
       colour = 'ILC',
       linetype = 'C'
     )) +
     geom_line(aes(
-      x = tb(tyr * rate / 1e3 / 1e3, drho12),
-      y = tyr,
+      x = hs,
+      y = tb(hs, drho12),
       colour = 'ILC',
       linetype = 'D'
     )) +
-    coord_cartesian(xlim = c(0, 20), ylim = c(5e5, 1e8)) +
+    coord_cartesian(
+      xlim = c(0, 40), 
+      ylim = c(1e5, 5e7)
+      ) +
     scale_y_continuous(
       expand = c(0, 0),
       trans = "log10",
@@ -1120,7 +1165,7 @@ for (i in seq_along(selected_settings)) {
       mid = unit(0.2, "cm"),
       long = unit(0.3, "cm")
     ) +
-    scale_x_continuous(expand = c(0, 0)) +
+    scale_x_continuous(expand = c(0, 0),breaks=seq(0,100,5)) +
     labs(x = "Layer thickness (km)", y = "Time (yr)") +
     scale_linetype_manual(
       values = c("solid", "62", "43", "12"),
@@ -1131,14 +1176,14 @@ for (i in seq_along(selected_settings)) {
     scale_colour_discrete(name = "Composition") +
     geom_ribbon(
       aes(
-        xmin = tyr * rate / 1e3 / 1e3 * 0.75,
-        xmax = tyr * rate / 1e3 / 1e3 * 1.5,
+        xmin = hs * 0.75,
+        xmax = hs * 1.5,
         y = tyr
       ),
       fill = "#dadada",
       alpha = 0.4
     ) +
-    geom_line(aes(x = tyr * rate / 1e3 / 1e3,   y = tyr),
+    geom_line(aes(x=hs, y=tyr),
               colour = '#333333',
               size = 1) +
     annotate(
