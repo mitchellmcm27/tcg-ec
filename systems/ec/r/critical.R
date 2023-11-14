@@ -52,6 +52,15 @@ theme_mcm <- function() {
         color = dgy,
       ),
       
+      axis.line = element_line(
+        color='black',
+        size=0.25
+      ),
+      axis.ticks = element_line(
+        color='black',
+        size=0.25
+      ),
+      
       text = element_text(size = 8, family = font),
       
       strip.text = element_text(
@@ -77,11 +86,13 @@ theme_mcm <- function() {
         size = 0.15,
         linetype = 1
       ),
+      line = element_line(size=0.25),
     )
 }
 
 # Set theme globally
 theme_set(theme_mcm())
+
 
 T0string = "$T_{0}$ (°C)"
 
@@ -166,7 +177,7 @@ dat %>%
     x = TeX("Damköhler number"),
     colour = TeX(T0string)
   ) +
-  facet_wrap( ~ composition)
+  facet_wrap(~ composition)
 
 ggsave('plots/critical_by_composition.pdf', device = cairo_pdf)
 ggsave('plots/critical_by_composition.png')
@@ -198,7 +209,7 @@ dat %>%
     x = TeX(T0string),
     colour = TeX("log Da")
   ) +
-  facet_wrap( ~ composition)
+  facet_wrap(~ composition)
 
 ggsave('plots/critical_by_composition_alt.pdf', device = cairo_pdf)
 ggsave('plots/critical_by_composition_alt.png')
@@ -465,7 +476,7 @@ dat %>%
     x = TeX('Damköhler number'),
     colour = TeX(T0string)
   ) +
-  facet_wrap( ~ composition)
+  facet_wrap(~ composition)
 
 ggsave('plots/plag_out_depth_by_composition.pdf', device = cairo_pdf)
 ggsave('plots/plag_out_depth_by_composition.png')
@@ -498,7 +509,7 @@ dat %>%
     x = TeX(T0string),
     colour = TeX("log Da")
   ) +
-  facet_wrap( ~ composition)
+  facet_wrap(~ composition)
 
 ggsave('plots/plag_out_depth_by_composition_alt.pdf', device = cairo_pdf)
 ggsave('plots/plag_out_depth_by_composition_alt.png')
@@ -547,7 +558,7 @@ base_plot <- dat %>%
   scale_colour_grey(start = 0.7, end = 0, name = "Da") +
   labs(y = TeX("Plag-out pressure (GPa)"),
        x = TeX("Temperature (°C)")) +
-  scale_y_continuous(breaks = seq(0, 3, by = .5), expand = c(0, 0), ) +
+  scale_y_continuous(breaks = seq(0, 3, by = .5), expand = c(0, 0),) +
   scale_x_continuous(breaks = seq(500, 900, by = 100), expand = c(0, 0)) +
   coord_cartesian(xlim = c(400, 1000), ylim = c(1, 2.5)) +
   theme(aspect.ratio = 1) +
@@ -557,7 +568,7 @@ base_plot <- dat %>%
                       "orange", "red", "darkred"
                     ))))
 
-base_plot + facet_wrap( ~ composition)
+base_plot + facet_wrap(~ composition)
 
 ggsave(
   'plots/plag_out_pt.pdf',
@@ -576,7 +587,7 @@ base_plot %+%
           composition == 'sammon_2021_lower_crust'
       )
   ) +
-  facet_wrap( ~ composition) +
+  facet_wrap(~ composition) +
   theme(legend.position = "bottom")
 
 ggsave(
@@ -631,7 +642,7 @@ base_plot <- dat %>%
   ) +
   geom_textline(aes(label = Da), size = 3, show.legend = FALSE) +
   scale_colour_grey(start = 0.8, end = 0, name = "Da") +
-  scale_y_continuous(breaks = seq(0, 3, by = .5), expand = c(0, 0), ) +
+  scale_y_continuous(breaks = seq(0, 3, by = .5), expand = c(0, 0),) +
   scale_x_continuous(breaks = seq(500, 900, by = 200), expand = c(0, 0)) +
   coord_cartesian(xlim = c(400, 1000), ylim = c(1, 2.5)) +
   labs(y = TeX("Critical pressure (GPa)"),
@@ -643,7 +654,7 @@ base_plot <- dat %>%
                       "orange", "red", "darkred"
                     ))))
 
-base_plot + facet_wrap( ~ composition)
+base_plot + facet_wrap(~ composition)
 
 ggsave(
   'plots/critical_pt.pdf',
@@ -889,255 +900,281 @@ dat %>%
   theme_mcm()
 
 
-drho1 <- dat %>%
-  filter(composition == 'mackwell_1998_maryland_diabase' &
-           setting == "hot-3" & Da == 100) %>%
-  select(effective_delta_rho)
-drho1 <- drho1$effective_delta_rho * 1000
-drho2 <- dat %>%
-  filter(composition == 'mackwell_1998_maryland_diabase' &
-           setting == "hot-3" & Da == 10) %>%
-  select(effective_delta_rho)
-drho2 <- drho2$effective_delta_rho * 1000
-drho3 <- dat %>%
-  filter(composition == 'mackwell_1998_maryland_diabase' &
-           setting == "hot-3" & Da == 3) %>%
-  select(effective_delta_rho)
-drho3 <- drho3$effective_delta_rho * 1000
-drho4 <- dat %>%
-  filter(composition == 'mackwell_1998_maryland_diabase' &
-           setting == "hot-3" & Da == 1) %>%
-  select(effective_delta_rho)
-drho4 <- drho4$effective_delta_rho * 1000
-
-drho5 <- dat %>%
-  filter(composition == 'hacker_2015_md_xenolith' &
-           setting == "hot-3" & Da == 100) %>%
-  select(effective_delta_rho)
-drho5 <- drho5$effective_delta_rho * 1000
-drho6 <- dat %>%
-  filter(composition == 'hacker_2015_md_xenolith' &
-           setting == "hot-3" & Da == 10) %>%
-  select(effective_delta_rho)
-drho6 <- drho6$effective_delta_rho * 1000
-drho7 <- dat %>%
-  filter(composition == 'hacker_2015_md_xenolith' &
-           setting == "hot-3" & Da == 3) %>%
-  select(effective_delta_rho)
-drho7 <- drho7$effective_delta_rho * 1000
-drho8 <- dat %>%
-  filter(composition == 'hacker_2015_md_xenolith' &
-           setting == "hot-3" & Da == 1) %>%
-  select(effective_delta_rho)
-drho8 <- drho8$effective_delta_rho * 1000
-
-drho9 <- dat %>%
-  filter(composition == 'sammon_2021_lower_crust' &
-           setting == "hot-3" & Da == 100) %>%
-  select(effective_delta_rho)
-drho9 <- drho9$effective_delta_rho * 1000
-drho10 <- dat %>%
-  filter(composition == 'sammon_2021_lower_crust' &
-           setting == "hot-3" & Da == 10) %>%
-  select(effective_delta_rho)
-drho10 <- drho10$effective_delta_rho * 1000
-drho11 <- dat %>%
-  filter(composition == 'sammon_2021_lower_crust' &
-           setting == "hot-3" & Da == 3) %>%
-  select(effective_delta_rho)
-drho11 <- drho11$effective_delta_rho * 1000
-drho12 <- dat %>%
-  filter(composition == 'sammon_2021_lower_crust' &
-           setting == "hot-3" & Da == 1) %>%
-  select(effective_delta_rho)
-drho12 <- drho12$effective_delta_rho * 1000
-
-# Jull & Kelemen
-
-tb <- function(h, drho) {
-  h_m <- h / 1000
-  T0 = 950 # K, approx hot-3
+selected_settings <- c('hot-1','hot-2','hot-3')
+T0s <- c(900,800,700)
+for (i in seq_along(selected_settings)) {
+  selected_setting <- selected_settings[i]
+  print(selected_setting)
+  T0 <- T0s[i]+273.15
   
-  R = 8.3145 # J/mol/K
-  g = 9.81
-  n = 3.5
-  A_Mpa = exp(15.4) # MPa^-n s^-1, wet olivine
-  Q = 515e3 # J/mol wet olivine
-  B = (A_Mpa ^ (-1 / n)) / 1e6 * exp(Q / n / R / T0)
-  Tb = (B / (2 * drho * g * h_m)) ^ n
+  drho1 <- dat %>%
+    filter(
+      composition == 'mackwell_1998_maryland_diabase' &
+        setting == selected_setting & Da == 100
+    ) %>%
+    select(effective_delta_rho)
+  drho1 <- drho1$effective_delta_rho * 1000
+  drho2 <- dat %>%
+    filter(
+      composition == 'mackwell_1998_maryland_diabase' &
+        setting == selected_setting & Da == 10
+    ) %>%
+    select(effective_delta_rho)
+  drho2 <- drho2$effective_delta_rho * 1000
+  drho3 <- dat %>%
+    filter(
+      composition == 'mackwell_1998_maryland_diabase' &
+        setting == selected_setting & Da == 3
+    ) %>%
+    select(effective_delta_rho)
+  drho3 <- drho3$effective_delta_rho * 1000
+  drho4 <- dat %>%
+    filter(
+      composition == 'mackwell_1998_maryland_diabase' &
+        setting == selected_setting & Da == 1
+    ) %>%
+    select(effective_delta_rho)
+  drho4 <- drho4$effective_delta_rho * 1000
   
-  # need to better constrain these
-  zfactor = 0.01 # size of initial perturbation as fraction of layer thickness
-  qprime = 0.2 # growth rate
+  drho5 <- dat %>%
+    filter(composition == 'hacker_2015_md_xenolith' &
+             setting == selected_setting & Da == 100) %>%
+    select(effective_delta_rho)
+  drho5 <- drho5$effective_delta_rho * 1000
+  drho6 <- dat %>%
+    filter(composition == 'hacker_2015_md_xenolith' &
+             setting == selected_setting & Da == 10) %>%
+    select(effective_delta_rho)
+  drho6 <- drho6$effective_delta_rho * 1000
+  drho7 <- dat %>%
+    filter(composition == 'hacker_2015_md_xenolith' &
+             setting == selected_setting & Da == 3) %>%
+    select(effective_delta_rho)
+  drho7 <- drho7$effective_delta_rho * 1000
+  drho8 <- dat %>%
+    filter(composition == 'hacker_2015_md_xenolith' &
+             setting == selected_setting & Da == 1) %>%
+    select(effective_delta_rho)
+  drho8 <- drho8$effective_delta_rho * 1000
   
-  tb = (-1 / qprime) * log(zfactor) * Tb
-  return(tb)
+  drho9 <- dat %>%
+    filter(composition == 'sammon_2021_lower_crust' &
+             setting == selected_setting & Da == 100) %>%
+    select(effective_delta_rho)
+  drho9 <- drho9$effective_delta_rho * 1000
+  drho10 <- dat %>%
+    filter(composition == 'sammon_2021_lower_crust' &
+             setting == selected_setting & Da == 10) %>%
+    select(effective_delta_rho)
+  drho10 <- drho10$effective_delta_rho * 1000
+  drho11 <- dat %>%
+    filter(composition == 'sammon_2021_lower_crust' &
+             setting == selected_setting & Da == 3) %>%
+    select(effective_delta_rho)
+  drho11 <- drho11$effective_delta_rho * 1000
+  drho12 <- dat %>%
+    filter(composition == 'sammon_2021_lower_crust' &
+             setting == selected_setting & Da == 1) %>%
+    select(effective_delta_rho)
+  drho12 <- drho12$effective_delta_rho * 1000
+  
+  # Jull & Kelemen
+  
+  tb <- function(h, drho) {
+    h_m <- h / 1000
+    R = 8.3145 # J/mol/K
+    g = 9.81
+    n = 3.5
+    A_Mpa = exp(15.4) # MPa^-n s^-1, wet olivine
+    Q = 515e3 # J/mol wet olivine
+    B = (A_Mpa ^ (-1 / n)) / 1e6 * exp(Q / n / R / T0)
+    Tb = (B / (2 * drho * g * h_m)) ^ n
+    
+    # need to better constrain these
+    zfactor = 0.01 # size of initial perturbation as fraction of layer thickness
+    qprime = 0.2 # growth rate
+    
+    tb = (-1 / qprime) * log(zfactor) * Tb
+    return(tb)
+  }
+  
+  tyr <- 10 ^ (seq(4, 10, .01))
+  rate <- 1. # m/yr
+  
+  tryCatch(expr={
+  ggplot() +
+    geom_ribbon(
+      aes(
+        xmin = tb(tyr * rate / 1e3 / 1e3, drho9),
+        xmax = tb(tyr * rate / 1e3 / 1e3, drho12),
+        y = tyr,
+        fill = 'ILC'
+      ),
+      alpha = 0.1,
+      show.legend = FALSE
+    ) +
+    geom_ribbon(
+      aes(
+        xmin = tb(tyr * rate / 1e3 / 1e3, drho5),
+        xmax = tb(tyr * rate / 1e3 / 1e3, drho8),
+        y = tyr,
+        fill = 'MX'
+      ),
+      alpha = 0.1,
+      show.legend = FALSE
+    ) +
+    
+    geom_ribbon(
+      aes(
+        xmin = tb(tyr * rate / 1e3 / 1e3, drho4),
+        xmax = tb(tyr * rate / 1e3 / 1e3, drho1),
+        y = tyr,
+        fill = 'MD'
+      ),
+      alpha = 0.1,
+      show.legend = FALSE
+    ) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho1),
+      y = tyr,
+      colour = 'MD',
+      linetype = 'A'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho2),
+      y = tyr,
+      colour = 'MD',
+      linetype = 'B'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho3),
+      y = tyr,
+      colour = 'MD',
+      linetype = 'C'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho4),
+      y = tyr,
+      colour = 'MD',
+      linetype = 'D'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho5),
+      y = tyr,
+      colour = 'MX',
+      linetype = 'A'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho6),
+      y = tyr,
+      colour = 'MX',
+      linetype = 'B'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho7),
+      y = tyr,
+      colour = 'MX',
+      linetype = 'C'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho8),
+      y = tyr,
+      colour = 'MX',
+      linetype = 'D'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho9),
+      y = tyr,
+      colour = 'ILC',
+      linetype = 'A'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho10),
+      y = tyr,
+      colour = 'ILC',
+      linetype = 'B'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho11),
+      y = tyr,
+      colour = 'ILC',
+      linetype = 'C'
+    )) +
+    geom_line(aes(
+      x = tb(tyr * rate / 1e3 / 1e3, drho12),
+      y = tyr,
+      colour = 'ILC',
+      linetype = 'D'
+    )) +
+    coord_cartesian(xlim = c(0, 20), ylim = c(5e5, 1e8)) +
+    scale_y_continuous(
+      expand = c(0, 0),
+      trans = "log10",
+      breaks = c(1e6, 1e7),
+      labels = trans_format('log10', math_format(10 ^ .x))
+    ) +
+    annotation_logticks(
+      sides = "l",
+      size = 0.25,
+      short = unit(0.1, "cm"),
+      mid = unit(0.2, "cm"),
+      long = unit(0.3, "cm")
+    ) +
+    scale_x_continuous(expand = c(0, 0)) +
+    labs(x = "Layer thickness (km)", y = "Time (yr)") +
+    scale_linetype_manual(
+      values = c("solid", "62", "43", "12"),
+      labels = c("100", "10", "3", "1"),
+      name = "Da",
+    ) +
+    guides(linetype = guide_legend(reverse = T)) +
+    scale_colour_discrete(name = "Composition") +
+    geom_ribbon(
+      aes(
+        xmin = tyr * rate / 1e3 / 1e3 * 0.75,
+        xmax = tyr * rate / 1e3 / 1e3 * 1.5,
+        y = tyr
+      ),
+      fill = "#dadada",
+      alpha = 0.4
+    ) +
+    geom_line(aes(x = tyr * rate / 1e3 / 1e3,   y = tyr),
+              colour = '#333333',
+              size = 1) +
+    annotate(
+      "segment",
+      x = 17,
+      xend = 19,
+      y = 2e7,
+      yend = 1.9e7,
+      colour = "#333333",
+      size = 0.4
+    ) +
+    annotate(
+      "text",
+      x = 15.3,
+      y = 2e7,
+      label = "crustal root",
+      family = theme_get()$text[["family"]],
+      size = theme_get()$text[["size"]] / 2.5
+    ) +
+    theme_mcm() +
+    theme(legend.position='none')
+      
+  
+  
+  ggsave(
+    paste('plots/thickness_', selected_setting, '.pdf', sep = ""),
+    device = cairo_pdf,
+    width = 3.75,
+    height = 3.5
+  )
+  ggsave(
+    paste('plots/thickness_', selected_setting, '.png', sep = ""),
+    width = 3.75,
+    height = 3.5
+  )
+  })
+    
 }
 
-tyr <- seq(5e4, 100e6, 5e4)
-rate <- 1. # m/yr
-ggplot() +
-  geom_ribbon(
-    aes(
-      xmin = tb(tyr * rate / 1e3 / 1e3, drho9),
-      xmax = tb(tyr * rate / 1e3 / 1e3, drho12),
-      y = tyr,
-      fill = 'ILC'
-    ),
-    alpha = 0.1,
-    show.legend = FALSE
-  ) +
-  geom_ribbon(aes(
-    xmin = tb(tyr * rate / 1e3 / 1e3, drho5),
-    xmax = tb(tyr * rate / 1e3 / 1e3, drho8),
-    y = tyr,
-    fill = 'MX'
-  ),
-  alpha = 0.1,
-  show.legend = FALSE) +
-  
-  geom_ribbon(aes(
-    xmin = tb(tyr * rate / 1e3 / 1e3, drho4),
-    xmax = tb(tyr * rate / 1e3 / 1e3, drho1),
-    y = tyr,
-    fill = 'MD'
-  ),
-  alpha = 0.1,
-  show.legend = FALSE) +
-  
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho1),
-    y = tyr,
-    colour = 'MD',
-    linetype = 'A'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho2),
-    y = tyr,
-    colour = 'MD',
-    linetype = 'B'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho3),
-    y = tyr,
-    colour = 'MD',
-    linetype = 'C'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho4),
-    y = tyr,
-    colour = 'MD',
-    linetype = 'D'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho5),
-    y = tyr,
-    colour = 'MX',
-    linetype = 'A'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho6),
-    y = tyr,
-    colour = 'MX',
-    linetype = 'B'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho7),
-    y = tyr,
-    colour = 'MX',
-    linetype = 'C'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho8),
-    y = tyr,
-    colour = 'MX',
-    linetype = 'D'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho9),
-    y = tyr,
-    colour = 'ILC',
-    linetype = 'A'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho10),
-    y = tyr,
-    colour = 'ILC',
-    linetype = 'B'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho11),
-    y = tyr,
-    colour = 'ILC',
-    linetype = 'C'
-  )) +
-  geom_line(aes(
-    x = tb(tyr * rate / 1e3 / 1e3, drho12),
-    y = tyr,
-    colour = 'ILC',
-    linetype = 'D'
-  )) +
-  coord_cartesian(xlim = c(0, 20), ylim = c(5e5, 5e7)) +
-  scale_y_continuous(
-    expand = c(0, 0),
-    trans = "log10",
-    breaks = c(1e6, 1e7),
-    labels = trans_format('log10', math_format(10 ^ .x))
-  ) +
-  annotation_logticks(
-    sides = "l",
-    size = 0.25,
-    short = unit(0.1, "cm"),
-    mid = unit(0.2, "cm"),
-    long = unit(0.3, "cm")
-  ) +
-  scale_x_continuous(expand = c(0, 0)) +
-  labs(x = "Layer thickness (km)", y = "Time (yr)") +
-  scale_linetype_manual(
-    values = c("solid", "62", "43", "12"),
-    labels = c("100", "10", "3", "1"),
-    name = "Da",
-  ) +
-  guides(linetype = guide_legend(reverse = T)) +
-  scale_colour_discrete(name = "Composition") +
-  geom_ribbon(
-    aes(
-      xmin = tyr * rate / 1e3 / 1e3 * 0.75,
-      xmax = tyr * rate / 1e3 / 1e3 * 1.5,
-      y = tyr
-    ),
-    fill = "#dadada",
-    alpha = 0.4
-  ) +
-  geom_line(aes(x = tyr * rate / 1e3 / 1e3,   y = tyr),
-            colour = '#333333',
-            size = 1) +
-  annotate(
-    "segment",
-    x = 17,
-    xend = 19,
-    y = 2e7,
-    yend = 1.9e7,
-    colour = "#333333",
-    size = 0.4
-  ) +
-  annotate(
-    "text",
-    x = 15.3,
-    y = 2e7,
-    label = "crustal root",
-    family = theme_get()$text[["family"]],
-    size = theme_get()$text[["size"]] / 2.5
-  ) +
-  theme_mcm()
-
-
-ggsave(
-  'plots/thickness.png',
-  device = cairo_pdf,
-  width = 6.5,
-  height = 3.5
-)
-ggsave('plots/thickness.png',
-       width = 6.5,
-       height = 3.5)
