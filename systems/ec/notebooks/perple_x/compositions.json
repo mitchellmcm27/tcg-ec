@@ -486,5 +486,26 @@
             11.34,
             10.19
         ]
+    },
+    "mackwell_1998_columbia_diabase": {
+        "basis": "wt",
+        "dataset": "stx21ver",
+        "comment": "",
+        "elements": [
+            "NA2O",
+            "MGO",
+            "AL2O3",
+            "SIO2",
+            "CAO",
+            "FEO"
+        ],
+        "composition": [
+            2.81,
+            8.10,
+            16.68,
+            47.87,
+            9.37,
+            13.25
+        ]
     }
 }
