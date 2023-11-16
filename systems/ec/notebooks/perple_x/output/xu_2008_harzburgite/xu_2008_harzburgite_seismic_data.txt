@@ -55,6 +55,7 @@ Endmembers and stoichiometric compounds:
         c2/c          implicit    implicit                 
         mfer          implicit    implicit                 
         aki           implicit    implicit                 
+        maj           implicit    implicit                 
         perov         implicit    implicit                 
         ring          implicit    implicit                 
         ts            implicit    implicit                 
@@ -62,6 +63,7 @@ Endmembers and stoichiometric compounds:
         mnal          implicit    implicit                 
         ppv           implicit    implicit                 
         nfer          implicit    implicit                 
+        namj          implicit    implicit                 
         neph          implicit    implicit                 
         nnal          implicit    implicit                 
         odi           implicit    implicit                 
@@ -71,25 +73,3 @@ Endmembers and stoichiometric compounds:
         sp            implicit    implicit                 
         st            implicit    implicit                 
         wus           implicit    implicit                 
-
-Solutions:
-
-                      Bulk Mod    Shear Mod 
-                      ---------   ---------
-      C2/c            implicit    implicit*
-      Wus             implicit    implicit*
-      Pv              implicit    implicit*
-      Pl              implicit    implicit*
-      Sp              implicit    implicit*
-      O               implicit    implicit*
-      Wad             implicit    implicit*
-      Ring            implicit    implicit*
-      Opx             implicit    implicit*
-      Cpx             implicit    implicit*
-      Aki             implicit    implicit*
-      Gt              implicit    implicit*
-      Ppv             implicit    implicit*
-      CF              implicit    implicit*
-      NaAl            implicit    implicit*
-
-*computed as the Reuss average of the implicit endmember shear moduli.

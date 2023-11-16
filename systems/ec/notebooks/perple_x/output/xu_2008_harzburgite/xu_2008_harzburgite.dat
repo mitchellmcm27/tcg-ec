@@ -1,8 +1,8 @@
 stx21ver.dat     thermodynamic data file                                                                                                    
 no_print | print generates print output
 plot     | obsolete 6.8.4+
-solution_model.dat     | solution model file, blank = none                                                                                                                                                                                                      
-xu_2008_harzburgite_Pseudosection                                                                                                                                                                                                                               
+                                             | solution model file, blank = none                                                                                                                                                                                
+y                                                                                                                                                                                                                                                               
 perplex_option.dat     | Perple_X option file                                                                                                                                                                                                                   
     5 calculation type: 0- composition, 1- Schreinemakers, 3- Mixed, 4- swash, 5- gridded min, 7- 1d fract, 8- gwash, 9- 2d fract, 10- 7 w/file input, 11- 9 w/file input, 12- 0d infiltration
     0 unused place holder, post 06
@@ -48,27 +48,10 @@ end independent potential list
 
 
 begin excluded phase list
-maj     
-namj    
 end excluded phase list
 
 
 begin solution phase list
-O         
-Pl        
-Sp        
-Cpx       
-Wad       
-Ring      
-Pv        
-Wus       
-C2/c      
-Opx       
-Aki       
-Ppv       
-CF        
-Gt        
-NaAl      
 end solution phase list
 
    25000.0        1573.15        0.00000        0.00000        0.00000     max p, t, xco2, mu_1, mu_2

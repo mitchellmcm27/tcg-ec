@@ -53,7 +53,7 @@ for name in comp_names
     dataset = comp["dataset"] isa String ? comp["dataset"] : "stx21ver"
     scratchdir = "./output/"
     if dataset == "stx21ver"
-        if occursin('pyrolite',name) || occursin('harzburgite',name)
+        if occursin("pyrolite",name) || occursin("harzburgite",name)
             println("excluding no phases")
             phases_exclude = []
         else
