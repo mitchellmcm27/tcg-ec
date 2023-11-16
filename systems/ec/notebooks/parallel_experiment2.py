@@ -1021,9 +1021,14 @@ for tectonic_setting in tectonic_settings:
         [ax.invert_yaxis() for label,ax in axes.items()]
         [ax.set_xlim([2.8,3.5]) for label,ax in axes.items()]
         [ax.set_ylim([80,30]) for label,ax in axes.items()]
+        rho_pyrolite=ipyrolite((T, P/1e4))/10
+        rho_harzburgite=iharzburgite((T,P/1e4))/10
         for i, obj in enumerate(outs_c):
             ax = axes[obj["composition"]]
             ax.plot(obj["rho"], obj["z"]/1e3)
+            if obj["Da"] == 1:
+                ax.plot(rho_pyrolite, obj["z"]/1e3, "r:")
+                ax.plot(rho_harzburgite, obj["z"]/1e3, "g:")
         plt.savefig(Path(output_path,"_collage.{}.{}".format(setting,"pdf")), metadata=pdf_metadata)
         plt.savefig(Path(output_path,"_collage.{}.{}".format(setting,"png")))
         plt.close(fig)
