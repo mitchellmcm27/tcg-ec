@@ -21,6 +21,7 @@
         ]
     },
     "hacker_2015_md_xenolith": {
+        "comment": "from",
         "basis" : "wt",
         "dataset": "stx21ver",
         "elements" : [
@@ -29,7 +30,9 @@
             "AL2O3",  
             "SIO2",   
             "CAO",    
-            "FEO"
+            "FEO",
+            "K2O",
+            "TIO2"
         ],
         "composition" : [
             2.60000,
@@ -37,7 +40,9 @@
             17.0000,
             52.1000,
             10.3000,
-            9.00000
+            9.00000,
+            0.5,
+            0.9
         ]
     },
     "hacker_2015_bin_1":{
@@ -130,7 +135,9 @@
             "AL2O3",  
             "SIO2",   
             "CAO",    
-            "FEO"
+            "FEO",
+            "K2O",
+            "TIO2"
         ],
         "composition" : [
             2.8,
@@ -138,7 +145,9 @@
             16.5,
             50.7,
             10.1,
-            10.39
+            10.39,
+            0.79,
+            1.24
         ]
     },
     "hacker_2015_middle_crust":{
@@ -171,7 +180,9 @@
             "AL2O3",  
             "SIO2",   
             "CAO",    
-            "FEO"
+            "FEO",
+            "K2O",
+            "TIO2"
         ],
         "composition":[
             2.65,
@@ -179,7 +190,9 @@
             16.9,
             53.4,
             9.59,
-            8.57
+            8.57,
+            0.61,
+            0.82
         ]
     },
     "sammon_2021_deep_crust" : {
@@ -191,7 +204,9 @@
             "AL2O3",
             "SIO2",
             "CAO",
-            "FEO"
+            "FEO",
+            "K2O",
+            "TIO2"
         ],
         "composition" : [
             2.93,
@@ -199,7 +214,9 @@
             16.66,
             57.6,
             8.21,
-            6.44
+            6.44,
+            1.06,
+            0.89
         ]
     },
     "sammon_2021_lower_crust" : {
@@ -211,7 +228,9 @@
             "AL2O3",
             "SIO2",
             "CAO",
-            "FEO"
+            "FEO",
+            "K2O",
+            "TIO2"
         ],
         "composition" : [
             2.63,
@@ -219,7 +238,86 @@
             17.2,
             53.3,
             10.15,
-            7.12
+            7.12,
+            0.7,
+            0.98
+        ]
+    },
+    "sammon_2021_averaged" : {
+        "comment": "Average of the Deep Crust and Lower Crust compositions",
+        "basis" : "wt",
+        "dataset": "stx21ver",
+        "elements" : [
+            "NA2O",
+            "MGO",
+            "AL2O3",
+            "SIO2",
+            "CAO",
+            "FEO",
+            "K2O",
+            "TIO2"
+        ],
+        "composition" : [
+            2.78,
+            6.75,
+            16.93,
+            55.45,
+            9.18,
+            6.78,
+            0.88,
+            0.935
+        ]
+    },
+    "sammon_2021_lower_crust_hp" : {
+        "basis" : "wt",
+        "dataset": "hp62ver",
+        "elements" : [
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
+            "K2O",
+            "H2O",
+            "TiO2"
+        ],
+        "composition" : [
+            2.63,
+            7.63,
+            17.2,
+            53.3,
+            10.15,
+            7.12,
+            0.70,
+            0,
+            0.98
+        ]
+    },
+    "sammon_2021_lower_crust_hp_wet" : {
+        "basis" : "wt",
+        "dataset": "hp62ver",
+        "elements" : [
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
+            "K2O",
+            "H2O",
+            "TiO2"
+        ],
+        "composition" : [
+            2.63,
+            7.63,
+            17.2,
+            53.3,
+            10.15,
+            7.12,
+            0.70,
+            0.1,
+            0.98
         ]
     },
     "sammon_2022_M85": {
@@ -232,15 +330,19 @@
             "AL2O3",
             "SIO2",
             "CAO",
-            "FEO"
+            "FEO",
+            "K2O",
+            "TIO2"
         ],
         "composition" : [
             2.75,
             4.93,
             16.8,
             53.3,
-            7.76,
-            8.75
+            8.06,
+            8.75,
+            0.96,
+            0.85
         ]
     },
     "liu_2001":{
@@ -476,7 +578,9 @@
             "AL2O3",
             "SIO2",
             "CAO",
-            "FEO"
+            "FEO",
+            "K2O",
+            "TIO2"
         ],
         "composition": [
             2.14,
@@ -484,7 +588,9 @@
             15.29,
             51.66,
             11.34,
-            10.19
+            10.19,
+            0.34,
+            0.73
         ]
     },
     "mackwell_1998_columbia_diabase": {
@@ -497,7 +603,9 @@
             "AL2O3",
             "SIO2",
             "CAO",
-            "FEO"
+            "FEO",
+            "K2O",
+            "TIO2"
         ],
         "composition": [
             2.81,
@@ -505,7 +613,9 @@
             16.68,
             47.87,
             9.37,
-            13.25
+            13.25,
+            0.40,
+            1.15
         ]
     }
 }

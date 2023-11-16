@@ -8,7 +8,7 @@ Set up a PerpleX calculation for a single bulk composition across an entire
 2d P-T space. P specified in bar and T in Kelvin.
 """
 function perplex_build_vertex(perplexdir::String, scratchdir::String, composition::Collection{Number},
-        elements::Collection{String}=("SIO2","TIO2","AL2O3","FEO","MGO","CAO","NA2O","K2O","H2O"),
+        elements::Collection{String},
         P::NTuple{2,Number}=(280, 28000), T::NTuple{2,Number}=(273.15, 1500+273.15);
         dataset::String="hp11ver.dat",
         xnodes::Integer=40,

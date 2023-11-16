@@ -419,8 +419,8 @@ plt.gca().set_title("Error with equilibrium")
 
 axi = fig.add_subplot(1,3,3)
 diff = (rho_g-rho_pyrolite_g)*1000 # kg/m3
-maxval = np.ceil(np.nanmax(np.absolute(diff))/100)*100+50
-levels = np.arange(-maxval,maxval+50,50)
+maxval = np.ceil(np.nanmax(np.absolute(diff))/100)*100+40
+levels = np.arange(-maxval,maxval+20,20)
 s=axi.imshow(diff,cmap=diff_cmap,vmin=-maxval,vmax=maxval, **imshow_kwargs)
 contours = axi.contour(T_g-273.15, P_g, diff, levels=levels,**contour_kwargs)
 contour0 = axi.contour(T_g-273.15, P_g, diff, levels=highlight_diffs,**contour_highlight_kwargs)

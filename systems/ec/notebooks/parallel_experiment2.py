@@ -85,13 +85,13 @@ compositions = [
     "hacker_2015_bin_3",
     #"bhowany_2018_hol2a",
     #"zhang_2006_mafic_granulite",
-    "sammon_2021_lower_crust",
-    "sammon_2021_deep_crust",
+    "sammon_2021_lower_crust_norm",
+    "sammon_2021_deep_crust_norm",
     "hacker_2015_bin_2",
-    "hacker_2015_md_xenolith",
+    "hacker_2015_md_xenolith_norm",
     "hacker_2015_bin_1",
     #"zhang_2022_cd07-2",
-    "mackwell_1998_maryland_diabase"
+    "mackwell_1998_maryland_diabase_norm"
 ]
 
 tectonic_settings = [
@@ -225,10 +225,10 @@ if __name__ == "__main__":
         print("Running in quick mode")
         Das = [d for d in Das if d <= 1e3]
         compositions = [
-        "sammon_2021_lower_crust",
-        "sammon_2021_deep_crust",
-        "hacker_2015_md_xenolith",
-        "mackwell_1998_maryland_diabase"
+        "sammon_2021_lower_crust_norm",
+        "sammon_2021_deep_crust_norm",
+        "hacker_2015_md_xenolith_norm",
+        "mackwell_1998_maryland_diabase_norm"
     ] if args.composition is None else [args.composition]
     if args.num_processes is not None:
         num_processes = int(args.num_processes)
@@ -803,10 +803,10 @@ for out in scenarios_out:
 
 # Create '_critical' plot
 selected_compositions = [
-    "mackwell_1998_maryland_diabase",
-    "hacker_2015_md_xenolith",
-    "sammon_2021_lower_crust",
-    "sammon_2021_deep_crust"
+    "mackwell_1998_maryland_diabase_norm",
+    "hacker_2015_md_xenolith_norm",
+    "sammon_2021_lower_crust_norm",
+    "sammon_2021_deep_crust_norm"
 ]
 
 selected_outputs = [o for o in scenarios_out if o["composition"] in selected_compositions]
