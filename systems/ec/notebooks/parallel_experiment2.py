@@ -950,7 +950,7 @@ for composition in compositions:
         rho_harzburgite=iharzburgite((T,P/1e4))
 
         ax.plot(rho_pyrolite/10, outs_c[0]["z"], "r:")
-        ax.plot(rho_harzburgite/10, outs_c[0]["z"], "m:")
+        ax.plot(rho_harzburgite/10, outs_c[0]["z"], "g:")
         ax.legend(["$Da = ${:.1e}".format(d) for d in _Das] +  (["pyrolite", "harzburgite"]), loc="upper right")
 
         ax.set_ylabel("Depth (km)")
@@ -1009,8 +1009,14 @@ for composition in compositions:
         plt.close(fig)
 
 for tectonic_setting in tectonic_settings:
+
         setting = tectonic_setting["setting"]
         outs_c = sorted([out for out in scenarios_out if (out["composition"] in selected_compositions and out["setting"] == setting)], key=lambda out: out["Da"])
+        
+        # grab 'constants' from first output
+        base = outs_c[0] 
+        T = base["T"]
+        P = base["P"]
         # Setup figure for rho-profile mosaic
         fig = plt.figure(figsize=(8,6.25))
         plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
@@ -1020,6 +1026,7 @@ for tectonic_setting in tectonic_settings:
         # Invert y axis because it represents depth
         [ax.invert_yaxis() for label,ax in axes.items()]
         [ax.set_xlim([2.8,3.5]) for label,ax in axes.items()]
+        [ax.set_xticks([2.8,3.0,3.2,3.4]) for label,ax in axes.items()]
         [ax.set_ylim([80,30]) for label,ax in axes.items()]
         rho_pyrolite=ipyrolite((T, P/1e4))/10
         rho_harzburgite=iharzburgite((T,P/1e4))/10
