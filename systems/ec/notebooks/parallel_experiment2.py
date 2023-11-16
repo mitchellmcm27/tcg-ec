@@ -74,7 +74,7 @@ num_processes =  mp.cpu_count()
 pdf_metadata = {'CreationDate': None}
 
 # Damkoehler numbers
-Das = [1e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]#, 1e6]
+Das = [1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]
 
 # default end time (scaled) is 1
 end_t = 1.
@@ -1006,4 +1006,24 @@ for composition in compositions:
         fig.suptitle("{}, {}, $v_0=${:.1f} km/Myr, $S0=${} 1/m".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), moho_descent_rate/1e3*yr*1e6, S0),y=0.9)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"pdf")), metadata=pdf_metadata)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"png")))
+        plt.close(fig)
+
+for tectonic_setting in tectonic_settings:
+        setting = tectonic_setting["setting"]
+        outs_c = sorted([out for out in scenarios_out if (out["composition"] in selected_compositions and out["setting"] == setting)], key=lambda out: out["Da"])
+        # Setup figure for rho-profile mosaic
+        fig = plt.figure(figsize=(8,6.25))
+        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+        axes = fig.subplot_mosaic([selected_compositions])
+        [ax.set_prop_cycle(plt.cycler("color", greys(np.linspace(0.2, 1, num_lines)))) for label,ax in axes.items()]
+
+        # Invert y axis because it represents depth
+        [ax.invert_yaxis() for label,ax in axes.items()]
+        [ax.set_xlim([2.8,3.5]) for label,ax in axes.items()]
+        [ax.set_ylim([80,30]) for label,ax in axes.items()]
+        for i, obj in enumerate(outs_c):
+            ax = axes[obj["composition"]]
+            ax.plot(obj["rho"], obj["z"]/1e3)
+        plt.savefig(Path(output_path,"_collage.{}.{}".format(setting,"pdf")), metadata=pdf_metadata)
+        plt.savefig(Path(output_path,"_collage.{}.{}".format(setting,"png")))
         plt.close(fig)
