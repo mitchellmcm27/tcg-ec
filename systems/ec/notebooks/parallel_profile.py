@@ -166,7 +166,7 @@ plt.plot(P_range,rho_final)
 plt.suptitle(composition.replace("_", " ").capitalize())
 plt.savefig(Path(outputPath,'density.png'))
 
-fig = plt.figure(figsize=(10,8))
+fig = plt.figure(figsize=(10,5))
 ax = plt.gca()
 ax3 = ax.twiny()
 df = pp.get_profile_data(composition)
@@ -194,7 +194,7 @@ ax.set_xlim(xlimits)
 ax3.set_xlabel(x2label)
 ax3.set_xlim(x2limits)
 ax.set_ylabel("Phase vol. mode")
-ax.set_ylim([0,1])
+#ax.set_ylim([0,1])
 if(df is not None):
     for i, phase in enumerate(rxn.phases()):
         pname = phase.name()
@@ -219,7 +219,7 @@ if(df is not None):
         y = df["Aki"]/100
         ax.plot(xvar,y,"-",linewidth=1,alpha=0.5,color="black")
 
-plt.suptitle(composition.replace("_", " ").capitalize())
+#plt.suptitle(composition.replace("_", " ").capitalize())
 plt.savefig(Path(outputPath,"phases.png"))
 
 ax2 = ax.twinx()
