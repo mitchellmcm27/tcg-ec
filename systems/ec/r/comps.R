@@ -46,5 +46,5 @@ new_data$P2O5 <- predict(fit_P2O5, new_data)
 new_data$MnO <- predict(fit_MnO, new_data)
 
 new_data <- new_data %>% mutate(Total = FeO+Na2O+CaO+SiO2+MgO+Al2O3+TiO2+K2O+P2O5+MnO)
-new_data
+new_data %>% write_delim("comps-interp.csv",delim=",")
 

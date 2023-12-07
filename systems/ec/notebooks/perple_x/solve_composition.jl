@@ -98,6 +98,8 @@ for name in comp_names
 
             iTi = findfirst(x->x=="TIO2",oxides)
             iK  = findfirst(x->x=="K2O",oxides)
+            iMn = findfirst(x->x=="MNO",oxides)
+            iP  = findfirst(x->x=="P2O5",oxides)
 
             wMg = oxide_comp[iMg]
             wFe = oxide_comp[iFe]
@@ -123,6 +125,35 @@ for name in comp_names
                 oxide_comp[iK] = 0
             end
 
+            if iK != nothing
+                # distribute K2O to SiO2
+                # to make more quartz, which has a similar density to kspar
+                diff = oxide_comp[iK]
+                if normalize_composition
+                    oxide_comp[iSi] += diff
+                end
+                oxide_comp[iK] = 0
+            end
+
+            if iP != nothing
+                # distribute P2O5 to Al2O3
+                diff = oxide_comp[iP]
+                if normalize_composition
+                    oxide_comp[iAl] += diff
+                end
+                oxide_comp[iP] = 0
+            end
+
+            
+            if iMn != nothing
+                # distribute MnO to MgO
+                diff = oxide_comp[iMn]
+                if normalize_composition
+                    oxide_comp[iMg] += diff
+                end
+                oxide_comp[iMn] = 0
+            end
+
       
             # any remaining deficit...
             diff = 100.0 - sum(oxide_comp)
@@ -134,7 +165,7 @@ for name in comp_names
     end
 
     println(oxide_comp)
-    
+
     blkpath = joinpath(scratchdir,composition_name,composition_name*".blk")
     pseudosection_exists = isfile(blkpath)
 
