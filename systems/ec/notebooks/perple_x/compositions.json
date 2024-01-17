@@ -21,7 +21,6 @@
         ]
     },
     "hacker_2015_md_xenolith": {
-        "comment": "from",
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
@@ -33,6 +32,30 @@
             "FEO",
             "K2O",
             "TIO2"
+        ],
+        "composition": [
+            2.60000,
+            7.30000,
+            17.0000,
+            52.1000,
+            10.3000,
+            9.00000,
+            0.5,
+            0.9
+        ]
+    },
+    "hacker_2015_md_xenolith_hp": {
+        "basis": "wt",
+        "dataset": "hp62ver",
+        "elements": [
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
+            "K2O",
+            "TiO2"
         ],
         "composition": [
             2.60000,
@@ -279,7 +302,6 @@
             "CaO",
             "FeO",
             "K2O",
-            "H2O",
             "TiO2"
         ],
         "composition": [
@@ -290,7 +312,6 @@
             10.15,
             7.12,
             0.70,
-            0,
             0.98
         ]
     },

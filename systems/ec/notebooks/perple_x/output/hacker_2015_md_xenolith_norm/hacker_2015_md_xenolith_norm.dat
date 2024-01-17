@@ -27,11 +27,11 @@ perplex_option.dat     | Perple_X option file
 
 begin thermodynamic component list
 NA2O  1  2.60000      0.00000      0.00000     mass  amount
-MGO   1  7.83742      0.00000      0.00000     mass  amount
+MGO   1  7.30000      0.00000      0.00000     mass  amount
 AL2O3 1  17.0000      0.00000      0.00000     mass  amount
-SIO2  1  52.6000      0.00000      0.00000     mass  amount
+SIO2  1  52.1000      0.00000      0.00000     mass  amount
 CAO   1  10.3000      0.00000      0.00000     mass  amount
-FEO   1  9.66258      0.00000      0.00000     mass  amount
+FEO   1  9.00000      0.00000      0.00000     mass  amount
 end thermodynamic component list
 
 
