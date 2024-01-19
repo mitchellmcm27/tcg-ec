@@ -79,6 +79,9 @@ Das = [1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4,
 # default end time (scaled) is 1
 end_t = 1.
 
+# prefix file path for saving plots
+prefix = None
+
 # Compositions
 compositions = [
     "hacker_2015_bin_4",
@@ -92,6 +95,18 @@ compositions = [
     "hacker_2015_bin_1",
     #"zhang_2022_cd07-2",
     "mackwell_1998_maryland_diabase_norm"
+]
+
+compositions = [
+    "si50_norm",
+    "si51_norm",
+    "si52_norm",
+    "si53_norm",
+    "si54_norm",
+    "si55_norm",
+    "si56_norm",
+    "si57_norm",
+    "si58_norm"
 ]
 
 tectonic_settings = [
@@ -210,6 +225,8 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--num_processes")
     parser.add_argument("-f", "--force", default=False, action="store_true")
     parser.add_argument("-e", "--end_time")
+    parser.add_argument("-p", "--prefix")
+
     args = parser.parse_args()
 
     if args.end_time is not None:
@@ -224,23 +241,20 @@ if __name__ == "__main__":
     if args.quick:
         print("Running in quick mode")
         Das = [d for d in Das if d <= 1e3]
-        compositions = [
-        "sammon_2021_lower_crust_norm",
-        "sammon_2021_deep_crust_norm",
-        "hacker_2015_md_xenolith_norm",
-        "mackwell_1998_maryland_diabase_norm"
-    ] if args.composition is None else [args.composition]
+        compositions = compositions if args.composition is None else [args.composition]
     if args.num_processes is not None:
         num_processes = int(args.num_processes)
     if args.force:
         save_output = True
         load_output = False
+    if args.prefix is not None:
+        prefix = args.prefix
 
 ##########################
 # Ready output directory #
 ##########################
 
-output_path = Path("figs",reference,rxn_name)
+output_path = Path("figs",reference,rxn_name,prefix) if prefix is not None else Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
 pickle_path = Path(output_path,"_outs.pickle")
 
@@ -803,10 +817,19 @@ for out in scenarios_out:
 
 # Create '_critical' plot
 selected_compositions = [
-    "mackwell_1998_maryland_diabase_norm",
-    "hacker_2015_md_xenolith_norm",
-    "sammon_2021_lower_crust_norm",
-    "sammon_2021_deep_crust_norm"
+    #"mackwell_1998_maryland_diabase_norm",
+    #"hacker_2015_md_xenolith_norm",
+    #"sammon_2021_lower_crust_norm",
+    #"sammon_2021_deep_crust_norm",
+    "si50_norm",
+    "si51_norm",
+    "si52_norm",
+    "si53_norm",
+    "si54_norm",
+    "si55_norm",
+    "si56_norm",
+    "si57_norm",
+    "si58_norm"
 ]
 
 selected_outputs = [o for o in scenarios_out if o["composition"] in selected_compositions]
@@ -1018,7 +1041,7 @@ for tectonic_setting in tectonic_settings:
         T = base["T"]
         P = base["P"]
         # Setup figure for rho-profile mosaic
-        fig = plt.figure(figsize=(8,6.25))
+        fig = plt.figure(figsize=(len(selected_compositions)*2,6.25))
         plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
         axes = fig.subplot_mosaic([selected_compositions])
         [ax.set_prop_cycle(plt.cycler("color", greys(np.linspace(0.2, 1, num_lines)))) for label,ax in axes.items()]

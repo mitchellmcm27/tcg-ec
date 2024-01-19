@@ -35,16 +35,16 @@ fit_K2O <- lm(K2O ~ SiO2, data=dat)
 fit_P2O5 <- lm(P2O5 ~ SiO2, data=dat)
 fit_MnO <- lm(MnO ~ SiO2, dat=dat)
 
-new_data$FeO <- predict(fit_FeO, new_data)
-new_data$Na2O <- predict(fit_Na2O, new_data)
-new_data$CaO <- predict(fit_CaO, new_data)
-new_data$MgO <- predict(fit_MgO, new_data)
-new_data$Al2O3 <- predict(fit_Al2O3, new_data)
 new_data$TiO2 <- predict(fit_TiO2, new_data)
+new_data$Al2O3 <- predict(fit_Al2O3, new_data)
+new_data$Fe2O3 <- predict(fit_FeO, new_data) * 0
+new_data$FeO <- predict(fit_FeO, new_data)
+new_data$MnO <- predict(fit_MnO, new_data)
+new_data$MgO <- predict(fit_MgO, new_data)
+new_data$CaO <- predict(fit_CaO, new_data)
+new_data$Na2O <- predict(fit_Na2O, new_data)
 new_data$K2O <- predict(fit_K2O, new_data)
 new_data$P2O5 <- predict(fit_P2O5, new_data)
-new_data$MnO <- predict(fit_MnO, new_data)
 
-new_data <- new_data %>% mutate(Total = FeO+Na2O+CaO+SiO2+MgO+Al2O3+TiO2+K2O+P2O5+MnO)
-new_data
+new_data %>% write_delim("comps-interp.csv",delim=",")
 

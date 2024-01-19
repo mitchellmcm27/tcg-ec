@@ -17,7 +17,6 @@ T_point = 900+273.15 # K
 P_point = 2.0e4 # bar
 
 T_surf = 273.15
-melt_model = "melt(G)"
 
 force_pseudosection = false
 normalize_composition = false
@@ -57,26 +56,65 @@ for name in comp_names
             println("excluding no phases")
             phases_exclude = []
         else
-            println("excluding majoritic garnet phases")
+            println("excluding majoritic garnet endmembers")
             phases_exclude = ["maj","namaj","namj"]
         end
+        # all solution phases
         phases = ["O","Pl","Sp","Cpx","Wad","Ring","Pv","Wus","C2/c","Opx","Aki","Ppv","CF","Gt","NaAl"]
-        #phases = ["Pl","Cpx","Opx","Gt"]
+        include_fluid="" # perplex will not ask, so leave it blank
+        saturated_fluid=""
     else
-        phases_exclude = []
+        phases_exclude = [
+            #melt(G)
+            "sil8L",
+            "ctjL",
+            "fo8L",
+            "wi8L",
+            "fa8L",
+            "q8L",
+            "qjL",
+            "dijL",
+            "jdjL",
+            "ctjL",
+            "fojL",
+            "fajL",
+            "hmjL",
+            "ekjL",
+            #cAmph(G)
+            #Omph(HP)
+            #Gt(W)
+            "andr",
+            #Opx(W)
+            #Bi(W)
+            #Mica(W)
+            "ma",
+            #Ilm(WPH)
+            "ilm",
+            "ilm_nol",
+            #T
+            #Sp(WPC)
+            #Ep(HP11)
+            #Pl(I1,HP)
+            #Fsp(C1)
+            ]
+        # Same as Li et al. 2022
         phases = [
-            "Fsp(C1)",
             "melt(G)",
-            "Omph(GHP)",
+            "cAmph(G)",
+            "Omph(HP)",
             "Gt(W)",
             "Opx(W)" ,
-            "Mt(W)" ,
-            "Ilm(WPH)",
-            "cAmph(G)",
             "Bi(W)",
-            "Mica(W)",
-            "T"
+            "Mica(W)" ,
+            "Ilm(WPH)", # ilmenite-hematite
+            "T",
+            "Sp(WPC)", # magnetite-spinel
+            "Ep(HP11)",
+            "Pl(I1,HP)",
+            "Fsp(C1)"
         ]
+        include_fluid="n" # perplex asks
+        saturated_fluid="n"
     end
     oxide_comp = convert(Array{Number},comp["composition"])
     oxides = convert(Array{String},comp["elements"])
@@ -84,6 +122,8 @@ for name in comp_names
 
     println(sum(oxide_comp))
     println(oxide_comp)
+    println(phases)
+    println(oxides)
     if composition_basis=="wt" && dataset == "stx21ver"
         if sum(oxide_comp) < 100.0
 
@@ -98,6 +138,8 @@ for name in comp_names
 
             iTi = findfirst(x->x=="TIO2",oxides)
             iK  = findfirst(x->x=="K2O",oxides)
+            iMn = findfirst(x->x=="MNO",oxides)
+            iP  = findfirst(x->x=="P2O5",oxides)
 
             wMg = oxide_comp[iMg]
             wFe = oxide_comp[iFe]
@@ -123,6 +165,35 @@ for name in comp_names
                 oxide_comp[iK] = 0
             end
 
+            if iK != nothing
+                # distribute K2O to SiO2
+                # to make more quartz, which has a similar density to kspar
+                diff = oxide_comp[iK]
+                if normalize_composition
+                    oxide_comp[iSi] += diff
+                end
+                oxide_comp[iK] = 0
+            end
+
+            if iP != nothing
+                # distribute P2O5 to Al2O3
+                diff = oxide_comp[iP]
+                if normalize_composition
+                    oxide_comp[iAl] += diff
+                end
+                oxide_comp[iP] = 0
+            end
+
+            
+            if iMn != nothing
+                # distribute MnO to MgO
+                diff = oxide_comp[iMn]
+                if normalize_composition
+                    oxide_comp[iMg] += diff
+                end
+                oxide_comp[iMn] = 0
+            end
+
       
             # any remaining deficit...
             diff = 100.0 - sum(oxide_comp)
@@ -134,7 +205,7 @@ for name in comp_names
     end
 
     println(oxide_comp)
-    
+
     blkpath = joinpath(scratchdir,composition_name,composition_name*".blk")
     pseudosection_exists = isfile(blkpath)
 
@@ -146,16 +217,17 @@ for name in comp_names
             solution_phases=join(phases,"\n")*"\n", 
             composition_basis=composition_basis, 
             mode_basis=mode_basis, 
-            name=composition_name
+            name=composition_name,
+            saturated_fluid=saturated_fluid
         )
         perplex_pssect(perplexdir, scratchdir, name=composition_name)
     end
 
     print("Extracting profile...\n")
-    modes = perplex_werami_profile(perplexdir, scratchdir, P_range_1d, T_range_1d, name=composition_name)
+    modes = perplex_werami_profile(perplexdir, scratchdir, P_range_1d, T_range_1d,name=composition_name)
 
     print("Extracting density grid...\n")
-    modes = perplex_werami_rho(perplexdir, scratchdir, name=composition_name)
+    modes = perplex_werami_rho(perplexdir, scratchdir, include_fluid=include_fluid, name=composition_name)
 
     print("Extracting point...\n")
     point = perplex_werami_point(perplexdir,scratchdir,P_point,T_point,name=composition_name)

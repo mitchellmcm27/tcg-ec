@@ -18,6 +18,7 @@ function perplex_build_vertex(perplexdir::String, scratchdir::String, compositio
         mode_basis::String="vol",
         composition_basis::String="wt",
         fluid_eos::Number=5,
+        saturated_fluid::String="",
         name::String="scratch"
     )
 
@@ -27,6 +28,9 @@ function perplex_build_vertex(perplexdir::String, scratchdir::String, compositio
     if(composition_basis=="mol")
         bymass = "n"
     end
+    # Use chemical potentials, activities or fugacities as independent variables (Y/N)?
+    chempot = "n"
+
     build = joinpath(perplexdir, "build")# path to PerpleX build
     vertex = joinpath(perplexdir, "vertex")# path to PerpleX vertex
 
@@ -59,14 +63,18 @@ function perplex_build_vertex(perplexdir::String, scratchdir::String, compositio
     # Name, components, and basic options. P-T conditions.
     # default fluid_eos = 5: Holland and Powell (1998) "CORK" fluid equation of state
     elementstring = join(elements .* "\n")
-    write(fp,"$name\n$dataset\nperplex_option.dat\nn\n2\nn\nn\n$elementstring\nn\n2\n$(first(T))\n$(last(T))\n$(first(P))\n$(last(P))\n$(bymass)\n") # v6.8.7
+    write(fp,"$name\n$dataset\nperplex_option.dat\nn\n2\n$saturated_fluid\nn\nn\n$elementstring\nn\n2\n$(first(T))\n$(last(T))\n$(first(P))\n$(last(P))\n$(bymass)\n") # v6.8.7
 
     # Whole-rock composition
     for i ∈ eachindex(composition)
         write(fp,"$(composition[i]) ")
     end
     # Solution model
-    write(fp,"\nn\ny\nn\n$excludes\ny\nsolution_model.dat\n$solution_phases\n$(name)_Pseudosection")
+    printfile = "n"
+    excl_endmember = "y"
+    prompt_phases = "n"
+    incl_soln = "y"
+    write(fp,"\n$printfile\n$excl_endmember\n$prompt_phases\n$excludes\n$incl_soln\nsolution_model.dat\n$solution_phases\n$(name)_Pseudosection")
     close(fp)
 
     # build PerpleX problem definition
@@ -143,7 +151,7 @@ end
 export perplex_werami_profile
 
 function perplex_werami_rho(perplexdir::String, scratchdir::String;
-    name::String="scratch", importas=:Dict)
+    include_fluid::String="", name::String="scratch", importas=:Dict)
     # Query a new path from a pseudosection
 
     werami = joinpath(perplexdir, "werami")# path to PerpleX werami
@@ -152,7 +160,7 @@ function perplex_werami_rho(perplexdir::String, scratchdir::String;
     # Create werami batch file
     fp = open(prefix*"werami.bat", "w")
     # v6.7.8 pseudosection
-    write(fp,"$name\n2\n2\nn\n0\nn\n1\n0\n")
+    write(fp,"$name\n2\n2\nn\n$include_fluid\n0\nn\n1\n0\n")
     close(fp)
 
     # Make sure there isn"t already an output

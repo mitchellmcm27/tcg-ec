@@ -209,8 +209,8 @@ def index(ls,v):
 phaseis_g = np.asarray([[index(uniquestrs,phstr) for phstr in phasestrr]  for phasestrr in phases_g])
 
 # Get pyrolite density grid
-interp = pp.get_rho_interpolator("xu_2008_pyrolite", "1000kg/m3")
-rho_pyrolite_g = interp((T_g, P_g))
+interp_py = pp.get_rho_interpolator("xu_2008_pyrolite", "1000kg/m3")
+rho_pyrolite_g = interp_py((T_g, P_g))
 
 # Create folders if needed
 outputPath = Path("figs",reference,composition,rxn_name)
@@ -301,22 +301,28 @@ save_current_fig_as("stime")
 
 # Plot comparison with Perple_X density
 interp = pp.get_rho_interpolator(composition,"1000kg/m3")
+interp_hp = pp.get_rho_interpolator(composition.replace("_norm","")+"_hp","1000kg/m3")
+fig = plt.figure(figsize=(10,10))
+
+# Panel (1,1): contour reactive density
+axi = fig.add_subplot(2,3,1)
+s = axi.contourf(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
+axi.contour(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
+plt.xlim(T_limits)
+plt.xticks(T_ticks)
+plt.ylabel("Pressure (GPa)")
+plt.gca().set_xticklabels(T_tick_labels)
+plt.colorbar(mappable=s, location="bottom", ticks=density_ticks, label="Density (10$^3$ kg/m$^3$)")
+plt.gca().set_title(composition_to_label(composition))
+
+# Panel (2,1): Diff reactive density with itself (blank)
+
 if (interp is not None):
     rho_eq_g = interp((T_g, P_g))
 
-    fig = plt.figure(figsize=(10,5))
-    
-    axi = fig.add_subplot(1,3,1)
-    s = axi.contourf(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
-    axi.contour(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
-    plt.xlim(T_limits)
-    plt.xticks(T_ticks)
-    plt.ylabel("Pressure (GPa)")
-    plt.gca().set_xticklabels(T_tick_labels)
-    plt.colorbar(mappable=s, location="bottom", ticks=density_ticks, label="Density (10$^3$ kg/m$^3$)")
-    plt.gca().set_title(composition_to_label(composition))
 
-    axi = fig.add_subplot(1,3,2)
+    # Panel (1,2): contour Eqm density
+    axi = fig.add_subplot(2,3,2)
     s = axi.contourf(T_g-273.15, P_g, rho_eq_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
     axi.contour(T_g-273.15, P_g, rho_eq_g, levels=density_levels, alpha=1, cmap=density_cmap)
     plt.xlim(T_limits)
@@ -326,9 +332,10 @@ if (interp is not None):
     plt.ylim([Pmin,Pmax])
     plt.yticks([])
     plt.colorbar(mappable=s, location="bottom",ticks=density_ticks, label="Density (10$^3$ kg/m$^3$)")
-    plt.gca().set_title("Equilibrium system")
+    plt.gca().set_title("Equilibrium system (NCFMAS)")
 
-    axi = fig.add_subplot(1,3,3)
+    # Panel (2,2): Diff b/w Eqm and reactive
+    axi = fig.add_subplot(2,3,5)
     diff = (rho_g-rho_eq_g)/rho_eq_g*100
     absmax = np.ceil(np.nanmax(np.absolute(diff)))
     levels = np.arange(-absmax, absmax+1, 1)
@@ -340,8 +347,36 @@ if (interp is not None):
     plt.gca().set_xticklabels(T_tick_labels)
     plt.gca().set_title("Error")
 
-    plt.tight_layout()
-    save_current_fig_as("density_comparison")
+if (interp_hp is not None):
+    rho_eq_hp_g = interp_hp((T_g, P_g))
+    # Panel (1,3): contour Eqm density for NCKFMASHTO (hp62ver)
+    axi = fig.add_subplot(2,3,3)
+    s = axi.contourf(T_g-273.15, P_g, rho_eq_hp_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
+    axi.contour(T_g-273.15, P_g, rho_eq_hp_g, levels=density_levels, alpha=1, cmap=density_cmap)
+    plt.xlim(T_limits)
+    plt.xticks(T_ticks)
+    plt.xlabel("Temperature (°C)", labelpad=2)
+    plt.gca().set_xticklabels(T_tick_labels)
+    plt.ylim([Pmin,Pmax])
+    plt.yticks([])
+    plt.colorbar(mappable=s, location="bottom",ticks=density_ticks, label="Density (10$^3$ kg/m$^3$)")
+    plt.gca().set_title("Equilibrium system (NCKFMASHTO)")
+
+    # Panel (2,3): Diff b/w Eqm and reactive
+    axi = fig.add_subplot(2,3,6)
+    diff = (rho_g-rho_eq_hp_g)/rho_eq_g*100
+    absmax = np.ceil(np.nanmax(np.absolute(diff)))
+    levels = np.arange(-absmax, absmax+1, 1)
+    s=axi.imshow(diff,cmap=diff_cmap,vmin=-absmax,vmax=absmax, **imshow_kwargs)
+    axi.contour(T_g-273.15 ,P_g, diff, levels=levels,**contour_kwargs)
+    plt.yticks([])
+    plt.colorbar(mappable=s, location="bottom", label="Relative error (%)")
+    plt.xticks(T_ticks)
+    plt.gca().set_xticklabels(T_tick_labels)
+    plt.gca().set_title("Error")
+
+plt.tight_layout()
+save_current_fig_as("density_comparison")
 
 # Plot comparison with pyrolite
 
