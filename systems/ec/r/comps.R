@@ -19,7 +19,7 @@ new_data <- data.frame(
 )
 
 dat %>% ggplot(
-  aes(x=SiO2, y=FeO)
+  aes(x=SiO2, y=FeO, colour=Al2O3)
 ) +
   geom_point() +
   geom_smooth(method='lm')
