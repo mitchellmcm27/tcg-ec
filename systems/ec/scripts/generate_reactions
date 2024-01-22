@@ -2481,6 +2481,48 @@ def generate_reactions(outdir):
             #([ab],[qz,namaj]),
             #([oEn],[mgmaj])
         ], database="tcg_stx21_database.tar.gz")
+
+    generate_reaction(
+        outdir,
+        'eclogitization_2024',
+        [
+            'Clinopyroxene',
+            'Orthopyroxene',
+            'Quartz',
+            'Feldspar',
+            'Garnet',
+            'Kyanite',
+        ],
+        [
+            # Based on AGU 17
+            ([hed, oEn],[di, fs]), # Fe-Mg exchange, Cpx-Opx
+            ([pyp, fs],[alm, oEn]), # Fe-Mg exchange, Grt-Opx
+            ([pyp, hed], [alm, di]), # Ellis & Green 1979 (1), #Fe-Mg exchange, Grt-Cpx
+            ([oEn],[cEn]),
+            ([oDi],[di]),
+            ([cats, pyp], [gs, mgts]), # cation exchange with Tschermaks
+            ([an], [cats, qz]), # Paria et al (paragraph 2, cites Herzberg 1978), GR67b
+            ([an, oEn], [di, mgts, qz]), # Green & Ringwood 1967 (a) - GR67a
+            ([an, oEn], [pyp, di, qz]),  # GR67c, Paria et al (B)
+            ([an, oEn], [pyp, gs, qz]), # GR67d
+            ([an, fs], [alm, hed, qz]), # Paria et al (A), GR67c
+            ([an, fs], [alm, gs, qz]),  # GR67d
+            ([oEn, mgts], [pyp]), # Paria et al (paragraph 2, cites RWood 1974), GR67e, Wood & Banno 1973 (1)
+            ([oEn, cats], [gs, pyp]), # GR67f
+            ([ab], [jd, qz]), # Paria et al (paragraph 2, Reinsch 1977 cited in Newton 1983), GR67g
+            ([gs, pyp, qz], [di, ky]),
+            ([gs, alm, qz], [hed, ky]),
+            ([pyp, qz], [cEn, ky]),
+            ([gs, ky], [cats, qz]),
+            ([an], [ky, gs, qz]),  # Koziol et al 1988 (paragraph 1), GR67o
+            ([fs, mgts], [pyp, alm]), 
+            ([fs, cats], [gs, pyp, alm]),  
+            ([an, pyp], [mgts, gs, qz]), # swapped pyp and mgts because it gets swapped by TCG
+            ([di, an], [gs, pyp, qz]), 
+            ([hed, an], [gs, alm, qz]),
+            #([cats, an], [gs, qz]), # removed because this reduces to an = cats + qtz
+            ([an, cEn], [gs, pyp, qz]),
+        ], database="tcg_stx21_database.tar.gz")
     
 def generate_reaction(outdir, name, phases, reactions, database='tcg_slb_database.tar.gz'):
 
