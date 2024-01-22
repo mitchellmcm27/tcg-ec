@@ -76,6 +76,9 @@ pdf_metadata = {'CreationDate': None}
 # Damkoehler numbers
 Das = [1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]
 
+# Account for dense oxides not included in SLB database
+oxide_density_10gcc = 0.3
+
 # default end time (scaled) is 1
 end_t = 1.
 
@@ -689,7 +692,7 @@ def run_experiment(scenario):
     
     scenario["T"] = T # K
     scenario["P"] = P # bar
-    scenario["rho"] = rho + 0.03 # g/cm3
+    scenario["rho"] = rho + oxide_density_10gcc/10.0 # g/cm3
     scenario["mi"] = mi_times # phase mass fractions
     scenario["Cik"] = Cik_times # endmember mass fractions
     scenario["Xik"] = np.asarray([rxn.C_to_X(c) for c in Cs_times], dtype="object") # endmember mol. fractions

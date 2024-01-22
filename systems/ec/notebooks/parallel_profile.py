@@ -21,7 +21,7 @@ end_t = 1
 phasetol = 1.e-3 # 1.e-2
 
 # Damkhoeler number, change with -d argument
-Da = 1e5 # 1.0
+Da = 3e5 # 1.0
 # regularization parameter for compositions
 eps = 1.e-5 # 1.e-2
 # these numbers seem to work very well with eps = 1e-5??
@@ -29,7 +29,7 @@ rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
 
 # large number
-max_steps = 1e5 # 4e3 is reasonable
+max_steps = 3e5 # 4e3 is reasonable
 
 # number of processes, edit with -n argument
 processes = mp.cpu_count()
