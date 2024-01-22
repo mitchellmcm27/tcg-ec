@@ -18,7 +18,7 @@ cm = 1e-2
 ### ------------ INPUTS -------------------
 reference= 'parallel_experiment_1d'
 composition = 'hacker_2003_morb'
-rxnName = 'eclogitization_agu10_stx21_rx'
+rxnName = 'eclogitization_2024_stx21_rx'
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-2 # 1.e-2

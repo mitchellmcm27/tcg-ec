@@ -12,7 +12,7 @@ import from_perplex as pp
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
 composition = 'hacker_2015_md_xenolith'
-rxn_name = 'eclogitization_agu17_stx21_rx'
+rxn_name = 'eclogitization_2024_stx21_rx'
 
 # end time of reactions, change with -e argument
 end_t = 1
@@ -134,7 +134,7 @@ def task(i):
     ode.solve(T,GPa2Bar(P),mi0,Cik0,end_t,Da=Da,eps=eps,method="BDF_mcm",max_steps=max_steps)
     odephasenames, phaseabbrev = ode.final_phases(phasetol)
     phases = '+'.join(phaseabbrev)
-    rho = ode.final_rho()
+    rho = ode.final_rho() + 0.3
 
     Cik = ode.sol.y[ode.I:ode.I+ode.K,-1]
     mi = ode.sol.y[:ode.I,-1] # -1 = final time step

@@ -28,7 +28,7 @@ save_output = False
 load_output = True
 
 reference= "parallel_instantaneous"
-rxn_name = "eclogitization_agu17_stx21_rx"
+rxn_name = "eclogitization_2024_stx21_rx"
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-5 # 1.e-2

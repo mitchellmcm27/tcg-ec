@@ -22,7 +22,7 @@ cm = 1e-2
 ### ------------ INPUTS -------------------
 reference= 'parallel_experiment'
 composition = 'hacker_2015_md_xenolith'
-rxn_name = 'eclogitization_agu17_stx21_rx'
+rxn_name = 'eclogitization_2024_stx21_rx'
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-5 # 1.e-2
@@ -174,7 +174,7 @@ def run_experiment(Da):
         v = mi/rhoi
         vi  = 1./v.sum()
         phi = vi*mi/rhoi
-        rho_final[i]=rho
+        rho_final[i]=rho + 0.3
         phases_final[i]=phases 
         phi_final[i]=phi 
         mi_final[i]=mi_reg

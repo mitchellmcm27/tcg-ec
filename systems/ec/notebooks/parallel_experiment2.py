@@ -34,7 +34,7 @@ save_output = False
 load_output = True
 
 reference= "parallel_experiment2"
-rxn_name = "eclogitization_agu17_stx21_rx"
+rxn_name = "eclogitization_2024_stx21_rx"
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-5 # default 1.e-2
@@ -84,30 +84,30 @@ prefix = None
 
 # Compositions
 compositions = [
-    "hacker_2015_bin_4",
-    "hacker_2015_bin_3",
+    #"hacker_2015_bin_4",
+    #"hacker_2015_bin_3",
     #"bhowany_2018_hol2a",
     #"zhang_2006_mafic_granulite",
-    "sammon_2021_lower_crust_norm",
-    "sammon_2021_deep_crust_norm",
-    "hacker_2015_bin_2",
-    "hacker_2015_md_xenolith_norm",
-    "hacker_2015_bin_1",
+    "sammon_2021_lower_crust",
+    "sammon_2021_deep_crust",
+    #"hacker_2015_bin_2",
+    "hacker_2015_md_xenolith",
+    #"hacker_2015_bin_1",
     #"zhang_2022_cd07-2",
-    "mackwell_1998_maryland_diabase_norm"
+    "mackwell_1998_maryland_diabase"
 ]
 
-compositions = [
-    "si50_norm",
-    "si51_norm",
-    "si52_norm",
-    "si53_norm",
-    "si54_norm",
-    "si55_norm",
-    "si56_norm",
-    "si57_norm",
-    "si58_norm"
-]
+#compositions = [
+#    "si50_norm",
+#    "si51_norm",
+#    "si52_norm",
+#    "si53_norm",
+#    "si54_norm",
+#    "si55_norm",
+#    "si56_norm",
+#    "si57_norm",
+#    "si58_norm"
+#]
 
 tectonic_settings = [
     {
@@ -689,7 +689,7 @@ def run_experiment(scenario):
     
     scenario["T"] = T # K
     scenario["P"] = P # bar
-    scenario["rho"] = rho # g/cm3
+    scenario["rho"] = rho + 0.03 # g/cm3
     scenario["mi"] = mi_times # phase mass fractions
     scenario["Cik"] = Cik_times # endmember mass fractions
     scenario["Xik"] = np.asarray([rxn.C_to_X(c) for c in Cs_times], dtype="object") # endmember mol. fractions

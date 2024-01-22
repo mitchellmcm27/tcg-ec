@@ -26,7 +26,7 @@ plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
 ### ======================= INPUTS ============================
 reference = "parallel_pd"
 composition = "hacker_2015_md_xenolith"
-rxn_name = "eclogitization_agu17_stx21_rx"
+rxn_name = "eclogitization_2024_stx21_rx"
 
 # number of nodes in each dimension (T,P) = (x,y)
 nP = 80
@@ -170,7 +170,7 @@ def task(args):
     ode.solve(T,GPa2Bar(P),mi0,Cik0,end_t,Da=Da,eps=eps,rtol=rtol,atol=atol,method="BDF_mcm",max_steps=max_steps)
     odephasenames, phaseabbrev = ode.final_phases(phasetol)
     phases = "+".join(phaseabbrev) if ode.sol.status == 0 else ""
-    rho = ode.final_rho() if ode.sol.status == 0 else np.nan
+    rho = ode.final_rho() + 0.3 if ode.sol.status == 0 else np.nan
     stime = ode.stime
     variance = odephasenames.size
     return rho/10., phases, stime, variance, i, j
