@@ -6,13 +6,28 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from tcg_slb.base import *
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
-from multiprocessing import Pool, shared_memory
+from multiprocessing import Pool
 import multiprocessing as mp
 from from_perplex import *
 from scipy.integrate import solve_ivp
 from geotherm_steady import geotherm_steady
 import csv
+from typing import TypedDict,List
 
+class TectonicSetting(TypedDict):
+    setting:str
+    L0:float
+    z0:float
+    z1:float
+    As:float
+    hr0:float
+    k:float
+    Ts:float
+    Tlab:float
+
+class InputScenario(TypedDict):
+    name: str
+    year: int
 ####################
 # Unit conversions #
 ####################
@@ -59,10 +74,10 @@ shortening_rate = 10.0 *mm/yr # m/s
 thickening_rate = shortening_rate / 3. # m/s
 
 # when crust is ~ 1/3 of lithosphere, this gives a descent rate of approx:
-moho_descent_rate = 1.0 * mm/yr
+moho_descent_rate = 1.0 * mm/yr # m/s
 h0 = 50. * km # thicken the crust by 50 km
 v0 = moho_descent_rate
-t0 = h0 / v0
+t0 = h0 / v0 # seconds
 
 crustal_rho = 2780.
 gravity = 9.81
@@ -112,7 +127,7 @@ compositions = [
 #    "si58_norm"
 #]
 
-tectonic_settings = [
+tectonic_settings: List[TectonicSetting] = [
     {
         "setting": "hot-1",
         "L0": 55.e3,
@@ -692,12 +707,12 @@ def run_experiment(scenario):
     
     scenario["T"] = T # K
     scenario["P"] = P # bar
-    scenario["rho"] = rho + oxide_density_10gcc/10.0 # g/cm3
+    scenario["rho"] = np.asarray(rho) + oxide_density_10gcc/10.0 # g/cm3
     scenario["mi"] = mi_times # phase mass fractions
     scenario["Cik"] = Cik_times # endmember mass fractions
     scenario["Xik"] = np.asarray([rxn.C_to_X(c) for c in Cs_times], dtype="object") # endmember mol. fractions
     scenario["z"] = depth_m
-    scenario["time"] = t
+    scenario["time"] = t # 
     return scenario
 
 #####################################
@@ -710,7 +725,7 @@ if load_output:
         scenarios_out = pickle.load(pickle_file)
 else:
     print("Preparing to run {} scenarios".format(len(scenarios)))
-    scenarios_in = [setup_ics(s) for s in scenarios]
+    scenarios_in:List[InputScenario] = [setup_ics(s) for s in scenarios]
 
     # run for varying damkhoeler numbers
     with Pool(num_processes) as pool:
@@ -783,6 +798,7 @@ for out in scenarios_out:
     effective_delta_rho = np.nanmean(delta_rho)
     out["effective_delta_rho"] = effective_delta_rho
     out["max_rho"] = max_rho
+    out["max_delta_rho"] = max_rho - max_rho_py if max_rho - max_rho_py > 0 else float("NaN")
 
     # Densification rate
     time = np.linspace(0,end_t, rho.size) * t0 # seconds
@@ -819,21 +835,22 @@ for out in scenarios_out:
         out["max_densification_rate_"+bin_width_string] = np.nanmax(bin_means)
 
 # Create '_critical' plot
-selected_compositions = [
+selected_compositions = compositions
+#[
     #"mackwell_1998_maryland_diabase_norm",
     #"hacker_2015_md_xenolith_norm",
     #"sammon_2021_lower_crust_norm",
     #"sammon_2021_deep_crust_norm",
-    "si50_norm",
-    "si51_norm",
-    "si52_norm",
-    "si53_norm",
-    "si54_norm",
-    "si55_norm",
-    "si56_norm",
-    "si57_norm",
-    "si58_norm"
-]
+    #"si50_norm",
+    #"si51_norm",
+    #"si52_norm",
+    #"si53_norm",
+    #"si54_norm",
+    #"si55_norm",
+    #"si56_norm",
+    #"si57_norm",
+    #"si58_norm"
+#]
 
 selected_outputs = [o for o in scenarios_out if o["composition"] in selected_compositions]
 
@@ -886,6 +903,7 @@ plt.xlabel("Da")
 plt.ylabel("Critical depth (km)")
 plt.savefig(Path(output_path,"{}.{}".format("_critical", "pdf")), metadata=pdf_metadata, bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
 plt.savefig(Path(output_path,"{}.{}".format("_critical", "png")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
+plt.close(fig)
 
 # Write summary data to CSV
 with open(Path(output_path,'_critical.csv'),'w') as csvfile:
@@ -914,6 +932,7 @@ with open(Path(output_path,'_critical.csv'),'w') as csvfile:
         'qs0',
         'qs1',
         'effective_delta_rho',
+        'max_delta_rho',
         'max_rho'
     ]
     for key,val in bin_widths.items():
@@ -923,6 +942,137 @@ with open(Path(output_path,'_critical.csv'),'w') as csvfile:
     for out in scenarios_out:
         writer.writerow(out)
     print("wrote _critical.csv")
+
+for _da in [1,10,100,1000]:
+    # Setup figure for Rayleigh-Taylor analysis by composition
+    fig = plt.figure(figsize=(3.75, 3.5))
+    plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+    # y axis is time (yr) in log scale
+    # x axis is layer thickness (km), linear
+    plt.gca().set_ylim([1e5,5e7])
+    plt.gca().set_yscale("log")
+    plt.gca().set_xlim([0,40])
+
+    thickening_rate = v0 * yr # converted from m/s to m/yr
+    plt.plot(np.logspace(5,8,num=200)*thickening_rate/1e3, np.logspace(5,8,num=200),'k-')
+    plt.plot(np.logspace(5,8,num=200)*0.7*thickening_rate/1e3, np.logspace(5,8,num=200),'k--',alpha=0.7,linewidth=0.5)
+    plt.plot(np.logspace(5,8,num=200)*1.3*thickening_rate/1e3, np.logspace(5,8,num=200),'k--',alpha=0.7,linewidth=0.5)
+
+    drew_legend=False
+    plt.gca().set_prop_cycle(plt.cycler("linestyle", ['-','--',':']))
+
+    outs_c = sorted([o for o in scenarios_out 
+        if (o["composition"] in selected_compositions and o["Da"]==_da and o["setting"][:3]=="hot")
+    ], key=lambda o: (o["composition"],o["setting"]))
+
+    for i, obj in enumerate(outs_c):
+        composition = obj["composition"]
+
+        if composition=='mackwell_1998_maryland_diabase':
+            color='cornflowerblue'
+        elif composition=='hacker_2015_md_xenolith':
+            color='mediumseagreen'
+        elif composition=='sammon_2021_lower_crust':
+            color='indianred'
+        else:
+            continue
+        
+        print("composition: "+composition)
+        T = obj["T"]
+        P = obj["P"]
+
+        rho_pyrolite=np.array(ipyrolite((T, P/1e4)))*100. # kg/m3
+
+        dens_rate = obj["max_densification_rate_100kyr"]/1e6 # kg/m3/Myr -> kg/m3/yr
+
+        densities = np.array(obj["rho"]) * 1000.
+        drho = densities - rho_pyrolite
+        is_root = drho > 0.
+
+        root_drho = drho[is_root]
+
+        max_drho = max(drho)
+        if(max_drho < 0):
+            continue
+        
+        print("max drho: {:.2f}".format(max_drho))
+        temp = obj["T1"]
+        Da = obj["Da"]
+
+        times_unitless = obj["time"]
+        times_yr = times_unitless * t0/yr
+
+        # thickness over time
+        h = times_yr*(v0*yr) # meters
+
+        #drhos = np.array(times*dens_rate)
+        #drhos[drhos > max_drho] = max_drho
+        drhos = np.ones(h.size)*root_drho[-1]
+        drhos[:root_drho.size] = root_drho
+
+        avg_drho = np.array([sum(drhos[:ir+1])/(ir+1) for ir,r in enumerate(drhos)])   
+
+        Rgas = 8.3145 # J/mol/K
+        g = 9.81 # m/s2
+        # non-Newtonian deformation
+
+        # For Eclogite
+        A_Mpa = 10.**3.3 # Jin 2001 eclogite, following Molnar & Garzione, Zieman
+        Q = 480.e3 # kJ/mol for eclogite
+        n=3.4
+
+        # For Wet Olivine
+        #A_Mpa = 1.9e3 # wet olivine
+        #Q = 420e3
+        #n = 3.
+
+        # Weaken B to account for fluids
+        # Eclogite rheology is dry
+        f = 0.5
+
+        A = A_Mpa*(1e6)**(-n) # Pa^-3.4 s^-1
+        F = 3.**(-(n+1.)/2./n)*(2)**(1./n) # convert imposed strain fields in lab to a general geometry
+        B = f*F*(A)**(-1./n)*np.exp(Q/(n*Rgas*temp)) # Pa s = kg/m/s
+
+        print("T: {:.2f}".format(temp))
+        print("B: {:.2e}".format(B))
+
+        Timescale = (B/(2.*avg_drho*g*h))**n # Eq 7, gives a timescale in seconds
+        
+        # growth rate factor, Jull & Kelemen 2001 Fig. 15
+        Cp = 0.66 # strong layer, follows Zieman
+        # Zieman assumes 33% for initial displacement, Z0
+        Zp0 = 0.33
+
+        tbp0 = ((n/Cp)**n)*((Zp0)**(1-n))/(n-1) # Eq 12, dimensionless time for 100% deflection
+        # on the order of 100?
+        
+        print("tbp0: {:.2e}".format(tbp0))
+
+        # Timescale is approx 1e15 seconds
+
+        exx = 1e-14 # horizontal strain rate, Behn et al. 2007, Zieman
+        epxx = exx * Timescale # by Eq. 8, dimensionless, approx 10
+        epxx0 = 1e-18 * Timescale # by Eq. 8, dimensionless, approx 1e-3
+        dtp = 2e5-3e7
+        dep = 1e-6-3e-10
+        #dtpdep = dtp/dep # ~ -3e13 assuming it's not in log units
+        dtpdep = -0.5 # assuming it is in log units
+
+        exponent = np.double(-epxx/tbp0*dtpdep) # ~1e14?
+        print("exponent: {:.2e} -- {:.2e}".format(min(exponent),max(exponent)))
+        tbp = tbp0*(epxx/epxx0)**exponent # instability time, dimensionless
+
+        tb_yr = tbp*Timescale/yr # instability time, years
+        plt.plot(h/1e3,tb_yr, linewidth=(temp/1273.15)**2, color=color)
+        print("\n")
+
+    plt.savefig(Path(output_path,"_instability.{}.{}".format(_da,"pdf")), metadata=pdf_metadata)
+    plt.savefig(Path(output_path,"_instability.{}.{}".format(_da,"png")))
+    plt.close(fig)
+
+quit()
 
 # Output plots for every composition & tectonic setting
 for composition in compositions:
@@ -1065,3 +1215,4 @@ for tectonic_setting in tectonic_settings:
         plt.savefig(Path(output_path,"_collage.{}.{}".format(setting,"pdf")), metadata=pdf_metadata)
         plt.savefig(Path(output_path,"_collage.{}.{}".format(setting,"png")))
         plt.close(fig)
+
