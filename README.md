@@ -36,9 +36,11 @@ Run them as follows
 - `python3 parallel_profile2.py` generates a 1-d profile in (p,T)-space
 - `python3 parallel_experiment.py` is a simple geodynamic experiment, lithospheric thickening
 
-In all cases, you can pass the name of any pre-defined composition that exists in the `notebooks/compositions` folder. For example, `python3 parallel_pd.py -c hacker_2015_md_xenolith`.
+In all cases, you can pass the name of any pre-defined composition that exists in the `notebooks/compositions` folder. 
+For example, `python3 parallel_pd.py -c hacker_2015_md_xenolith`.
+By default the `parallel_*` scripts use all available CPU cores.
 
-Other arguments as follows
+Arguments can be passed as follows to customize the model runs:
 
 | CLI argument    |  Purpose                           | Default |
 |-----------------|------------------------------------|---------|
@@ -50,4 +52,3 @@ Other arguments as follows
 |   `-f`          | Force model to recalculate results | False |
 |   `-p [string]`  | String to prefix output directory  | None |
 
-By default the `parallel_*` scripts use all available CPU cores.
