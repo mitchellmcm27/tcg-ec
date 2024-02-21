@@ -14,6 +14,17 @@ from geotherm_steady import geotherm_steady
 import csv
 from typing import TypedDict,List,Tuple
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 class TectonicSetting(TypedDict):
     setting:str
     L0:float
@@ -93,7 +104,7 @@ num_processes =  mp.cpu_count()
 pdf_metadata = {'CreationDate': None}
 
 # Damkoehler numbers
-Das = [1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]
+Das = [1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5]
 
 # Account for dense oxides not included in SLB database
 oxide_density_10gcc = 0.3
@@ -758,12 +769,28 @@ def run_experiment(scenario:InputScenario)->OutputScenario:
 #####################################
 # Deal with result loading & saving #
 #####################################
-
+scenarios_out = None
 if load_output:
-    print("Loading pickle from file file {}".format(pickle_path))
-    with open(pickle_path, 'rb') as pickle_file:
-        scenarios_out = pickle.load(pickle_file)
-else:
+    print("Looking for pickle file {}".format(pickle_path))
+    try:
+        with open(pickle_path, 'rb') as pickle_file:
+            scenarios_out = pickle.load(pickle_file)
+            print("Successfully loaded output")
+    except:
+      sys.stdout.write("\n"+bcolors.WARNING+"WARNING: Unable to load file {}".format(pickle_path)+bcolors.ENDC)
+      sys.stdout.write("\n"+bcolors.WARNING+"Re-calculate all model scenarios (may take some time)"+bcolors.ENDC)
+      sys.stdout.write("\n"+bcolors.OKCYAN+"Continue? [Y/n]: "+bcolors.ENDC)
+      yes = {'yes','y', 'ye', ''}
+      no = {'no','n'}
+
+      choice = input().lower()
+      if choice not in yes:
+        print("Quitting...")
+        quit()
+      load_output = False
+      save_output = True
+
+if scenarios_out is None:
     print("Preparing to run {} scenarios".format(len(scenarios)))
     scenarios_in = [setup_ics(s) for s in scenarios]
 
