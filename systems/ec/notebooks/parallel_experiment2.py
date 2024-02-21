@@ -12,7 +12,7 @@ from from_perplex import *
 from scipy.integrate import solve_ivp
 from geotherm_steady import geotherm_steady
 import csv
-from typing import TypedDict,List
+from typing import TypedDict,List,Tuple
 
 class TectonicSetting(TypedDict):
     setting:str
@@ -25,9 +25,28 @@ class TectonicSetting(TypedDict):
     Ts:float
     Tlab:float
 
-class InputScenario(TypedDict):
-    name: str
-    year: int
+class InputScenario(TectonicSetting):
+    Da:float
+    composition:str
+    T0:float
+    T1:float
+    qs0:float
+    qs1:float
+    P0:float
+    Cik0:List[float]
+    mi0:List[float]
+    rho0:float
+
+class OutputScenario(InputScenario):
+    T: List[float] # K
+    P: List[float] # bar
+    rho: List[float]
+    mi: List[List[float]]
+    Cik: List[List[float]]
+    Xik: List[List[float]]
+    z: List[float]
+    time: List[float]
+
 ####################
 # Unit conversions #
 ####################
@@ -60,25 +79,10 @@ eps = 1.e-5 # default 1.e-2
 rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
 
-# Calc descent rate of Moho
-shortening_rate = 10.0 *mm/yr # m/s
-
-# thickening rate depends on the 
-# width of the region being shortened
-# and the thickness of the lithosphere
-# here we assume that the thickness is 1/3 the width
-# e.g. 100 km lithospehre, 300 km region
-# this gives a thickening rate of ~3 km/Myr
-# and a crustal thickening rate of ~1 km/Myr
-# which roughly matches Wang et al. 2015 Arizaro
-thickening_rate = shortening_rate / 3. # m/s
-
-# when crust is ~ 1/3 of lithosphere, this gives a descent rate of approx:
-moho_descent_rate = 1.0 * mm/yr # m/s
+v0 = 1.0 * mm/yr # Moho descent rate, m/s
 h0 = 50. * km # thicken the crust by 50 km
-v0 = moho_descent_rate
 t0 = h0 / v0 # seconds
-
+Tr = 2000.+273.15 # reaction's characteristic temperature (T_r)
 crustal_rho = 2780.
 gravity = 9.81
 
@@ -102,30 +106,11 @@ prefix = None
 
 # Compositions
 compositions = [
-    #"hacker_2015_bin_4",
-    #"hacker_2015_bin_3",
-    #"bhowany_2018_hol2a",
-    #"zhang_2006_mafic_granulite",
     "sammon_2021_lower_crust",
     "sammon_2021_deep_crust",
-    #"hacker_2015_bin_2",
     "hacker_2015_md_xenolith",
-    #"hacker_2015_bin_1",
-    #"zhang_2022_cd07-2",
     "mackwell_1998_maryland_diabase"
 ]
-
-#compositions = [
-#    "si50_norm",
-#    "si51_norm",
-#    "si52_norm",
-#    "si53_norm",
-#    "si54_norm",
-#    "si55_norm",
-#    "si56_norm",
-#    "si57_norm",
-#    "si58_norm"
-#]
 
 tectonic_settings: List[TectonicSetting] = [
     {
@@ -259,7 +244,6 @@ if __name__ == "__main__":
     if args.quick:
         print("Running in quick mode")
         Das = [d for d in Das if d <= 1e3]
-        compositions = compositions if args.composition is None else [args.composition]
     if args.num_processes is not None:
         num_processes = int(args.num_processes)
     if args.force:
@@ -275,7 +259,6 @@ if __name__ == "__main__":
 output_path = Path("figs",reference,rxn_name,prefix) if prefix is not None else Path("figs",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
 pickle_path = Path(output_path,"_outs.pickle")
-
 
 ######################################
 # Plot pressure-temperature profiles #
@@ -324,7 +307,7 @@ for num_setting, setting in enumerate(tectonic_settings):
 
     p = plt.plot(T-273.15, depths_sc/1e3,linewidth=1, alpha=0.5)
     color = plt.gca().lines[-1].get_color()
-    #plt.plot(T[-1]-273.15, depths_sc[-1]/1e3, "x", color=color, )
+    
     T0, _qs = geotherm_steady(z0/L0,
                     L0*shortening,
                     shortening,
@@ -370,13 +353,13 @@ for num_setting, setting in enumerate(tectonic_settings):
         zts[i] = z0*s
     
     label = setting["setting"].replace("hot","H").replace("transitional","T").replace("cold","C")
-    
-    plt.plot(np.array(Tts)-273.15,np.array(zts)/1.e3,'-',alpha=1,linewidth=1.2,color=color,label=label)
+
+    # T-z-t path
+    plt.plot(Tts-273.15, zts/1.e3,'-',alpha=1,linewidth=1.2,color=color,label=label)
 
     # points after shortening
     plt.plot(T1-273.15, z0/1e3*shortening,'.',color=color)
-    #plt.plot(T[-1]-273.15, depths_sc[-1]/1e3*shortening, "x", color=color)
-    #plt.plot(T[0]-273.15, depths_sc[0]/1e3,'kx')
+
     geotherm_latex_table["heading"][num_setting] = setting["setting"].replace("hot","H").replace("cold","C").replace("transitional","T")
     geotherm_latex_table["As"][num_setting] = As*1.e6
     geotherm_latex_table["L0"][num_setting] = L0/1.e3
@@ -442,7 +425,7 @@ with open(Path(output_path,"_geotherms_table.tex"), "w") as fil:
 
 # Create scenarios for all combinations 
 # of setting, composition, and Da       
-scenarios = []
+scenarios:List[InputScenario] = []
 for setting in tectonic_settings:
     for da in Das:
         for comp in compositions:
@@ -458,37 +441,71 @@ iharzburgite = get_rho_interpolator("xu_2008_harzburgite")
 # Get reaction/phase/endmember parameters
 rxn = get_reaction(rxn_name)
 phase_names, endmember_names = get_names(rxn)
+
 I = len(rxn.phases())
 _Kis = [len(rxn.phases()[i].endmembers()) for i in range(I)] # list, num EMs in each phase
 K = sum(_Kis)
 
+def get_u0(Fi0:List[float], cik0:List[float])->List[float]:
+    # Equilibrate the reative model at initial (T0, P0) with Da=1e5
+    # Set up vector of initial conditions
+    u0=np.empty(I+K+2) # [...I endmembers, ...K phases, P, T]
+    u0[:I] = Fi0 # intial phase mass fractions
+    u0[I:I+K] = cik0 # initial endmember mass fractions
+    u0[I+K:] = np.array([1., 1.]) # scaled T0 and P0 (T/T0 = P/P0 = 1)
+    return u0
+
+def reshape_C(rxn,cik:List[float])->List[List[float]]:
+    c:List[List[float]] = rxn.zero_C()
+    k = 0
+    for i,Ki in enumerate(_Kis):
+        c[i] = cik[k:k+Ki]
+        k = k+Ki
+    return c
+
+def get_rho(rxn, Fi:List[float], cik:List[float], T:float, P:float)->float:
+    # Calculate rho for each timestep as 1/sum_i(F_i/rho_i)
+    # for which we need the endmember compositions as a vector for each phase (Cs_times)
+    rhoi = rxn.rho(T,P,cik) # phase densities rho_i
+    rho = 1/sum(Fi/rhoi)/10.0 # g/cm3 
+    return rho
+
 # Get equilibrated initial condition (with cache to avoid repeating work)
 ic_cache = {}
-def get_initial_composition(T0,P0,rxn,composition):
-    slug = "{:.4f}-{:.4f}-{}-{}".format(T0,P0,rxn.name(),composition)
+def get_initial_composition(T0:float,P0:float,composition_name:str)->Tuple[List[float],List[float],float]:
+    rxn = get_reaction(rxn_name)
+    slug = "{:.4f}-{:.4f}-{}-{}".format(T0,P0,rxn.name(),composition_name)
     if slug in ic_cache:
         return ic_cache[slug]
-
-    # Get equilibrium composition at arbitrary P,T
-    mi0, Xik0, phii0, Cik0 = get_point_composition(rxn, composition) 
-    _Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
-    _mi0 = phi2m(rxn, phii0, _Cik0) if mi0 is None else mi0
-
-    # Equilibrate model at initial (T0, P0)
-    ode = ScipyPDReactiveODE(rxn)
-    ode.solve(T0, P0,_mi0,_Cik0,1,Da=1e5,eps=eps)
     
-    rho0 = ode.final_rho()*100 # kg/m3
-    Cik0 = ode.sol.y[ode.I:ode.I+ode.K,-1] # -1 = final time step
-    mi0 = ode.sol.y[:ode.I,-1]
+    rxn.set_parameter("T0",Tr)
 
-    ic_cache[slug] = (Cik0, mi0, rho0)
-    return Cik0, mi0, rho0
+    # Get equilibrium composition from Perple_X (arbitrary [P,T])
+    Fi_a, Xik_a, phii_a, cik_a = get_point_composition(rxn, composition_name) 
+    cik_a = x2c(rxn, Xik_a) if cik_a is None else cik_a
+    Fi_a = phi2m(rxn, phii_a, cik_a) if Fi_a is None else Fi_a
+
+    # Equilibrate the reative model at initial (T0, P0) with Da=1e5
+    # Set up vector of initial conditions
+    u0_a = np.concatenate((Fi_a,cik_a))
+
+    Da_eq = 1e5
+    rho_a = get_rho(rxn,np.asarray(Fi_a),reshape_C(rxn,cik_a),T0,P0)*10.
+    print(rho_a)
+    args = (rxn,Da_eq,T0,P0,rho_a)
+    sol = solve_ivp(rhs_fixed, [0, 1], u0_a, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol)
+    
+    Fi0 = sol.y[:I,-1] # -1 = final timestep
+    cik0 = sol.y[I:I+K,-1]
+    rho0 = get_rho(rxn,Fi0,reshape_C(rxn,cik0),T0,P0)*1000. # kg/m3
+
+    ic_cache[slug] = (cik0, Fi0, rho0)
+    return cik0, Fi0, rho0
 
 # Get full initial conditions
-def get_initial_state(rxn,scenario):
+def get_initial_state(scenario:TectonicSetting)->InputScenario:
 
-    composition = scenario['composition']
+    composition_name = scenario['composition']
     L0 = scenario["L0"]
     z0 = scenario["z0"]
     As = scenario["As"]
@@ -527,14 +544,13 @@ def get_initial_state(rxn,scenario):
     P0 = crustal_rho * gravity * z0/1e5 # bar
 
     # Initial composition (equilibrium at T0,P0)
-    Cik0, mi0, rho0 = get_initial_composition(T0,P0,rxn,composition)
+    Cik0, mi0, rho0 = get_initial_composition(T0,P0,composition_name)
 
     return T0, P0, Cik0, mi0, rho0, qs0, T1, qs1
 
 # Gets all initial conditions and save to scenario
-def setup_ics(scenario):
-    rxn = get_reaction(rxn_name)
-    T0, P0, Cik0, mi0, rho0,qs0,T1,qs1 = get_initial_state(rxn,scenario)
+def setup_ics(scenario:TectonicSetting)->InputScenario:
+    T0, P0, Cik0, mi0, rho0,qs0,T1,qs1 = get_initial_state(scenario)
     scenario["T0"] = T0
     scenario["T1"] = T1
     scenario["qs0"] = qs0
@@ -546,19 +562,60 @@ def setup_ics(scenario):
     return scenario
 
 #############################################
+# RHS to equilibrate at fixed P,T           #
+#############################################
+
+def rhs_fixed(t,u,rxn,Da,T,P,rho0):
+
+    Fi = u[:I] # phase mass fractions
+    cik = u[I:I+K] # endmember mass fractions
+  
+    # reshape C
+    C = rxn.zero_C() # object with correct shape
+    Kis = 0
+    for i,Ki in enumerate(_Kis):
+        C[i] = cik[Kis:Kis+Ki]
+        Kis = Kis+Ki
+
+    # regularize C by taking max of C and eps
+    Cs = [np.maximum(np.asarray(C[i],dtype=np.double), eps*np.ones(len(C[i]))) for i in range(len(C))]
+    Cs = [np.asarray(Cs[i],dtype=np.double)/sum(Cs[i]) for i in range(len(Cs))]
+    rhoi = np.array(rxn.rho(T, P, Cs)) # phase densities $\rho_i$
+    V = np.sum(Fi/rhoi) # total volume
+  
+    # regularize F by adding eps
+    Fis = np.asarray(Fi)
+    Fis = Fi + eps
+
+    # Get dimensionless Gammas from reaction
+    Gammai = np.asarray(rxn.Gamma_i(T,P,Cs,Fi))
+    gamma_ik = rxn.Gamma_ik(T,P,Cs,Fi)
+    Gammaik = np.zeros(K)
+    sKi = 0
+    for i in range(I):
+        for k in range(_Kis[i]):
+            Gammaik[sKi+k] = gamma_ik[i][k]
+        sKi += _Kis[i]
+    
+    # Calculate reactive mass flux (scaled Gammas)
+    du = np.zeros(u.shape)
+    sKi = 0
+    for i in range(I):
+        du[i] = Da*rho0*Gammai[i]*V
+        for k in range(_Kis[i]):
+            GikcGi = Gammaik[sKi+k] - C[i][k]*Gammai[i]
+            du[I+sKi+k] = Da*rho0*GikcGi*V/Fis[i]
+        sKi += _Kis[i]
+    return du
+
+#############################################
 # Define RHS of differential system of eqns #
 #############################################
 
 def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
-
-    # Damkholer number could be modulated here if wanted
-
-    # Extract variables
-
-    # NOTE: this is here called Fi for consistency with the paper. Elsewhere in the file it is called mi
-    Fi = u[:I] # phase mass fractions
     
-    # NOTE: this is here called cik for consistency with the paper. Elsewhere in the file it's called Cik
+    # Extract variables
+    Fi = u[:I] # phase mass fractions
     cik = u[I:I+K] # endmember mass fractions
 
     T = u[I+K]
@@ -579,7 +636,7 @@ def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
 
     # regularize C by taking max of C and eps
     Cs = [np.maximum(np.asarray(C[i]), eps*np.ones(len(C[i]))) for i in range(len(C))]
-    Cs = [np.asarray(C[i])/sum(C[i]) for i in range(len(C))]
+    Cs = [np.asarray(Cs[i])/sum(Cs[i]) for i in range(len(Cs))]
 
     rhoi = np.array(rxn.rho(Ts, Ps, Cs)) # phase densities $\rho_i$
     V = np.sum(Fi/rhoi) # total volume
@@ -633,9 +690,7 @@ def rhs(t,u,rxn,scale,Da,L0,z0,As,hr0,conductivity,T_surf,Tlab):
 # Function that runs scenarios in parallel #
 ############################################
 
-def run_experiment(scenario):
-
-    # print("Running ", scenario, "...\n")
+def run_experiment(scenario:InputScenario)->OutputScenario:
     Da = scenario["Da"]
     L0 = scenario["L0"]
     z0 = scenario["z0"]
@@ -653,19 +708,13 @@ def run_experiment(scenario):
 
     rxn = get_reaction(rxn_name)
 
-    # Set reaction's characteristic Arrhenius temperature (T_r in paper)
-    rxn.set_parameter("T0",2000+273.15) # 2000 C gives a good fit to data
+    # Set reaction's characteristic Arrhenius temperature (T_r)
+    rxn.set_parameter("T0",Tr)
 
     scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0)}
 
     # Set up vector of initial conditions
-    u0=np.empty(I+K+2) # each endmember, each phase, pressure, temperature
-    u0[:I] = mi0 # intial phase mass fractions
-    u0[I:I+K] = Cik0 # initial endmember mass fractions
-    u0[I+K:] = np.array([1., 1.]) # scaled T0 and P0 (T/T0 = P/P0 = 1)
-
-    #event = lambda t,y,rxn,scale,Da: Pmax - y[-1]*scale["P"] # when pressure = Pmax
-    #event.terminal = True
+    u0 = get_u0(mi0,Cik0)
 
     # Rescale damkohler number in case the end time is not 1
     _da = Da * end_t
@@ -684,17 +733,8 @@ def run_experiment(scenario):
 
     mi_times  = y[:I].T # vector for each timestep
     Cik_times = y[I:I+K].T # 2d array for each timestep
-
-    # reshape C
-    def reshape_C(Cik):
-        C = rxn.zero_C()
-        k = 0
-        for i,Ki in enumerate(_Kis):
-            C[i] = Cik[k:k+Ki]
-            k = k+Ki
-        return C
     
-    Cs_times = [reshape_C(Cik) for Cik in Cik_times] # vector for each timestep
+    Cs_times = [reshape_C(rxn,Cik) for Cik in Cik_times] # vector for each timestep
 
     # Calculate rho for each timestep as 1/sum_i(F_i/rho_i)
     # for which we need the endmember compositions as a vector for each phase (Cs_times)
@@ -725,7 +765,7 @@ if load_output:
         scenarios_out = pickle.load(pickle_file)
 else:
     print("Preparing to run {} scenarios".format(len(scenarios)))
-    scenarios_in:List[InputScenario] = [setup_ics(s) for s in scenarios]
+    scenarios_in = [setup_ics(s) for s in scenarios]
 
     # run for varying damkhoeler numbers
     with Pool(num_processes) as pool:
@@ -834,42 +874,30 @@ for out in scenarios_out:
         bin_means = [dens_rate_masked[digitized_t == i].mean() for i in range(len(bins))]
         out["max_densification_rate_"+bin_width_string] = np.nanmax(bin_means)
 
-# Create '_critical' plot
-selected_compositions = compositions
-#[
-    #"mackwell_1998_maryland_diabase_norm",
-    #"hacker_2015_md_xenolith_norm",
-    #"sammon_2021_lower_crust_norm",
-    #"sammon_2021_deep_crust_norm",
-    #"si50_norm",
-    #"si51_norm",
-    #"si52_norm",
-    #"si53_norm",
-    #"si54_norm",
-    #"si55_norm",
-    #"si56_norm",
-    #"si57_norm",
-    #"si58_norm"
-#]
+###########################
+# Plot max. stable depths #
+###########################
 
+selected_compositions = compositions
 selected_outputs = [o for o in scenarios_out if o["composition"] in selected_compositions]
 
-depths = [o['critical_depth'] for o in selected_outputs]
+depths = np.asarray([o['critical_depth'] for o in selected_outputs])
+temps = np.asarray([o["critical_temperature"] for o in selected_outputs])
 
-T0s = np.asarray([o["T0"] - 273.15 for o in selected_outputs])
+das = np.asarray([o["Da"] for o in selected_outputs])
 
-def T2size(T):
-    return ((1 - (T-np.min(T))/(np.max(T)-np.min(T)))*6 + 3)**2
-def size2T(s):
-    return -((np.sqrt(s)-3)/6 - 1)*(np.max(T0s)-np.min(T0s))+np.min(T0s)
+def da2size(d):
+    return ((1 - (d-np.min(d))/(np.max(d)-np.min(d)))*6 + 3)**2
+def size2da(s):
+    return -((np.sqrt(s)-3)/6 - 1)*(np.max(das)-np.min(das))+np.min(das)
 
-sizes = T2size(T0s)
+sizes = da2size(das)
 
 comps = [o["composition"] for o in selected_outputs]
 codes = [selected_compositions.index(c) for c in comps]
 
 fig = plt.figure(figsize=(5,7))
-s = plt.scatter([o["Da"] for o in selected_outputs], np.asarray(depths)/1e3, s=sizes, c=codes, cmap="tab10", alpha=0.5)
+s = plt.scatter(temps-273.15, depths/1e3, s=sizes, c=codes, cmap="tab10", alpha=0.5)
 
 # produce a legend with the unique colors from the scatter
 ax = plt.gca()
@@ -889,23 +917,25 @@ handles, labels = s.legend_elements(
     prop="sizes",
     alpha=0.6,
     fmt="{x:.0f}",
-    func=size2T
+    func=size2da
 )
 
 legend2 = ax.legend(handles, 
                     labels, 
                     loc="upper left",
                     bbox_to_anchor=(1.04,1),
-                    title="$T_0$ (°C)")
+                    title="Da")
 ax.set_ylim(top=30, bottom=85)
-plt.semilogx()
-plt.xlabel("Da")
+plt.xlabel("Temperature (°C)")
 plt.ylabel("Critical depth (km)")
 plt.savefig(Path(output_path,"{}.{}".format("_critical", "pdf")), metadata=pdf_metadata, bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
 plt.savefig(Path(output_path,"{}.{}".format("_critical", "png")),bbox_extra_artists=(legend1,legend2), bbox_inches='tight')
 plt.close(fig)
 
-# Write summary data to CSV
+#############################
+# Write summary data to CSV #
+#############################
+
 with open(Path(output_path,'_critical.csv'),'w') as csvfile:
     fieldnames = [
         'setting',
@@ -943,6 +973,9 @@ with open(Path(output_path,'_critical.csv'),'w') as csvfile:
         writer.writerow(out)
     print("wrote _critical.csv")
 
+#############################
+# Rayleigh--Taylor analysis #
+#############################
 for _da in [1,10,100,1000]:
     # Setup figure for Rayleigh-Taylor analysis by composition
     fig = plt.figure(figsize=(3.75, 3.5))
@@ -954,10 +987,10 @@ for _da in [1,10,100,1000]:
     plt.gca().set_yscale("log")
     plt.gca().set_xlim([0,40])
 
-    thickening_rate = v0 * yr # converted from m/s to m/yr
-    plt.plot(np.logspace(5,8,num=200)*thickening_rate/1e3, np.logspace(5,8,num=200),'k-')
-    plt.plot(np.logspace(5,8,num=200)*0.7*thickening_rate/1e3, np.logspace(5,8,num=200),'k--',alpha=0.7,linewidth=0.5)
-    plt.plot(np.logspace(5,8,num=200)*1.3*thickening_rate/1e3, np.logspace(5,8,num=200),'k--',alpha=0.7,linewidth=0.5)
+    v0_yr = v0 * yr # converted from m/s to m/yr
+    plt.plot(np.logspace(5,8,num=200)*v0_yr/1e3, np.logspace(5,8,num=200),'k-')
+    plt.plot(np.logspace(5,8,num=200)*0.7*v0_yr/1e3, np.logspace(5,8,num=200),'k--',alpha=0.7,linewidth=0.5)
+    plt.plot(np.logspace(5,8,num=200)*1.3*v0_yr/1e3, np.logspace(5,8,num=200),'k--',alpha=0.7,linewidth=0.5)
 
     drew_legend=False
     plt.gca().set_prop_cycle(plt.cycler("linestyle", ['-','--',':']))
@@ -970,7 +1003,7 @@ for _da in [1,10,100,1000]:
         composition = obj["composition"]
 
         if composition=='mackwell_1998_maryland_diabase':
-            color='cornflowerblue'
+            color='dodgerblue'
         elif composition=='hacker_2015_md_xenolith':
             color='mediumseagreen'
         elif composition=='sammon_2021_lower_crust':
@@ -1072,9 +1105,11 @@ for _da in [1,10,100,1000]:
     plt.savefig(Path(output_path,"_instability.{}.{}".format(_da,"png")))
     plt.close(fig)
 
-quit()
 
-# Output plots for every composition & tectonic setting
+##########################################################
+# Summary plots for every composition & tectonic setting #
+##########################################################
+    
 for composition in compositions:
     for tectonic_setting in tectonic_settings:
         setting = tectonic_setting["setting"]
@@ -1179,11 +1214,16 @@ for composition in compositions:
             axes["An"].plot(XAn, obj["z"])
             axes["Jd"].plot(XJd, obj["z"])
 
-        fig.suptitle("{}, {}, $v_0=${:.1f} km/Myr, $S0=${} 1/m".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), moho_descent_rate/1e3*yr*1e6, S0),y=0.9)
+        fig.suptitle("{}, {}, $v_0=${:.1f} km/Myr, $S0=${} 1/m".format(composition.capitalize().replace("_"," "), setting.replace("_",", "), v0/1e3*yr*1e6, S0),y=0.9)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"pdf")), metadata=pdf_metadata)
         plt.savefig(Path(output_path,"{}.{}.{}".format(setting,composition,"png")))
         plt.close(fig)
 
+
+#####################################################
+# For each setting, plot each composition's density #
+#####################################################
+        
 for tectonic_setting in tectonic_settings:
 
         setting = tectonic_setting["setting"]
@@ -1204,14 +1244,33 @@ for tectonic_setting in tectonic_settings:
         [ax.set_xlim([2.8,3.5]) for label,ax in axes.items()]
         [ax.set_xticks([2.8,3.0,3.2,3.4]) for label,ax in axes.items()]
         [ax.set_ylim([80,30]) for label,ax in axes.items()]
+
         rho_pyrolite=ipyrolite((T, P/1e4))/10
         rho_harzburgite=iharzburgite((T,P/1e4))/10
+
+
         for i, obj in enumerate(outs_c):
             ax = axes[obj["composition"]]
-            ax.plot(obj["rho"], obj["z"]/1e3)
+            
+            if obj["composition"]=='mackwell_1998_maryland_diabase':
+                color='dodgerblue'
+            elif obj["composition"]=='hacker_2015_md_xenolith':
+                color='mediumseagreen'
+            elif obj["composition"]=='sammon_2021_lower_crust':
+                color='indianred'
+            elif obj["composition"]=='sammon_2021_deep_crust':
+                color='goldenrod'
+            else:
+                color='black'
+
+            linewidth = 0.75 if obj["Da"] >= 1e3 else 0.25
+
+            ax.plot(obj["rho"], obj["z"]/1e3, color=color,linewidth=linewidth)
+
             if obj["Da"] == 1:
                 ax.plot(rho_pyrolite, obj["z"]/1e3, "r:")
                 ax.plot(rho_harzburgite, obj["z"]/1e3, "g:")
+
         plt.savefig(Path(output_path,"_collage.{}.{}".format(setting,"pdf")), metadata=pdf_metadata)
         plt.savefig(Path(output_path,"_collage.{}.{}".format(setting,"png")))
         plt.close(fig)

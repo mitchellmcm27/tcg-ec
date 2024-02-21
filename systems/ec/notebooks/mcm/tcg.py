@@ -270,12 +270,12 @@ def phi2m(rxn, phii0, Cik0, T=900.,p=10000.,eps=1e-5):
 def get_reaction(rxnName):
     pv = repr(sys.version_info.major)+'.'+repr(sys.version_info.minor)
     path = os.path.join(os.path.pardir, 'database', 'install', rxnName,
-                        'lib', 'python'+pv, 'site-packages/')  # the final slash is necessary!
+                        'lib', 'python'+pv, 'site-packages/')  # the final slash is necessary
     sys.path.append(path)
     #print(path)
     tcgdb = __import__('py_'+rxnName)
-    func = getattr(tcgdb, rxnName)
-    rxn = func()  # <-- this should work!
+    importer = getattr(tcgdb, rxnName)
+    rxn = importer()
     return rxn
 
 def get_names(rxn):
