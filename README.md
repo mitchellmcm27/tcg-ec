@@ -33,9 +33,21 @@ Calculation scripts are in the `notebooks` directory.
 Run them as follows
 
 - `python3 parallel_pd.py` generates a (p,T) pseudosection
-- `python3 parallel_profile.py` generates a 1-d profile in (p,T)-space
+- `python3 parallel_profile2.py` generates a 1-d profile in (p,T)-space
 - `python3 parallel_experiment.py` is a simple geodynamic experiment, lithospheric thickening
 
-In all cases, you can pass the name of any pre-defined composition that exists in the `notebooks/compositions` folder. For example, `python3 parallel_pd.py hacker_2015_md_xenolith`.
+In all cases, you can pass the name of any pre-defined composition that exists in the `notebooks/compositions` folder. For example, `python3 parallel_pd.py -c hacker_2015_md_xenolith`.
+
+Other arguments as follows
+
+| CLI argument    |  Purpose                           | Default |
+|-----------------|------------------------------------|---------|
+|   `-n [int]`    | Number of CPU processes to use     | `mp.cpu_count()` |
+|   `-e [float]`  | Scaled ending time                 |  1               |
+|   `-c [string]` | Bulk composition to use, by name   | an array of 4 compositions |
+|   `-r [string]` | Reaction to use, by name           | `eclogitization_2024_stx21_rx` |
+|   `-q`          | Run in "quick mode" (_Da_ ≤ 1e3)   | False |
+|   `-f`          | Force model to recalculate results | False |
+|   `-p [string]`  | String to prefix output directory  | None |
 
 By default the `parallel_*` scripts use all available CPU cores.
