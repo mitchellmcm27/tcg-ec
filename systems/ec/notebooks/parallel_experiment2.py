@@ -1250,7 +1250,12 @@ for composition in compositions:
 #####################################################
 # For each setting, plot each composition's density #
 #####################################################
-        
+selected_compositions = [
+    "sammon_2021_deep_crust",
+    "sammon_2021_lower_crust",
+    "hacker_2015_md_xenolith",
+    "mackwell_1998_maryland_diabase"
+]        
 for tectonic_setting in tectonic_settings:
 
         setting = tectonic_setting["setting"]
@@ -1290,7 +1295,7 @@ for tectonic_setting in tectonic_settings:
             else:
                 color='black'
 
-            linewidth = 0.75 if obj["Da"] >= 1e3 else 0.25
+            linewidth = 1. if obj["Da"] >= 1e3 else 0.35
 
             ax.plot(obj["rho"], obj["z"]/1e3, color=color,linewidth=linewidth)
 
