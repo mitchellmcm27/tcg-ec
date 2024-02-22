@@ -1023,7 +1023,7 @@ for _da in [1,10,100,1000]:
     plt.gca().set_prop_cycle(plt.cycler("linestyle", ['-','--',':']))
 
     outs_c = sorted([o for o in scenarios_out 
-        if (o["composition"] in selected_compositions and o["Da"]==_da and o["setting"][:3]=="hot")
+        if (o["composition"] in selected_compositions and o["Da"]==_da)
     ], key=lambda o: (o["composition"],o["setting"]))
 
     for i, obj in enumerate(outs_c):
