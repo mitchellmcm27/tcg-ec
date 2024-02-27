@@ -1,7 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from fd1d_heat_implicit import *
-from scipy.integrate import solve_bvp
 
 def geotherm_steady(m, # between 0 and 1
                     L, # length scale
