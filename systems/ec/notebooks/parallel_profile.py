@@ -16,12 +16,14 @@ rxn_name = 'eclogitization_2024_stx21_rx'
 
 # end time of reactions, change with -e argument
 end_t = 1
+# reaction's characteristic temperature (T_r)
+Tr = 3000.+273.15 
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-3 # 1.e-2
 
 # Damkhoeler number, change with -d argument
-Da = 3e5 # 1.0
+Da = 1e7 # 1.0
 # regularization parameter for compositions
 eps = 1.e-5 # 1.e-2
 # these numbers seem to work very well with eps = 1e-5??
@@ -98,6 +100,7 @@ else:
 
 
 rxn = get_reaction(rxn_name)
+rxn.set_parameter("T0", Tr)
 table = latex_reactions(rxn)
 
 with open(Path(outputPath,"reaction_table_body.tex"), "w") as text_file:

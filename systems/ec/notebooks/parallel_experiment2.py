@@ -44,16 +44,16 @@ class InputScenario(TectonicSetting):
     qs0:float
     qs1:float
     P0:float
-    Cik0:List[float]
-    mi0:List[float]
+    cik0:List[float]
+    Fi0:List[float]
     rho0:float
 
 class OutputScenario(InputScenario):
     T: List[float] # K
     P: List[float] # bar
     rho: List[float]
-    mi: List[List[float]]
-    Cik: List[List[float]]
+    Fi: List[List[float]]
+    cik: List[List[float]]
     Xik: List[List[float]]
     z: List[float]
     time: List[float]
@@ -93,7 +93,7 @@ atol = 1.e-9 # absolute tolerance, default 1e-9
 v0 = 1.0 * mm/yr # Moho descent rate, m/s
 h0 = 50. * km # thicken the crust by 50 km
 t0 = h0 / v0 # seconds
-Tr = 2000.+273.15 # reaction's characteristic temperature (T_r)
+Tr = 3000.+273.15 # reaction's characteristic temperature (T_r)
 crustal_rho = 2780.
 gravity = 9.81
 
@@ -104,7 +104,9 @@ num_processes =  mp.cpu_count()
 pdf_metadata = {'CreationDate': None}
 
 # Damkoehler numbers
-Das = [1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5]
+Das = [1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7]
+print(Das)
+
 
 # Account for dense oxides not included in SLB database
 oxide_density_10gcc = 0.3
@@ -254,7 +256,8 @@ if __name__ == "__main__":
         rxn_name = args.rxn_name
     if args.quick:
         print("Running in quick mode")
-        Das = [d for d in Das if d <= 1e3]
+        Das = [d for d in Das if d <= 1e4]
+        print("Only running Da = {}".format(Das))
     if args.num_processes is not None:
         num_processes = int(args.num_processes)
     if args.force:
@@ -496,11 +499,11 @@ def get_initial_composition(T0:float,P0:float,composition_name:str)->Tuple[List[
     cik_a = x2c(rxn, Xik_a) if cik_a is None else cik_a
     Fi_a = phi2m(rxn, phii_a, cik_a) if Fi_a is None else Fi_a
 
-    # Equilibrate the reative model at initial (T0, P0) with Da=1e5
+    # Equilibrate the reative model at initial (T0, P0) with Da=1e8
     # Set up vector of initial conditions
     u0_a = np.concatenate((Fi_a,cik_a))
 
-    Da_eq = 1e5
+    Da_eq = 1e8
     rho_a = get_rho(rxn,np.asarray(Fi_a),reshape_C(rxn,cik_a),T0,P0)*10.
     print(rho_a)
     args = (rxn,Da_eq,T0,P0,rho_a)
@@ -555,20 +558,20 @@ def get_initial_state(scenario:TectonicSetting)->InputScenario:
     P0 = crustal_rho * gravity * z0/1e5 # bar
 
     # Initial composition (equilibrium at T0,P0)
-    Cik0, mi0, rho0 = get_initial_composition(T0,P0,composition_name)
+    cik0, Fi0, rho0 = get_initial_composition(T0,P0,composition_name)
 
-    return T0, P0, Cik0, mi0, rho0, qs0, T1, qs1
+    return T0, P0, cik0, Fi0, rho0, qs0, T1, qs1
 
 # Gets all initial conditions and save to scenario
 def setup_ics(scenario:TectonicSetting)->InputScenario:
-    T0, P0, Cik0, mi0, rho0,qs0,T1,qs1 = get_initial_state(scenario)
+    T0, P0, cik0, Fi0, rho0,qs0,T1,qs1 = get_initial_state(scenario)
     scenario["T0"] = T0
     scenario["T1"] = T1
     scenario["qs0"] = qs0
     scenario["qs1"] = qs1
     scenario["P0"] = P0
-    scenario["Cik0"] = Cik0
-    scenario["mi0"] = mi0
+    scenario["cik0"] = cik0
+    scenario["Fi0"] = Fi0
     scenario["rho0"] = rho0
     return scenario
 
@@ -710,8 +713,8 @@ def run_experiment(scenario:InputScenario)->OutputScenario:
     z1 = scenario["z1"]
     T0 = scenario["T0"]
     P0 = scenario["P0"] 
-    Cik0 = scenario["Cik0"]
-    mi0 = scenario["mi0"]
+    cik0 = scenario["cik0"]
+    Fi0 = scenario["Fi0"]
     rho0 = scenario["rho0"]
     k = scenario["k"]
     Ts = scenario["Ts"]
@@ -725,14 +728,14 @@ def run_experiment(scenario:InputScenario)->OutputScenario:
     scale= {"T":T0, "P":P0, "rho":rho0, "h":(z1-z0)}
 
     # Set up vector of initial conditions
-    u0 = get_u0(mi0,Cik0)
+    u0 = get_u0(Fi0,cik0)
 
     # Rescale damkohler number in case the end time is not 1
     _da = Da * end_t
     args = (rxn,scale,_da,L0,z0,As,hr0,k,Ts,Tlab)
 
     # Solve IVP using BDF method
-    sol = solve_ivp(rhs, [0, end_t], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None)
+    sol = solve_ivp(rhs, [0, end_t], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None, min_step=1e-5)
     
     # resample solution
     t = np.linspace(0,end_t,1000)
@@ -742,16 +745,16 @@ def run_experiment(scenario:InputScenario)->OutputScenario:
     T = y[-2]*scale["T"] # K
     P = y[-1]*scale["P"] # bar
 
-    mi_times  = y[:I].T # vector for each timestep
-    Cik_times = y[I:I+K].T # 2d array for each timestep
+    Fi_times  = y[:I].T # vector for each timestep
+    cik_times = y[I:I+K].T # 2d array for each timestep
     
-    Cs_times = [reshape_C(rxn,Cik) for Cik in Cik_times] # vector for each timestep
+    Cs_times = [reshape_C(rxn,cik) for cik in cik_times] # vector for each timestep
 
     # Calculate rho for each timestep as 1/sum_i(F_i/rho_i)
     # for which we need the endmember compositions as a vector for each phase (Cs_times)
-    rho = [1/sum(mi_times[t]/rxn.rho(T[t], P[t], Cs))/10 for t,Cs in enumerate(Cs_times)]
+    rho = [1/sum(Fi_times[t]/rxn.rho(T[t], P[t], Cs))/10 for t,Cs in enumerate(Cs_times)]
 
-    print("{} P_end = {:.2f} Gpa. T_end = {:.2f} K. Used {:n} steps: ".format(sol.message,P[-1]/1e4,T[-1],len(sol.t)))
+    print("{} P_end = {:.2f} Gpa. T_end = {:.2f} K. DA = {}. Used {:n} steps.".format(sol.message,P[-1]/1e4,T[-1],_da,len(sol.t)))
 
     # Back-calculate depth from pressure
     depth_m = (P*1e5) / gravity / crustal_rho
@@ -759,8 +762,8 @@ def run_experiment(scenario:InputScenario)->OutputScenario:
     scenario["T"] = T # K
     scenario["P"] = P # bar
     scenario["rho"] = np.asarray(rho) + oxide_density_10gcc/10.0 # g/cm3
-    scenario["mi"] = mi_times # phase mass fractions
-    scenario["Cik"] = Cik_times # endmember mass fractions
+    scenario["Fi"] = Fi_times # phase mass fractions
+    scenario["cik"] = cik_times # endmember mass fractions
     scenario["Xik"] = np.asarray([rxn.C_to_X(c) for c in Cs_times], dtype="object") # endmember mol. fractions
     scenario["z"] = depth_m
     scenario["time"] = t # 
@@ -875,7 +878,7 @@ for out in scenarios_out:
     out["densification_rate"] = densification_rate
     out["time_Myr"] = time_Myr
     for i,phase in enumerate(phase_names):
-        phase_mis = out["mi"][:,i] # wt%
+        phase_mis = out["Fi"][:,i] # wt%
         if(phase=='Feldspar'):
             plag_frac = phase_mis.copy()
             # find the index at which plagioclase drops below 1 wt%
@@ -1003,7 +1006,7 @@ with open(Path(output_path,'_critical.csv'),'w') as csvfile:
 #############################
 # Rayleigh--Taylor analysis #
 #############################
-for _da in [1,10,100,1000]:
+for _da in [3,30,300,3000]:
     # Setup figure for Rayleigh-Taylor analysis by composition
     fig = plt.figure(figsize=(3.75, 3.5))
     plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
@@ -1217,7 +1220,7 @@ for composition in compositions:
             ax.set_xticklabels([None, None, 20, None, 40, None, 60, None, 80, None, None])
             ax.set_yticklabels([])
             for j, obj in enumerate(outs_c):
-                ax.plot(obj["mi"][:,i]*100, obj["z"])
+                ax.plot(obj["Fi"][:,i]*100, obj["z"])
 
         # get Plagioclase anorthite composition
         ax = axes["An"]
@@ -1295,7 +1298,7 @@ for tectonic_setting in tectonic_settings:
             else:
                 color='black'
 
-            linewidth = 1. if obj["Da"] >= 1e3 else 0.35
+            linewidth = 1. if obj["Da"] >= 1e4 else 0.35
 
             ax.plot(obj["rho"], obj["z"]/1e3, color=color,linewidth=linewidth)
 

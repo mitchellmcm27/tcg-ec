@@ -50,7 +50,8 @@ rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
 
 # Damkhoeler number - override with -d arg
-Da = 3e5
+Da = 1e7
+Tr = 3000.+273.15 # reaction's characteristic temperature (T_r)
 
 Pmin, Pmax = [0.5, 2.5] # Gpa
 Tmin, Tmax = [300+273.15, 1300+273.15] # K
@@ -146,7 +147,7 @@ if __name__ == "__main__":
 
 # get reaction object
 rxn = get_reaction(rxn_name)
-
+rxn.set_parameter("T0", Tr)
 mi0, Xik0, phii0, Cik0 = pp.get_point_composition(rxn, composition)
 
 Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
