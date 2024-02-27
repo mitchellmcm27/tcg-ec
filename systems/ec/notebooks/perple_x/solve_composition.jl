@@ -44,11 +44,8 @@ else
 end
 
 for name in comp_names
-
     composition_name = name
-
     comp = compositions[name]
-
     dataset = comp["dataset"] isa String ? comp["dataset"] : "stx21ver"
     scratchdir = "./output/"
     if dataset == "stx21ver"
@@ -118,6 +115,9 @@ for name in comp_names
     end
     oxide_comp = convert(Array{Number},comp["composition"])
     oxides = convert(Array{String},comp["elements"])
+    if dataset == "stx21ver"
+        map!((s) -> uppercase(s), oxides)
+    end
     composition_basis = comp["basis"]
 
     println(sum(oxide_comp))
@@ -127,7 +127,9 @@ for name in comp_names
     if composition_basis=="wt" && dataset == "stx21ver"
         if sum(oxide_comp) < 100.0
 
-            composition_name = composition_name * "_norm"
+            if normalize_composition
+                composition_name = composition_name * "_norm"
+            end
 
             iFe = findfirst(x->x=="FEO",oxides)
             iSi = findfirst(x->x=="SIO2",oxides)
@@ -232,5 +234,4 @@ for name in comp_names
     print("Extracting point...\n")
     point = perplex_werami_point(perplexdir,scratchdir,P_point,T_point,name=composition_name)
     print(point)
-
 end

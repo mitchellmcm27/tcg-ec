@@ -4,12 +4,12 @@
         "dataset": "stx21ver",
         "comment": "based on Figure 9",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             4.29,
@@ -24,14 +24,14 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO",
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
             "K2O",
-            "TIO2"
+            "TiO2"
         ],
         "composition": [
             2.60000,
@@ -72,12 +72,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             2.85,
@@ -92,12 +92,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             3.19,
@@ -112,12 +112,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             3.60,
@@ -132,12 +132,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             3.92,
@@ -153,14 +153,14 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO",
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
             "K2O",
-            "TIO2"
+            "TiO2"
         ],
         "composition": [
             2.8,
@@ -177,12 +177,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             3.89,
@@ -198,14 +198,14 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO",
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
             "K2O",
-            "TIO2"
+            "TiO2"
         ],
         "composition": [
             2.65,
@@ -222,14 +222,38 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO",
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
             "K2O",
-            "TIO2"
+            "TiO2"
+        ],
+        "composition": [
+            2.93,
+            5.87,
+            16.66,
+            57.6,
+            8.21,
+            6.44,
+            1.06,
+            0.89
+        ]
+    },
+    "sammon_2021_deep_crust_hp": {
+        "basis": "wt",
+        "dataset": "hp62ver",
+        "elements": [
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
+            "K2O",
+            "TiO2"
         ],
         "composition": [
             2.93,
@@ -246,14 +270,14 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO",
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
             "K2O",
-            "TIO2"
+            "TiO2"
         ],
         "composition": [
             2.63,
@@ -271,14 +295,14 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO",
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
             "K2O",
-            "TIO2"
+            "TiO2"
         ],
         "composition": [
             2.78,
@@ -346,14 +370,14 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO",
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
             "K2O",
-            "TIO2"
+            "TiO2"
         ],
         "composition": [
             2.75,
@@ -371,12 +395,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             2.54,
@@ -392,12 +416,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             2.56,
@@ -412,12 +436,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             2.72,
@@ -432,12 +456,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             1.64,
@@ -452,12 +476,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             1.77000,
@@ -472,12 +496,12 @@
         "basis": "mol",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             0.11,
@@ -492,12 +516,12 @@
         "basis": "mol",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             0.00000,
@@ -512,12 +536,12 @@
         "basis": "mol",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             2.18,
@@ -532,12 +556,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             3.70000,
@@ -552,12 +576,12 @@
         "basis": "wt",
         "dataset": "stx21ver",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             2.50000,
@@ -573,12 +597,12 @@
         "dataset": "stx21ver",
         "comment": "Cited by Holland et al 2013 J. Pet.",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO"
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO"
         ],
         "composition": [
             3.55,
@@ -594,14 +618,39 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO",
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
             "K2O",
-            "TIO2"
+            "TiO2"
+        ],
+        "composition": [
+            2.14,
+            8.03,
+            15.29,
+            51.66,
+            11.34,
+            10.19,
+            0.34,
+            0.73
+        ]
+    },
+    "mackwell_1998_maryland_diabase_hp": {
+        "basis": "wt",
+        "dataset": "hp62ver",
+        "comment": "",
+        "elements": [
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
+            "K2O",
+            "TiO2"
         ],
         "composition": [
             2.14,
@@ -619,14 +668,14 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "NA2O",
-            "MGO",
-            "AL2O3",
-            "SIO2",
-            "CAO",
-            "FEO",
+            "Na2O",
+            "MgO",
+            "Al2O3",
+            "SiO2",
+            "CaO",
+            "FeO",
             "K2O",
-            "TIO2"
+            "TiO2"
         ],
         "composition": [
             2.81,
@@ -644,13 +693,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -672,13 +721,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -701,13 +750,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -730,13 +779,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -759,13 +808,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -788,13 +837,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -817,13 +866,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -846,13 +895,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -875,13 +924,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -904,13 +953,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -933,13 +982,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -962,13 +1011,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -991,13 +1040,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -1020,13 +1069,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -1049,13 +1098,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"
@@ -1078,13 +1127,13 @@
         "dataset": "stx21ver",
         "comment": "",
         "elements": [
-            "SIO2",
-            "FEO",
-            "NA2O",
-            "CAO",
-            "MGO",
-            "AL2O3",
-            "TIO2",
+            "SiO2",
+            "FeO",
+            "Na2O",
+            "CaO",
+            "MgO",
+            "Al2O3",
+            "TiO2",
             "K2O",
             "P2O5",
             "MNO"

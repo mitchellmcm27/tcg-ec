@@ -12,16 +12,18 @@ import from_perplex as pp
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
 composition = 'hacker_2015_md_xenolith'
-rxn_name = 'eclogitization_agu17_stx21_rx'
+rxn_name = 'eclogitization_2024_stx21_rx'
 
 # end time of reactions, change with -e argument
 end_t = 1
+# reaction's characteristic temperature (T_r)
+Tr = 3000.+273.15 
 
 # only phases greater than this fraction will be plotted
 phasetol = 1.e-3 # 1.e-2
 
 # Damkhoeler number, change with -d argument
-Da = 1e5 # 1.0
+Da = 1e7 # 1.0
 # regularization parameter for compositions
 eps = 1.e-5 # 1.e-2
 # these numbers seem to work very well with eps = 1e-5??
@@ -29,7 +31,7 @@ rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
 
 # large number
-max_steps = 1e5 # 4e3 is reasonable
+max_steps = 3e5 # 4e3 is reasonable
 
 # number of processes, edit with -n argument
 processes = mp.cpu_count()
@@ -98,6 +100,7 @@ else:
 
 
 rxn = get_reaction(rxn_name)
+rxn.set_parameter("T0", Tr)
 table = latex_reactions(rxn)
 
 with open(Path(outputPath,"reaction_table_body.tex"), "w") as text_file:
@@ -134,7 +137,7 @@ def task(i):
     ode.solve(T,GPa2Bar(P),mi0,Cik0,end_t,Da=Da,eps=eps,method="BDF_mcm",max_steps=max_steps)
     odephasenames, phaseabbrev = ode.final_phases(phasetol)
     phases = '+'.join(phaseabbrev)
-    rho = ode.final_rho()
+    rho = ode.final_rho() + 0.3
 
     Cik = ode.sol.y[ode.I:ode.I+ode.K,-1]
     mi = ode.sol.y[:ode.I,-1] # -1 = final time step

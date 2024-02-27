@@ -26,7 +26,7 @@ plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
 ### ======================= INPUTS ============================
 reference = "parallel_pd"
 composition = "hacker_2015_md_xenolith"
-rxn_name = "eclogitization_agu17_stx21_rx"
+rxn_name = "eclogitization_2024_stx21_rx"
 
 # number of nodes in each dimension (T,P) = (x,y)
 nP = 80
@@ -39,7 +39,7 @@ end_t = 1
 # limit the maximum number of steps taken by the solver
 # defaults to infinity, which can exhaust memory if solver doesn't converge
 # a default of 4e3 seems to work well
-max_steps = 4e3
+max_steps = 6e3
 
 # regularization parameter for compositions
 # sets the minimum value for Cik
@@ -50,10 +50,14 @@ rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
 
 # Damkhoeler number - override with -d arg
-Da = 1e5
+Da = 1e7
+Tr = 3000.+273.15 # reaction's characteristic temperature (T_r)
 
 Pmin, Pmax = [0.5, 2.5] # Gpa
 Tmin, Tmax = [300+273.15, 1300+273.15] # K
+
+# Account for dense oxides not included in SLB database
+oxide_density_gcc = 0.03
 
 # override with -n arg
 num_processes = mp.cpu_count()-1
@@ -143,7 +147,7 @@ if __name__ == "__main__":
 
 # get reaction object
 rxn = get_reaction(rxn_name)
-
+rxn.set_parameter("T0", Tr)
 mi0, Xik0, phii0, Cik0 = pp.get_point_composition(rxn, composition)
 
 Cik0 = x2c(rxn, Xik0) if Cik0 is None else Cik0
@@ -154,6 +158,7 @@ P_range = np.linspace(Pmin, Pmax, nP)
 P_g, T_g  = np.meshgrid(P_range, T_range, indexing="ij")
 
 rho_g = np.zeros(P_g.shape)
+rho_g_oxides = np.zeros(P_g.shape)
 stime_g = np.zeros(P_g.shape)
 variance_g = np.zeros(P_g.shape)
 phases_g = [["" for j in range(nT)] for i in range(nP)]
@@ -182,7 +187,8 @@ with Pool(num_processes, maxtasksperchild=12) as pool:
 
 # Collect individual points back into grids
 for rho, phases, stime, variance, i , j in sols:
-    rho_g[i][j] = rho
+    rho_g[i][j] = rho # g/cm3
+    rho_g_oxides[i][j] = rho + oxide_density_gcc
     phases_g[i][j] = phases
     stime_g[i][j] = stime
     variance_g[i][j] = variance
@@ -197,6 +203,7 @@ stime_g[rhonan] = np.nan
 
 # Interpolate NaNs in density
 rho_g[rhonan] = griddata((x[~rhonan], y[~rhonan]),rho_g[~rhonan],(x[rhonan], y[rhonan]))
+rho_g_oxides[rhonan] = griddata((x[~rhonan], y[~rhonan]),rho_g[~rhonan],(x[rhonan], y[rhonan]))
 
 # Generate unique phase assemblage indices
 uniquestrs = sorted(list(set([phstr for phstrl in phases_g for phstr in phstrl if phstr != ""])))
@@ -237,9 +244,9 @@ def plot_phase_labels(ax):
 fig = plt.figure(figsize=(12,14))
 axi = fig.add_subplot(1,1,1)
 
-s = axi.contourf(T_g-273.15,P_g,rho_g,levels=density_levels,alpha=0.75,cmap=density_cmap)
-axi.contour(T_g-273.15,P_g,rho_g,levels=density_levels,alpha=1,cmap=density_cmap)
-axi.contour(T_g-273.15,P_g,rho_g,levels=highlight_densities,alpha=1,colors="black")
+s = axi.contourf(T_g-273.15,P_g,rho_g_oxides,levels=density_levels,alpha=0.75,cmap=density_cmap)
+axi.contour(T_g-273.15,P_g,rho_g_oxides,levels=density_levels,alpha=1,cmap=density_cmap)
+axi.contour(T_g-273.15,P_g,rho_g_oxides,levels=highlight_densities,alpha=1,colors="black")
 plt.xlim(T_limits)
 plt.ylim([Pmin,Pmax])
 plt.colorbar(mappable=s, location="left", label="density (10$^3$ kg/m$^3$)")
@@ -300,6 +307,7 @@ plt.gca().set_title(composition_to_label(composition))
 save_current_fig_as("stime")
 
 # Plot comparison with Perple_X density
+
 interp = pp.get_rho_interpolator(composition,"1000kg/m3")
 interp_hp = pp.get_rho_interpolator(composition.replace("_norm","")+"_hp","1000kg/m3")
 fig = plt.figure(figsize=(10,10))
@@ -319,7 +327,6 @@ plt.gca().set_title(composition_to_label(composition))
 
 if (interp is not None):
     rho_eq_g = interp((T_g, P_g))
-
 
     # Panel (1,2): contour Eqm density
     axi = fig.add_subplot(2,3,2)
@@ -362,9 +369,9 @@ if (interp_hp is not None):
     plt.colorbar(mappable=s, location="bottom",ticks=density_ticks, label="Density (10$^3$ kg/m$^3$)")
     plt.gca().set_title("Equilibrium system (NCKFMASHTO)")
 
-    # Panel (2,3): Diff b/w Eqm and reactive
+    # Panel (2,3): Diff b/w Eqm and reactive (including oxides)
     axi = fig.add_subplot(2,3,6)
-    diff = (rho_g-rho_eq_hp_g)/rho_eq_g*100
+    diff = (rho_g_oxides - rho_eq_hp_g)/rho_eq_hp_g*100
     absmax = np.ceil(np.nanmax(np.absolute(diff)))
     levels = np.arange(-absmax, absmax+1, 1)
     s=axi.imshow(diff,cmap=diff_cmap,vmin=-absmax,vmax=absmax, **imshow_kwargs)
@@ -378,13 +385,13 @@ if (interp_hp is not None):
 plt.tight_layout()
 save_current_fig_as("density_comparison")
 
-# Plot comparison with pyrolite
+# Plot comparison with pyrolite (including oxides)
 
 fig = plt.figure(figsize=(10,5))
 
 axi = fig.add_subplot(1,3,1)
-s = axi.contourf(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
-axi.contour(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
+s = axi.contourf(T_g-273.15, P_g, rho_g_oxides, levels=density_levels, alpha=0.75, cmap=density_cmap)
+axi.contour(T_g-273.15, P_g, rho_g_oxides, levels=density_levels, alpha=1, cmap=density_cmap)
 plt.xlim(T_limits)
 plt.xticks(T_ticks)
 plt.ylabel("Pressure (GPa)")
@@ -406,7 +413,7 @@ plt.colorbar(mappable=s, location="bottom", ticks=density_ticks, label="Density 
 plt.gca().set_title("Pyrolite (Xu et al. 2008)")
 
 axi = fig.add_subplot(1,3,3)
-diff = (rho_g-rho_pyrolite_g)*1000 # kg/m3
+diff = (rho_g_oxides-rho_pyrolite_g)*1000 # kg/m3
 maxval = np.ceil(np.nanmax(np.absolute(diff))/100)*100+50
 levels = np.arange(-maxval,maxval+50,50)
 s=axi.imshow(diff,cmap=diff_cmap,vmin=-maxval,vmax=maxval, **imshow_kwargs)
@@ -425,9 +432,10 @@ save_current_fig_as("density_contrast")
 
 fig = plt.figure(figsize=(10,5))
 
+# Plot (1,1): density of reactive system (including oxides)
 axi = fig.add_subplot(1,3,1)
-s = axi.contourf(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=0.75, cmap=density_cmap)
-axi.contour(T_g-273.15, P_g, rho_g, levels=density_levels, alpha=1, cmap=density_cmap)
+s = axi.contourf(T_g-273.15, P_g, rho_g_oxides, levels=density_levels, alpha=0.75, cmap=density_cmap)
+axi.contour(T_g-273.15, P_g, rho_g_oxides, levels=density_levels, alpha=1, cmap=density_cmap)
 plt.xlim(T_limits)
 plt.xticks(T_ticks)
 plt.gca().set_xticklabels(T_tick_labels)
@@ -437,6 +445,7 @@ plt.colorbar(mappable=s, location="bottom", ticks=density_ticks, label="Density 
 plt.ylabel("Pressure (GPa)")
 plt.gca().set_title("Reactive system")
 
+# Plot (1,2): difference with equilibrium (doesn't include oxides)
 axi = fig.add_subplot(1,3,2)
 diff = (rho_g-rho_eq_g)/rho_eq_g*100
 absmax = np.ceil(np.nanmax(np.absolute(diff))) # rounded to nearest digit
@@ -452,8 +461,9 @@ plt.yticks([])
 plt.xlabel("Temperature (°C)", labelpad=2)
 plt.gca().set_title("Error with equilibrium")
 
+# Plot (1,3): difference with pyrolite (including oxides)
 axi = fig.add_subplot(1,3,3)
-diff = (rho_g-rho_pyrolite_g)*1000 # kg/m3
+diff = (rho_g_oxides-rho_pyrolite_g)*1000 # kg/m3
 maxval = np.ceil(np.nanmax(np.absolute(diff))/100)*100+40
 levels = np.arange(-maxval,maxval+20,20)
 s=axi.imshow(diff,cmap=diff_cmap,vmin=-maxval,vmax=maxval, **imshow_kwargs)
