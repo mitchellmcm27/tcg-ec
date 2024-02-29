@@ -1,2 +1,0 @@
-hacker_2015_bin_1
-n

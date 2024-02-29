@@ -1,0 +1,73 @@
+
+----------------------------------------
+
+Stable phases at:
+                             T(K)     =  1173.15    
+                             P(bar)   =  20000.0    
+
+Phase Compositions (molar  proportions):
+                   wt %      vol %     mol %     mol        NA2O     MGO      AL2O3    SIO2     CAO      FEO  
+ Cpx               49.29     50.85     47.40    0.224      0.20201  0.38501  0.29119  1.91082  0.58217  0.13560
+ Gt                39.30     35.05     17.84    0.842E-01  0.00000  1.04924  1.00000  3.00000  0.59297  1.35779
+ ky                 2.08      1.98      2.66    0.125E-01  0.00000  0.00000  1.00000  1.00000  0.00000  0.00000
+ qtz                9.33     12.12     32.10    0.151      0.00000  0.00000  0.00000  1.00000  0.00000  0.00000
+
+Phase speciation (molar proportions):
+
+ Cpx               jd: 0.40402, di: 0.35739, hed: 0.13560, cen: 0.01381, cts: 0.08918
+ Gt                gr: 0.19766, alm: 0.45260, py: 0.34975
+
+Structural formulae for 688 format solution models:
+
+ Phase           Site  Multiplicity  Molar Site Fractions
+
+ Gt            
+                  A       3.00       Ca(.1977)Fe(.4526)Mg(.3497)
+           Non-mixing stoichiometry: B2[Al]B1[Al][Si3O12]                                        
+
+
+Molar Properties and Density:
+                    N(g)          G(J)     S(J/K)     V(J/bar)      Cp(J/K)       Alpha(1/K)  Beta(1/bar)    Cp/Cv    Density(kg/m3)
+ Cpx               214.93       -3076916   455.56       6.4287       252.09      0.29972E-04  0.83342E-06   1.0333       3343.2    
+ Gt                455.30       -5908181   920.38       11.773       504.59      0.27237E-04  0.61939E-06   1.0339       3867.5    
+ ky                162.05       -2545817   314.21       4.4580       198.88      0.26224E-04  0.64817E-06   1.0287       3634.9    
+ qtz                60.08        -891238   125.43       2.2624       82.373      0.84218E-04  0.30143E-05   1.0820       2655.7    
+ System             97.52       -1352299   202.28       2.8271       113.82      0.35513E-04  0.10190E-05   1.0374       3449.4    
+
+Seismic Properties:
+                 Gruneisen_T      Ks(bar)      Mu(bar)    V0(km/s)     Vp(km/s)     Vs(km/s)   Poisson ratio
+ Cpx               0.94768      0.12399E+07  0.68988E+06   6.0898       8.0374       4.5426      0.26532    
+ Gt                 1.0607      0.16692E+07  0.89430E+06   6.5696       8.6018       4.8087      0.27271    
+ ky                0.93293      0.15871E+07  0.10557E+07   6.6077       9.0766       5.3890      0.22778    
+ qtz               0.83033      0.35897E+06  0.38265E+06   3.6765       5.7208       3.7958      0.10675    
+ System            0.97279      0.11606E+07  0.70718E+06   5.8005       7.8090       4.5278      0.24677    
+
+Bulk Composition:
+              mol        g        wt %     mol/kg
+    NA2O      0.045     2.800     2.871     0.463
+    MGO       0.174     7.030     7.209     1.789
+    AL2O3     0.162    16.500    16.920     1.659
+    SIO2      0.844    50.700    51.989     8.653
+    CAO       0.180    10.100    10.357     1.847
+    FEO       0.145    10.390    10.654     1.483
+
+Other Bulk Properties:
+
+ Enthalpy (J/kg) = -.114335E+08
+ Specific Enthalpy (J/m3) = -.394389E+11
+ Entropy (J/K/kg) =  2074.28    
+ Specific Entropy (J/K/m3) = 0.715510E+07
+ Heat Capacity (J/K/kg) =  1167.12    
+ Specific Heat Capacity (J/K/m3) = 0.402591E+07
+
+
+Chemical Potentials (J/mol):
+
+      NA2O          MGO           AL2O3         SIO2          CAO           FEO  
+    -794482.      -645522.     -0.165458E+07  -891240.      -751425.      -336583.    
+
+Variance (c-p+2) =  4
+
+
+----------------------------------------
+

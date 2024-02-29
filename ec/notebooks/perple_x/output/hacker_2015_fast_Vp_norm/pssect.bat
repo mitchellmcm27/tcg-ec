@@ -1,2 +1,0 @@
-hacker_2015_fast_Vp_norm
-n

@@ -1,2 +1,0 @@
-mackwell_1998_columbia_diabase
-n
