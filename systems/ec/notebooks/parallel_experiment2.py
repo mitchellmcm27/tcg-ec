@@ -93,9 +93,10 @@ atol = 1.e-9 # absolute tolerance, default 1e-9
 v0 = 1.0 * mm/yr # Moho descent rate, m/s
 h0 = 50. * km # thicken the crust by 50 km
 t0 = h0 / v0 # seconds
-Tr = 3000.+273.15 # reaction's characteristic temperature (T_r)
+Tr = 5500.+273.15 # reaction's characteristic temperature (T_r)
 crustal_rho = 2780.
 gravity = 9.81
+Da_eq = 1e6
 
 # multiprocessing
 num_processes =  mp.cpu_count()
@@ -104,7 +105,7 @@ num_processes =  mp.cpu_count()
 pdf_metadata = {'CreationDate': None}
 
 # Damkoehler numbers
-Das = [1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7]
+Das = [1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]
 print(Das)
 
 
@@ -503,7 +504,6 @@ def get_initial_composition(T0:float,P0:float,composition_name:str)->Tuple[List[
     # Set up vector of initial conditions
     u0_a = np.concatenate((Fi_a,cik_a))
 
-    Da_eq = 1e8
     rho_a = get_rho(rxn,np.asarray(Fi_a),reshape_C(rxn,cik_a),T0,P0)*10.
     print(rho_a)
     args = (rxn,Da_eq,T0,P0,rho_a)
@@ -735,7 +735,7 @@ def run_experiment(scenario:InputScenario)->OutputScenario:
     args = (rxn,scale,_da,L0,z0,As,hr0,k,Ts,Tlab)
 
     # Solve IVP using BDF method
-    sol = solve_ivp(rhs, [0, end_t], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None, min_step=1e-5)
+    sol = solve_ivp(rhs, [0, end_t], u0, args=args, dense_output=True, method="BDF", rtol=rtol, atol=atol, events=None)
     
     # resample solution
     t = np.linspace(0,end_t,1000)
@@ -1269,9 +1269,9 @@ for tectonic_setting in tectonic_settings:
         T = base["T"]
         P = base["P"]
         # Setup figure for rho-profile mosaic
-        fig = plt.figure(figsize=(len(selected_compositions)*2,6.25))
-        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+        fig = plt.figure(figsize=(6.5,3.0))
         axes = fig.subplot_mosaic([selected_compositions])
+        plt.tight_layout(pad=0.075, w_pad=0.075, h_pad=.075)
         [ax.set_prop_cycle(plt.cycler("color", greys(np.linspace(0.2, 1, num_lines)))) for label,ax in axes.items()]
 
         # Invert y axis because it represents depth
@@ -1279,32 +1279,40 @@ for tectonic_setting in tectonic_settings:
         [ax.set_xlim([2.8,3.5]) for label,ax in axes.items()]
         [ax.set_xticks([2.8,3.0,3.2,3.4]) for label,ax in axes.items()]
         [ax.set_ylim([80,30]) for label,ax in axes.items()]
-
+        [ax.tick_params(width=0.4) for label,ax in axes.items()]
+        for axis in ['top','bottom','left','right']:
+            [ax.spines[axis].set_linewidth(0.25) for label,ax in axes.items()]
+  
         rho_pyrolite=ipyrolite((T, P/1e4))/10
-        rho_harzburgite=iharzburgite((T,P/1e4))/10
+        #rho_harzburgite=iharzburgite((T,P/1e4))/10
 
 
         for i, obj in enumerate(outs_c):
             ax = axes[obj["composition"]]
             
             if obj["composition"]=='mackwell_1998_maryland_diabase':
-                color='dodgerblue'
+                color='#00adee' # dodgerblue
             elif obj["composition"]=='hacker_2015_md_xenolith':
-                color='mediumseagreen'
+                color='#3cb371' # mediumseagreen
             elif obj["composition"]=='sammon_2021_lower_crust':
-                color='indianred'
+                color='#be1e2d' # indianred
             elif obj["composition"]=='sammon_2021_deep_crust':
-                color='goldenrod'
+                color='#f6921e' # goldenrod
             else:
                 color='black'
 
-            linewidth = 1. if obj["Da"] >= 1e4 else 0.35
+            linewidth = 0.75 if obj["Da"] == np.max(Das) else 0.35
+            alpha = 1.0 if obj["Da"] == np.max(Das) else 0.8
 
-            ax.plot(obj["rho"], obj["z"]/1e3, color=color,linewidth=linewidth)
+            ax.plot(obj["rho"], obj["z"]/1e3, color=color,linewidth=linewidth,alpha=alpha)
 
+            if obj["composition"] != selected_compositions[0]:
+                ax.set_yticks([])
+                ax.set_yticklabels([])
+            
             if obj["Da"] == 1:
-                ax.plot(rho_pyrolite, obj["z"]/1e3, "r:")
-                ax.plot(rho_harzburgite, obj["z"]/1e3, "g:")
+                ax.plot(rho_pyrolite, obj["z"]/1e3, "k--",linewidth=0.5)
+                #ax.plot(rho_harzburgite, obj["z"]/1e3, "g--", linewidth=0.5)
 
         plt.savefig(Path(output_path,"_collage.{}.{}".format(setting,"pdf")), metadata=pdf_metadata)
         plt.savefig(Path(output_path,"_collage.{}.{}".format(setting,"png")))

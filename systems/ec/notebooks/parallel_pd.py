@@ -50,8 +50,8 @@ rtol = 1.e-5 # relative tolerance, default 1e-5
 atol = 1.e-9 # absolute tolerance, default 1e-9
 
 # Damkhoeler number - override with -d arg
-Da = 1e7
-Tr = 3000.+273.15 # reaction's characteristic temperature (T_r)
+Da = 1e9
+Tr = 5500.+273.15 # reaction's characteristic temperature (T_r)
 
 Pmin, Pmax = [0.5, 2.5] # Gpa
 Tmin, Tmax = [300+273.15, 1300+273.15] # K

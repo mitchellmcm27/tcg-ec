@@ -123,9 +123,9 @@ ggplot() +
   geom_polygon(aes(x = c2x, y = c2y / 1e3, fill = "Int.lower crust"), alpha =
                  1) +
   scale_fill_manual(values = c("#ffeeee", "#dfeeff")) +
-  geom_textline(
+  geom_line(
     data = dat %>% filter(composition == mafic &
-                            Da <= 3000) %>% mutate(critical_depth = ifelse(
+                            Da < 10000) %>% mutate(critical_depth = ifelse(
                               is.na(critical_depth), NaN, critical_depth
                             )),
     aes(
@@ -136,15 +136,12 @@ ggplot() +
       label = Da,
       #alpha = log10(Da)
     ),
-    hjust = 0.3,
-    size = 2.5,
     show.legend = FALSE,
-    text_smoothing = 30,
-    linewidth = 0.4
+    size = 0.25
   ) +
-  geom_textline(
+  geom_line(
     data = dat %>% filter(composition == felsic &
-                            Da <= 3000) %>% mutate(critical_depth = ifelse(
+                            Da < 10000) %>% mutate(critical_depth = ifelse(
                               is.na(critical_depth), NaN, critical_depth
                             )),
     aes(
@@ -155,29 +152,27 @@ ggplot() +
       label = Da,
       alpha = log10(Da)
     ),
-    hjust = 0.45,
-    size = 2.5,
-    show.legend = FALSE,
-    text_smoothing = 30,
-    linewidth = 0.4
+    size = 0.1
   ) +
   geom_line(
     data = dat %>% filter(composition == mafic &
-                            Da == 3e3) %>% mutate(critical_depth = ifelse(
+                            Da == 1e4) %>% mutate(critical_depth = ifelse(
                               is.na(critical_depth), 85.e3, critical_depth
                             )),
     aes(x = critical_temperature - 273.15, y = critical_depth / 1e3),
-    colour = "#004466"
+    colour = "#1b75bb",
+    size=0.25
   ) +
   geom_line(
     data = dat %>% filter(composition == felsic &
-                            Da == 3e3) %>% mutate(critical_depth = ifelse(
+                            Da == 1e4) %>% mutate(critical_depth = ifelse(
                               is.na(critical_depth), 85.e3, critical_depth
                             )),
     aes(x = critical_temperature - 273.15, y = critical_depth / 1e3),
-    colour = "#aa0000"
+    colour = "#aa0000",
+    size=0.25
   ) +
-  scale_colour_manual(values = c("#ff4444", "#00aacc")) +
+  scale_colour_manual(values = c("#be1e2d", "#6dcff6")) +
   scale_alpha(range = c(0.3, 1.0)) +
   scale_y_reverse(breaks = seq(30, 80, by = 10), expand = c(0, 0)) +
   scale_x_continuous(
@@ -203,10 +198,7 @@ ggplot() +
     colour = TeX("log Da"),
     fill = 'Composition'
   ) +
-  theme(legend.position = "bottom") +
-  theme(legend.title = element_blank()) +
-  theme(legend.background = element_blank()) +
-  theme(legend.position = c(0.15, 0.15))
+  theme(legend.position="none")
 
 ggsave(
   'plots/critical_shaded_alt.pdf',
