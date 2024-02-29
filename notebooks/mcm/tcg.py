@@ -272,7 +272,7 @@ def get_reaction(rxnName):
     path = os.path.join(os.path.pardir, 'database', 'install', rxnName,
                         'lib', 'python'+pv, 'site-packages/')  # the final slash is necessary
     sys.path.append(path)
-    #print(path)
+    print(path)
     tcgdb = __import__('py_'+rxnName)
     importer = getattr(tcgdb, rxnName)
     rxn = importer()
