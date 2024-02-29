@@ -58,7 +58,7 @@ Arguments can be passed as follows to customize the model runs:
 |   `-e [float]`  | Scaled ending time                 |  1               |
 |   `-c [string]` | Bulk composition to use, by name   | an array of 4 compositions |
 |   `-r [string]` | Reaction to use, by name           | eclogitization_2024_stx21_rx |
-|   `-q`          | Run in "quick mode" (_Da_ ≤ 1e3)   | False |
+|   `-q`          | Run in "quick mode" (_Da_ ≤ 1e4)   | False |
 |   `-f`          | Force model to recalculate results | False |
 |   `-p [string]`  | String to prefix output directory  | None |
 
