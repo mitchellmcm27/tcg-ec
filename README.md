@@ -44,7 +44,7 @@ Four python scripts are given as follows:
 - `python3 parallel_pd.py` generates a (_T_,_P_) pseudosection for comparing density with Perple_X results.
 - `python3 parallel_profile.py` generates a 1-d profile through (_T_,_P_)-space for comparing phase mode with Perple_X results.
 - `python3 parallel_experiment2.py` runs the geodynamic model of crustal thickening at the Moho.
-- `damkholer-fit.ipynb` shows how Damkholer number is fit to empirical data.
+- `damkohler-fit.ipynb` shows how Damkohler number is fit to empirical data.
 
 In most cases, you can pass the name of any pre-defined composition that exists in the **notebooks/perple_x/compositions.json** file. 
 For example, `python3 parallel_pd.py -c hacker_2015_md_xenolith`.
