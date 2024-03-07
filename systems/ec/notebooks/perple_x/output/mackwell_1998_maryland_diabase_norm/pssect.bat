@@ -1,2 +1,0 @@
-mackwell_1998_maryland_diabase_norm
-n

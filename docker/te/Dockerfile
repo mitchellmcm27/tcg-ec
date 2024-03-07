@@ -1,1 +1,0 @@
-FROM registry.gitlab.com/enki-portal/thermoengine:master

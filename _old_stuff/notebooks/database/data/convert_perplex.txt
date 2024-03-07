@@ -1,0 +1,54 @@
+
+
+abbrev,c1,c2,c3,c4,c5,c6,c7,eos,formula,G0,m0,m1,name,S0,t1,t2,t3,transition,type,V0
+qtz,614253.7,19.78011,884.20481,-0.03958,1.0,2.40509,,6,SIO2(1),-860118.03,448577.6,-0.04277,qtz,-3.0,847.0,5.76,0.1359,1.0,7.0,-2.2421
+
+
+name,formula,a0,n,v0,k00,k0p,theta0,gamma0,q,refS,T_r,V_r,TC0,VD,SD
+Quartz,Si(1)O(2),-858853.3999999999,3.0,2.367003,495474.3,4.33155,816.3307,-0.00296,1.0,0.0,300.0,2.367003,847.0,0.1222,5.164
+
+abbrev,c1,c2,c3,c4,c5,c6,c7,eos,formula,G0,m0,m1,name,S0,t1,t2,t3,transition,type,V0
+q,495474.3,4.33155,816.3307,-0.00296,1.0,2.36469,,6,SIO2(1),-858853.4,448561.7,0.95315,q,-3.0,847.0,4.95,0.1188,1.0,4.0,-2.367003
+
+
+a0 = G0         # F0
+n = -S0
+v0 = -V0        # minus sign correct?
+
+k00 = c1        # K0
+k0p = c2        # K'
+theta0 = c3     # Debeye T
+gamma0 = c4     # gruneisen
+q = c5          # q0
+refS = 0.       # 
+T_r = 300.
+V_r = -V0
+
+TC0 = t1
+VD = t3
+SD = t2
+
+---
+
+G0 = F0 // parm(5)*1e3
+S0 = -m // -int(parm(1))
+V0 = V0 // ? or negative? parm(6)/1e1
+c1 = K_T0 // parm(7)*1e4
+c2 = K'_T0 // parm(8)
+c3 = Debeye T // parm(10)
+c4 = gamma0 // parm(26)
+c5 = q0 // parm(27)
+c6 = eta_S0 // parm(37)
+[c7 = configurational entropy ?]
+m0 = mu0 // parm(35)*1e4
+m1 = mu' // parm(36)
+
+parm(41) !== 1 ? `van laar size = ${parm(41)}` : ''
+
+if parm(38) !== 0
+{
+    // Landau Low
+    t1 = Tc0 // parm(38)
+    t2 = Sd // parm(39)
+    t3 = Vd // parm(40)/1e1
+}
