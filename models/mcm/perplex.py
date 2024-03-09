@@ -27,7 +27,7 @@ def ppx_rho_interpolator(name, unit="100kg/m3"):
             '''         
             perplex_version = fp.readline()
             perplex_fname = fp.readline()
-            n_dims = fp.readline() # ?
+            n_dims = fp.readline()
             xvarname = fp.readline()
             x0 = float(fp.readline().strip())
             xstep = float(fp.readline().strip())
@@ -36,7 +36,7 @@ def ppx_rho_interpolator(name, unit="100kg/m3"):
             y0 = float(fp.readline().strip())
             ystep = float(fp.readline().strip())
             ny = int(fp.readline().strip())
-            n_cols = fp.readline() # ?
+            n_cols = fp.readline()
             T_range = np.arange(0,nx)*xstep + x0
             P_range = np.arange(0,ny)*ystep + y0
         df = pd.read_csv(filepath, delimiter='\s+', skiprows=12, header=0, names=["T","P","rho"])
@@ -84,8 +84,8 @@ def ppx_point_composition(rxn, name):
     filepath = "perple_x/output/{}/{}_1.txt".format(name,name)
     print(filepath)
     try:
-        x = ""
-        m = ""
+        x = "" # mol fractions
+        F = "" # mass fractions
         with open(filepath) as file:
             copy = False
             for line in file:
@@ -94,7 +94,7 @@ def ppx_point_composition(rxn, name):
                 elif line.strip().startswith("Phase speciation"):
                     copy = False
                 elif copy:
-                    m += line.strip() + "\n"
+                    F += line.strip() + "\n"
         with open(filepath) as file:
             copy = False
             for line in file:
@@ -105,35 +105,34 @@ def ppx_point_composition(rxn, name):
                 elif copy:
                     x += line.strip() + "\n"
   
-        m = m.strip().split("\n")
-        m[0] = m[0].replace(" %", "%")
-        m = "\n".join(m)
-        m_df = pd.read_csv(StringIO(m), delimiter="\s+", header=0)
-        ms = m_df['wt%']
-        mi0 = [0 for p in rxn.phases()]
+        F = F.strip().split("\n")
+        F[0] = F[0].replace(" %", "%")
+        F = "\n".join(F)
+        F_df = pd.read_csv(StringIO(F), delimiter="\s+", header=0)
+        Fs = F_df['wt%']
+        Fi0 = [0 for p in rxn.phases()]
 
         for n,p in enumerate(rxn.phases()):
             if p.abbrev()=="cpx":
-                mi0[n] = ms.get("Cpx",0.)
+                Fi0[n] = Fs.get("Cpx",0.)
             if p.abbrev()=="opx":
-                mi0[n] = ms.get("Opx",0.)
+                Fi0[n] = Fs.get("Opx",0.)
             if p.abbrev()=="qtz":
-                mi0[n] = ms.get("qtz",0.)
+                Fi0[n] = Fs.get("qtz",0.)
             if p.abbrev()=="plg":
-                mi0[n] = ms.get("Pl",0.)
+                Fi0[n] = Fs.get("Pl",0.)
             if p.abbrev()=="gt":
-                mi0[n] = ms.get("Gt",0.)
+                Fi0[n] = Fs.get("Gt",0.)
             if p.abbrev()=="ky":
-                mi0[n] = ms.get("ky",0.)
+                Fi0[n] = Fs.get("ky",0.)
             if p.abbrev()=="sp":
-                mi0[6] = ms.get("Sp",0.)
+                Fi0[6] = Fs.get("Sp",0.)
             if p.abbrev()=="co":
-                mi0[6] = ms.get("Aki",0.)
+                Fi0[6] = Fs.get("Aki",0.)
 
-        mi0 = [m/100 for m in mi0]
-        #print(mi0)
+        Fi0 = [f/100 for f in Fi0]
+        
         x = x.strip().split("\n")
-
         Xik0 = rxn.zero_C()
         for i,c in enumerate(Xik0):
             Xik0[i][0] = 1.
@@ -174,7 +173,7 @@ def ppx_point_composition(rxn, name):
 
         phii0 = None
         Cik0 = None
-        return mi0, Xik0, phii0, Cik0
+        return Fi0, Xik0, phii0, Cik0
     except Exception as e:
         print("There was an error:")
         print(e)

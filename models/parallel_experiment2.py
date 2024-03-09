@@ -1,10 +1,13 @@
-from mcm.tcg import *
+import sys,os
+sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'tcg_slb','python'))
+
+import pickle
+from mcm.tcg import get_reaction,get_names,x2c,phi2F
 import numpy as np
 import numpy.ma as ma
 from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
 from pathlib import Path
-from tcg_slb.base import *
 from multiprocessing import Pool
 import multiprocessing as mp
 from mcm.perplex import ppx_rho_interpolator, ppx_point_composition

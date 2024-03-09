@@ -1,9 +1,13 @@
-from mcm.tcg import *
+import sys, os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'tcg_slb','python'))
+
+from mcm.tcg import get_reaction,latex_reactions,get_names,x2c,phi2F,custom_solve
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
 from pathlib import Path
-from tcg_slb.base import *
+from tcg_slb.base import GPa2Bar
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 import multiprocessing as mp
 from multiprocessing import Pool
@@ -134,9 +138,8 @@ def task(i):
     T = T_range[i]
 
     ode = ScipyPDReactiveODE(rxn)
-    ode.solve(T,GPa2Bar(P),Fi0,cik0,end_t,Da=Da,eps=eps,method="BDF_mcm",max_steps=max_steps)
-    odephasenames, phaseabbrev = ode.final_phases(phasetol)
-    phases = '+'.join(phaseabbrev)
+    custom_solve(ode,T,GPa2Bar(P),Fi0,cik0,end_t,Da=Da,eps=eps,max_steps=max_steps)
+
     rho = ode.final_rho() + 0.3
 
     cik = ode.sol.y[ode.I:ode.I+ode.K,-1]
@@ -149,6 +152,8 @@ def task(i):
     vi  = 1./v.sum()
     phii = vi*Fi/rhoi
     Xik = [x for xarr in ode.rxn.C_to_X(C) for x in xarr]
+    odephasenames, phaseabbrev = ode.final_phases(phasetol)
+    phases = '+'.join(phaseabbrev)
     return rho, phases, phii, Fi, cik_reg, Xik, i
 
 # Map blocks to block-level calculations
@@ -176,14 +181,14 @@ df = ppx_profile_data(composition)
 
 # T(K), P(bar), Pl, Pl, Cpx, Opx, qtz, Gt, ky  
 phase_name_to_col_name = {
-    "Clinopyroxene_slb_ph":"Cpx3",
-    "Orthopyroxene_slb_ph":"Opx",
-    "Quartz_slb_ph":"qtz",
-    "Feldspar_slb_ph":"Pl2",
-    "Garnet_slb_ph":"Gt2",
-    "Kyanite_slb_ph":"ky",
-    "Spinel_slb_ph":"Sp",
-    "Olivine_slb_ph": "O"
+    "Clinopyroxene_stx21_ph":"Cpx3",
+    "Orthopyroxene_stx21_ph":"Opx",
+    "Quartz_stx21_ph":"qtz",
+    "Feldspar_stx21_ph":"Pl2",
+    "Garnet_stx21_ph":"Gt2",
+    "Kyanite_stx21_ph":"ky",
+    "Spinel_stx21_ph":"Sp",
+    "Olivine_stx21_ph": "O"
 }
 
 hs = []
@@ -215,7 +220,7 @@ if(df is not None):
 
 
 if(df is not None):
-    if("O" in df.columns and "Olivine_slb_ph" not in [p.name() for p in rxn.phases()]):
+    if("O" in df.columns and "Olivine_stx21_ph" not in [p.name() for p in rxn.phases()]):
         y = df["O"]/100
         ax.plot(xvar,y,"-",linewidth=1,alpha=0.5,color="black")
     if("Aki" in df.columns):

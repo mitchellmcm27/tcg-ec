@@ -1,9 +1,13 @@
-from mcm.tcg import *
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'tcg_slb','python'))
+
+from mcm.tcg import x2c,phi2F,get_reaction,composition_to_label, custom_solve
 import numpy as np
 from matplotlib import pyplot as plt
 from pathlib import Path
-from tcg_slb.base import *
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
+from tcg_slb.phasediagram.base import GPa2Bar
+
 from multiprocessing import Pool
 import multiprocessing as mp
 from scipy.interpolate import griddata
@@ -172,7 +176,7 @@ def task(args):
 
     ode = ScipyPDReactiveODE(rxn)
 
-    ode.solve(T,GPa2Bar(P),Fi0,cik0,end_t,Da=Da,eps=eps,rtol=rtol,atol=atol,method="BDF_mcm",max_steps=max_steps)
+    custom_solve(ode,T,GPa2Bar(P),Fi0,cik0,end_t,Da=Da,eps=eps,rtol=rtol,atol=atol)
     odephasenames, phaseabbrev = ode.final_phases(phasetol)
     phases = "+".join(phaseabbrev) if ode.sol.status == 0 else ""
     rho = ode.final_rho() if ode.sol.status == 0 else np.nan

@@ -1,251 +1,19 @@
-import sys, os
-sys.path.append(os.path.join(os.path.pardir, 'python'))
-
-import math
-import pandas as pd
+import sys, os, time
 import numpy as np
-from pathlib import Path
-import pickle
-from tcg_slb.base import *
-from tcg_slb.phasediagram.base import PDReactiveGrid, PDReactiveProfile, PDReactiveGridDiagnostics, PDReactiveProfileDiagnostics
-from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 import sympy as sym
+from scipy.integrate import solve_ivp
+from scipy.integrate import solve_ivp, BDF, OdeSolution
+from scipy.optimize import OptimizeResult as OdeResult
+from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
+from typing import TypedDict,List,Tuple
+
+MESSAGES = {
+    0: "The solver successfully reached the end of the integration interval.",
+    1: "A termination event occurred.",
+    2: "The solver failed to converge."
+}
+
 sym.init_printing()
-
-class EcModel():
-    Tmin = 0.
-    Tmax = 0.
-    nT = 0
-    T = None
-
-    Pmin = 0.
-    Pmax = 0.
-    nP = 0
-    P = None
-
-    rxn = None
-
-    Cik0 = None
-    mi0 = None
-
-    # results
-    grid = None
-    bdfdiag = None
-    ode = None
-
-    def __init__(self, referenceName, rxnName, Tmin=773., Tmax=1273., nT=60, nP=60, Pmin=0.5, Pmax=2.5, Cik0=None, mi0=None, phii0=None, Xik0=None, T0=None, P0=None, domain="grid", **kwargs):
-        self.referenceName = referenceName
-        self.rxnName = rxnName
-
-        self.Tmin = Tmin
-        self.Tmax = Tmax
-        self.nT = nT
-        self.nP = nP
-        self.Pmin = Pmin
-        self.Pmax = Pmax
-        self.T0 = T0
-        self.P0 = P0
-        self.domain = domain
-        self.rxn = self.get_reaction(rxnName)
-        self.phaseNames = [ph.name() for ph in self.rxn.phases()]
-
-        if self.domain=="grid" and nT > 0 and nP > 0:
-            self.T = np.linspace(Tmin, Tmax, nT)
-            self.P = np.linspace(Pmin, Pmax, nP)
-        if self.domain=="profile" and nT> 0:
-            num_points = math.floor(nT)
-            self.T = np.linspace(Tmin,Tmax,num_points)
-            self.P = np.linspace(Pmin,Pmax,num_points)
-
-        self.Cik0 = Cik0 if Cik0 is not None else x2c(self.rxn, Xik0)
-        self.mi0 = mi0 if mi0 is not None else phi2m(
-            self.rxn, phii0, self.Cik0, P=P0, T=T0)
-
-        #print(self.Cik0)
-        #print('')
-        #if phii0 is not None:
-        #    print(phii0)
-        #    print(sum(phii0))
-        #    print('')
-        #print(self.mi0)
-        #print(sum(self.mi0))
-
-    def run(self, end_t=1e2, reload=False, save=False, plot=True, plot_phases=True, **kwargs):
-        # initial temperature, pressure and phase volume fraction
-        Ti = self.T0 # if self.T0 else 900. # kelvin
-        pi = self. P0 # GPa2Bar(self.P0 if self.P0 else 1.25)  # bars
-        if(Ti is not None and pi is not None):
-            Ti = self.T0
-            pi = GPa2Bar(self.P0)
-            ode = ScipyPDReactiveODE(self.rxn)
-            self.ode = ode
-            ode.solve(Ti, pi, self.mi0, self.Cik0, end_t, **kwargs)
-            #print(ode.stime)
-            #print(ode.final_phases(1.e-2))
-            if plot:
-                ode.plot()
-                self.display_initial_final()
-
-        if self.domain == "grid" and self.T is not None and self.P is not None:
-            grid = self.solve_reaction_grid(
-                reload=reload, save=save, end_t=end_t, **kwargs)
-            self.grid = grid
-            if(plot):
-                bdfdiag = self.plot_reaction_grid(grid, plot_phases=plot_phases)
-                self.bdfdiag = bdfdiag
-            else:
-                bdfdiag = None
-            return self.rxn, grid, ode, bdfdiag
-        elif self.domain=="profile" and self.T is not None and self.P is not None:
-            grid = self.solve_reaction_profile(reload=reload, save=save, end_t=end_t, **kwargs)
-            print("done solving profile")
-            self.grid = grid
-            if(plot):
-                bdfdiag = self.plot_reaction_profile(grid, plot_phases=plot_phases)
-                self.bdfdiag = bdfdiag
-            else:
-                bdfdiag = None
-            return self.rxn, grid, ode, bdfdiag
-        else:
-            return self.rxn, None, ode, None
-        
-    def mi_final(self):
-        return self.ode.sol.y[:self.ode.I, -1]
-    def Cik_final(self):
-        Cik = self.ode.sol.y[self.ode.I:self.ode.I+self.ode.K].T
-        Cik_end = Cik[-1]
-        Cs = self.ode.regularizeC(Cik_end)
-        return [cik for ci in Cs for cik in ci]
-    
-    def display_initial_final(self):
-        mi = self.mi_final()
-        table = [self.ode.mi0, mi]
-        # convert to volume!
-        phaseNames = [ph.name() for ph in self.rxn.phases()]
-        df = pd.DataFrame(
-            table, 
-            columns=phaseNames, 
-            index=['Wt% (initial)', 'Wt% (final)']
-        )
-
-        try:
-            from IPython.display import display, HTML
-            display(df)
-        except:
-            print(df)
-
-    def get_pickle_path(self):
-        if(self.domain=="profile"):
-            return Path('output', self.referenceName, self.rxn.name() + '_profile.pickle')
-        return Path('output', self.referenceName, self.rxn.name() + '.pickle')
-
-    def load_grid(self):
-        filename = self.get_pickle_path()
-        with open(filename, 'rb') as pfile:
-            bdfgrid = pickle.load(pfile)
-        self.bdfgrid = bdfgrid
-        return bdfgrid
-
-    def save_grid(self, bdfgrid):
-        filename = self.get_pickle_path()
-        filename.parent.mkdir(exist_ok=True, parents=True)
-        with open(filename, 'wb+') as pfile:
-            pickle.dump(bdfgrid, pfile)
-
-    def solve_reaction_profile(self, end_t=1e2, reload=False, save=False, odeClass=ScipyPDReactiveODE, **kwargs):
-        if reload:
-            return self.load_grid()
-        i0 = 2  # doesn't matter as long as you pass cik0
-        bdfgrid = PDReactiveProfile()
-        bdfgrid.solve(self.rxn, odeClass, i0, [
-                      'T', 'p'], self.T, self.P, end_t, Cik0=self.Cik0, mi0=self.mi0)
-        if save:
-            self.save_grid(bdfgrid)
-        return bdfgrid
-    
-    def solve_reaction_grid(self, end_t=1e2, reload=False, save=False, odeClass=ScipyPDReactiveODE):
-        if reload:
-            return self.load_grid()
-
-        i0 = 2  # doesn't matter as long as you pass cik0
-
-        bdfgrid = PDReactiveGrid()
-
-        bdfgrid.solve(self.rxn, odeClass, i0, [
-                      'T', 'p'], self.T, self.P, end_t, Cik0=self.Cik0, mi0=self.mi0)
-
-        if save:
-            self.save_grid(bdfgrid)
-
-        return bdfgrid
-
-    def plot_reaction_grid(self, bdfgrid, plot_phases=True, figure_background=None):
-        import matplotlib.pyplot as plt
-
-        figure_xlim = [self.Tmin, self.Tmax]
-        figure_ylim = [self.Pmin, self.Pmax]
-
-        def decorate(pdrgd):
-            def new_setup_axes(self, axi):
-                if (figure_background is not None):
-                    img = plt.imread(figure_background)
-                    ip = axi.imshow(img)
-                axi.axis('off')
-                ax = axi.inset_axes([0.001, 0.006, 0.995, 0.991])
-                ax.patch.set_alpha(0.0)
-
-                ax.set_xlabel("Temperature (K)")
-                ax.set_ylabel("Pressure (GPa)")
-                ax.set_xlim(figure_xlim)
-                ax.set_ylim(figure_ylim)
-                return ax
-
-            # replace the display with newdisplay
-            pdrgd.setup_axes = new_setup_axes
-
-            # return the modified student
-            return pdrgd
-
-        bdfdiag = decorate(PDReactiveGridDiagnostics)(self.rxn, bdfgrid)
-        # s=bdfdiag.plot_rho()
-        # s.set_clim([25., 38.])
-        # s.set_cmap('jet')
-
-        s2 = bdfdiag.plot_rho_contours()
-
-        if plot_phases:
-            bdfdiag.plot_phases()
-        return bdfdiag
-
-    def plot_reaction_profile(self, bdfgrid, plot_phases=True, figure_background=None):
-        print("plot profile")
-        import matplotlib.pyplot as plt
-
-        figure_xlim = [self.T[0], self.T[-1]]
-        def decorate(pdrgd):
-                def new_setup_axes(self, ax):
-                    ax.set_xlabel("Temperature (K)")
-                    ax.set_xlim(figure_xlim)   
-                    return ax
-
-                # replace the display with newdisplay
-                pdrgd.setup_axes = new_setup_axes
-
-                # return the modified student
-                return pdrgd
-        
-        print("Decorate")
-        bdfdiag = decorate(PDReactiveProfileDiagnostics)(self.rxn, bdfgrid)
-
-        print("plot_rho_contours")
-        s2 = bdfdiag.plot_rho_contours()
-
-        if plot_phases:
-            print("plot_phases")
-            bdfdiag.plot_phases()
-        print("plot_path")
-        bdfdiag.plot_path()
-        return bdfdiag
 
 def x2c(rxn, Xik0):
     return np.asarray([c for (i, ph) in enumerate(rxn.phases()) for c in ph.x_to_c(Xik0[i])])
@@ -269,10 +37,9 @@ def phi2F(rxn, phii, cik, T=900.,p=10000.,eps=1e-5):
 
 def get_reaction(rxnName):
     pv = repr(sys.version_info.major)+'.'+repr(sys.version_info.minor)
-    path = os.path.join(os.path.pardir, 'database', 'install', rxnName,
+    path = os.path.join(os.path.pardir, 'tcg_slb','database', 'install', rxnName,
                         'lib', 'python'+pv, 'site-packages/')  # the final slash is necessary
     sys.path.append(path)
-    print(path)
     tcgdb = __import__('py_'+rxnName)
     importer = getattr(tcgdb, rxnName)
     rxn = importer()
@@ -280,10 +47,10 @@ def get_reaction(rxnName):
 
 def get_names(rxn):
     phase_names = [p.name() for p in rxn.phases()]
-    phase_names = [s.replace("_slb_ph","") for s in phase_names]
+    phase_names = [s.replace("_stx21_ph","") for s in phase_names]
 
     endmember_names = [em.name() for p in rxn.phases() for em in p.endmembers()]
-    endmember_names = [s.replace("_slb_em","") for s in endmember_names]
+    endmember_names = [s.replace("_stx21_em","") for s in endmember_names]
     return phase_names, endmember_names
 
 def latex_reactions(rxn):
@@ -291,30 +58,30 @@ def latex_reactions(rxn):
     rudnick_2014_lower_crust
     Reaction object: eclogitization_agu18_stx21_rx
 
-    Phase 0 Clinopyroxene_slb_ph (cpx)
-         Endmember 0 Diopside_slb_em : CaMgSi2O6_(cpx)
-         Endmember 1 Hedenbergite_slb_em : CaFeSi2O6_(cpx)
-         Endmember 2 Clinoenstatite_slb_em : Mg2Si2O6_(cpx)
-         Endmember 3 CaTschermaks_slb_em : CaAl2SiO6_(cpx)
-         Endmember 4 Jadeite_slb_em : NaAlSi2O6_(cpx)
-    Phase 1 Orthopyroxene_slb_ph (opx)
-         Endmember 0 Enstatite_slb_em : Mg2Si2O6_(opx)
-         Endmember 1 Ferrosilite_slb_em : Fe2Si2O6_(opx)
-         Endmember 2 MgTschermaks_slb_em : MgAl2SiO6_(opx)
-         Endmember 3 OrthoDiopside_slb_em : CaMgSi2O6_(opx)
-    Phase 2 Quartz_slb_ph (qtz)
-         Endmember 0 Quartz_slb_em : SiO2_(qtz)
-    Phase 3 Feldspar_slb_ph (plg)
-         Endmember 0 Anorthite_slb_em : CaAl2Si2O8_(plg)
-         Endmember 1 Albite_slb_em : NaAlSi3O8_(plg)
-    Phase 4 Garnet_slb_ph (gt)
-         Endmember 0 Pyrope_slb_em : Mg3Al2Si3O12_(gt)
-         Endmember 1 Almandine_slb_em : Fe3Al2Si3O12_(gt)
-         Endmember 2 Grossular_slb_em : Ca3Al2Si3O12_(gt)
-         Endmember 3 MgMajorite_slb_em : Mg4Si4O12_(gt)
-         Endmember 4 NaMajorite_slb_em : Na2Al2Si4O12_(gt)
-    Phase 5 Kyanite_slb_ph (ky)
-         Endmember 0 Kyanite_slb_em : Al2SiO5_(ky)
+    Phase 0 Clinopyroxene_stx21_ph (cpx)
+         Endmember 0 Diopside_stx21_em : CaMgSi2O6_(cpx)
+         Endmember 1 Hedenbergite_stx21_em : CaFeSi2O6_(cpx)
+         Endmember 2 Clinoenstatite_stx21_em : Mg2Si2O6_(cpx)
+         Endmember 3 CaTschermaks_stx21_em : CaAl2SiO6_(cpx)
+         Endmember 4 Jadeite_stx21_em : NaAlSi2O6_(cpx)
+    Phase 1 Orthopyroxene_stx21_ph (opx)
+         Endmember 0 Enstatite_stx21_em : Mg2Si2O6_(opx)
+         Endmember 1 Ferrosilite_stx21_em : Fe2Si2O6_(opx)
+         Endmember 2 MgTschermaks_stx21_em : MgAl2SiO6_(opx)
+         Endmember 3 OrthoDiopside_stx21_em : CaMgSi2O6_(opx)
+    Phase 2 Quartz_stx21_ph (qtz)
+         Endmember 0 Quartz_stx21_em : SiO2_(qtz)
+    Phase 3 Feldspar_stx21_ph (plg)
+         Endmember 0 Anorthite_stx21_em : CaAl2Si2O8_(plg)
+         Endmember 1 Albite_stx21_em : NaAlSi3O8_(plg)
+    Phase 4 Garnet_stx21_ph (gt)
+         Endmember 0 Pyrope_stx21_em : Mg3Al2Si3O12_(gt)
+         Endmember 1 Almandine_stx21_em : Fe3Al2Si3O12_(gt)
+         Endmember 2 Grossular_stx21_em : Ca3Al2Si3O12_(gt)
+         Endmember 3 MgMajorite_stx21_em : Mg4Si4O12_(gt)
+         Endmember 4 NaMajorite_stx21_em : Na2Al2Si4O12_(gt)
+    Phase 5 Kyanite_stx21_ph (ky)
+         Endmember 0 Kyanite_stx21_em : Al2SiO5_(ky)
 
     Reaction 0
          0.666667 CaFeSi2O6_(cpx) + 0.333333 Mg2Si2O6_(opx) -> 0.666667 CaMgSi2O6_(cpx) + 0.333333 Fe2Si2O6_(opx)
@@ -384,3 +151,55 @@ def composition_to_label(c):
         "bhowany_2018_hol2a": "Bhowany et al. (2018) eclogite (hol2a)"
     }
     return dic.get(c, default)
+
+def custom_solve(ode:ScipyPDReactiveODE, T:float, p:float, mi0:List[float], Cik0:List[float], end:float, **kwargs):
+
+    max_steps = kwargs.pop("max_steps", np.inf)
+
+    ode.set_initial_params(T,p,mi0,Cik0,**kwargs)
+
+    rtol   = kwargs.get('rtol', 1.e-5)
+    atol   = kwargs.get('atol', 1.e-9)
+
+    u0 = np.concatenate((mi0,Cik0))
+
+    tic = time.perf_counter()
+
+    t0 = 0.
+    solver = BDF(ode.rhs, t0, u0, float(end), rtol=rtol, atol=atol, jac=ode.jac)
+    ts = [t0]
+    ys = [u0]
+    interpolants = []
+    status = None
+    num_steps = 0
+    while status is None:
+        message = solver.step()
+    
+        if solver.status == 'finished':
+            status = 0
+        elif solver.status == 'failed':
+            status = -1
+            break
+
+        if num_steps == max_steps:
+            status = 2
+        
+        t_old = solver.t_old
+        t = solver.t
+        y = solver.y
+        output = solver.dense_output()
+        interpolants.append(output)
+        ts.append(t)
+        ys.append(y)
+        num_steps = num_steps + 1
+        
+    message = MESSAGES.get(status, message)
+    ts = np.array(ts)
+    ys = np.vstack(ys).T
+    ode_solution = OdeSolution(ts, interpolants)
+    sol = OdeResult(t=ts, y=ys, sol=ode_solution,
+            nfev=solver.nfev, njev=solver.njev, nlu=solver.nlu,
+            status=status, message=message, success=status >= 0)
+    ode.sol = sol
+    toc = time.perf_counter()
+    ode.stime = toc-tic
