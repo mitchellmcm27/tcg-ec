@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+
+import os,sys
+import pandas as pd
+import ast
+from thermocodegen.coder import coder
+import sympy as sym
+
+sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'python'))
+from tcg_slb.phase import SLBPhase
+
+
+reference= 'generate_phases' 
+
+class Stx21Phase(SLBPhase):
+    W_Psarr = None
+
+    def __init__(self,name,abbrev,reference,endmember_names,\
+                      formula_str,conversion_strs,\
+                      **kwargs):
+        super(Stx21Phase, self).__init__(name,abbrev,reference,endmember_names,\
+                formula_str,conversion_strs,\
+                **kwargs)
+        W = kwargs.get("W")
+        W_V   = kwargs.get('W_V', [])
+        W_Vname = []
+        W_Vsyms = []
+        if len(W) > 0:
+            W_Vname = ['W_V_{}{}'.format(i,j) for j in range(2,self.nc+1) for i in range(1,j)]
+            W_Vsyms = [sym.symbols('W_V_{}{}'.format(i,j), real=True) for j in range(2,self.nc+1) for i in range(1,j)]
+            self.W_Vsarr = [[0 for j in range(self.nc)] for i in range(self.nc)]
+            k = 0
+            for i in range(1,self.nc):
+                for j in range(i):
+                    self.W_Vsarr[i][j] = W_Vsyms[k]
+                    self.W_Vsarr[j][i] = W_Vsyms[k]
+                    k = k + 1
+        self.param_strs = self.param_strs + W_Vname
+        self.param_unit = self.param_unit + ['J/mol/bar']*len(W_Vsyms) # J/mol/bar = 10*cm^3/mol
+        self.param_syms = self.param_syms + W_Vsyms
+        self.param_vals.update(dict([(W_Vname[i],W_V[i]) for i in range(len(W_V))]))
+
+    def G_landau_2022(self):
+        if self.TC0 is None: return 0
+
+        # See SLB 2022 GJI
+        # three critical terms: TC0, VD, SD
+        # These are zero for most endmembers,
+        # this can lead to nans and infinities if not careful
+
+        # for species with landau transitions
+        # TC0 > 0 (commonly 5 K)
+        # SD > 0 (though vanishingly small for staurolite)
+        # VD >= 0 (but most commonly zero!)
+
+        # added conditional check for zero
+        TC = [sym.S.Zero if self.TC0[i]==0 else self.TC0syms[i] + self.VDsyms[i]*self.P/self.SDsyms[i] for i in range(len(self.TC0))]
+
+        #Q2 changed based on SLB 2022 GJI
+        #Q2 = [sym.sqrt(1-self.T/TC[i]) for i in range(len(TC))]
+        # added conditional check for zero
+        # following SLB 2022 discussion in appendex, limit Q to a maximum value of 2 (Q**2  <= 4)
+        Q2 = [sym.Piecewise((sym.S.Zero, self.T>=TC[i]), (sym.Min(sym.S(4), sym.sqrt((TC[i]-self.T)/self.TC0syms[i])), True)) for i in range(len(TC))]
+
+        G_landau_hip = [sym.S.Zero if self.TC0[i]==0 else self.n[i]*self.SDsyms[i]*((self.T-TC[i])*(Q2[i]-sym.S(1)) + self.TC0syms[i]*(Q2[i]*Q2[i]*Q2[i]-sym.S(1))/sym.S(3)) for i in range(len(TC))]
+        G_landau_hip = [G_landau_hip[i].simplify() for i in range(len(TC))]
+        G_landau = sum(G_landau_hip)
+        return G_landau
+    
+    def G_excess_2022(self):
+        if len(self.Wsarr)==0: return 0
+        W = sym.Matrix(self.Wsarr)
+        W_V = sym.Matrix(self.W_Vsarr)
+        for i in range(self.nc):
+            for j in range(self.nc):
+                # modified to add the W_V term, which is multiplied by pressure
+                W[i,j] = (W[i,j] + W_V[i,j]*self.P)/(self.dsyms[i] + self.dsyms[j])
+        Xdsum = sum([self.X[i]*self.dsyms[i] for i in range(self.nc)])
+        Phi = sym.diag(*self.dsyms)*self.X/Xdsum
+        G_excess = self.nT*Xdsum*Phi.T*W*Phi
+        G_excess = G_excess[0].simplify()
+        return G_excess
+    
+    def G_2022(self):
+        return self.G_ss_default() + self.G_config_default() + self.G_excess_2022() + self.G_landau_2022()
+    
+def generate_phases(outdir,stixrude_version):
+  ph_postfix = "_stx21_ph" if stixrude_version == 21 else "_slb_ph"
+  csvfile = "stx21_phases.csv" if stixrude_version == 21 else "slb_phases.csv"
+  em_postfix = "_stx21_em" if stixrude_version == 21 else "_slb_em"
+  csv_headers = ['endmember_names','conversion_strs','X','d','W','sites','TC0','VD','SD']
+  if stixrude_version == 21:
+      csv_headers.append('W_V')
+  def literal_return(val):
+      try:
+          return ast.literal_eval(val)
+      except (ValueError, SyntaxError) as e:
+          return None
+  converter = dict([(h,literal_return) for h in csv_headers])
+  df = pd.read_csv(os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'data', csvfile),skipinitialspace=True,converters=converter)
+
+  try:
+      os.mkdir(outdir)
+  except FileExistsError:
+      pass
+
+  for i, row in df.iterrows():
+      values_dict = row.to_dict()
+      name = values_dict.pop('name').replace('-','_')+ph_postfix
+      abbrev = values_dict.pop('abbrev')
+      endmember_names = values_dict.pop('endmember_names')
+      endmember_names = [em+em_postfix for em in endmember_names]
+      phase = Stx21Phase(name, abbrev, reference, endmember_names, **values_dict)
+      if stixrude_version == 21:
+        phase.G = phase.G_2022()
+        # else, use the default G
+      print(phase.tofile(outdir))
+
+if __name__ == "__main__":
+    import argparse
+    import os
+
+    parser = argparse.ArgumentParser( \
+                           description="""Generate phmls for SLB thermodynamic database.""")
+    parser.add_argument('-o', '--outdir', action='store', metavar='outdir', 
+                        default=os.path.join(os.path.dirname(__file__), os.path.pardir, 'database', 'phases'), type=str, required=False,
+                        help='Output directory for phml files (defaults to ../database/phases relative to script).')
+    parser.add_argument('-v', '--stixrude_verison', action="store", metavar="stixrude_version", default=11, type=int, required=False, help='Version of the Stixrude database as an integer (defaults to 11 for 2011).')
+    args = parser.parse_args()
+
+    generate_phases(args.outdir,args.stixrude_version)
+
+

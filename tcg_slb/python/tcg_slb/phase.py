@@ -33,7 +33,7 @@ class SLBPhase:
     Rsym = None
     
     G = None
-    
+
     def __init__(self,name,abbrev,reference,endmember_names,\
                       formula_str,conversion_strs,\
                       **kwargs):
@@ -47,7 +47,9 @@ class SLBPhase:
         SD    = kwargs.get('SD', None)
         R     = kwargs.get('R', 8.31446261815324)
         T_r   = kwargs.get('T_r', 300.0)
-        
+        W = kwargs.get("W")
+        W_V   = kwargs.get('W_V', None)
+
         self.name   = name
         self.abbrev = abbrev
         self.reference = reference
@@ -76,16 +78,23 @@ class SLBPhase:
         self.dsyms = [sym.symbols('d_{}'.format(i), real=True) for i in range(len(d))]
         Wname = []
         Wsyms = []
+        W_Vname = []
+        W_Vsyms = []
         self.Wsarr = []
         if len(W) > 0:
             Wname = ['W_{}{}'.format(i,j) for j in range(2,self.nc+1) for i in range(1,j)]
             Wsyms = [sym.symbols('W_{}{}'.format(i,j), real=True) for j in range(2,self.nc+1) for i in range(1,j)]
             self.Wsarr = [[0 for j in range(self.nc)] for i in range(self.nc)]
+            W_Vname = ['W_V_{}{}'.format(i,j) for j in range(2,self.nc+1) for i in range(1,j)]
+            W_Vsyms = [sym.symbols('W_V_{}{}'.format(i,j), real=True) for j in range(2,self.nc+1) for i in range(1,j)]
+            self.W_Vsarr = [[0 for j in range(self.nc)] for i in range(self.nc)]
             k = 0
             for i in range(1,self.nc):
                 for j in range(i):
                     self.Wsarr[i][j] = Wsyms[k]
                     self.Wsarr[j][i] = Wsyms[k]
+                    self.W_Vsarr[i][j] = W_Vsyms[k]
+                    self.W_Vsarr[j][i] = W_Vsyms[k]
                     k = k + 1
         
         if TC0 is not None and not numpy.isnan(numpy.sum(TC0)):
@@ -112,7 +121,12 @@ class SLBPhase:
                           ['J/mol']*len(Wsyms)
         self.param_syms = [self.Rsym, self.Trsym]+\
                           self.dsyms+\
-                          Wsyms
+                          W_Vsyms
+        if W_V is not None:
+            self.param_strs += W_Vname
+            self.param_unit += ['J/mol/bar']*len(W_Vsyms)
+            self.param_syms += W_Vsyms
+
         if self.TC0 is not None:
             self.param_strs += ['T_C0_{}'.format(i) for i in range(len(self.TC0))]
             self.param_strs += ['V_D_{}'.format(i) for i in range(len(self.VD))]
@@ -128,6 +142,8 @@ class SLBPhase:
                            'T_r' : T_r}
         self.param_vals.update(dict([('d_{}'.format(i),d[i]) for i in range(len(d))]))
         self.param_vals.update(dict([(Wname[i],W[i]) for i in range(len(W))]))
+        if W_V is not None:
+            self.param_vals.update(dict([(W_Vname[i],W_V[i]) for i in range(len(W_V))]))
         if self.TC0 is not None:
             self.param_vals.update(dict([('T_C0_{}'.format(i),self.TC0[i]) for i in range(len(self.TC0))]))
             self.param_vals.update(dict([('V_D_{}'.format(i),self.VD[i]) for i in range(len(self.VD))]))
@@ -179,6 +195,49 @@ class SLBPhase:
     
     def G_default(self):
         return self.G_ss_default() + self.G_config_default() + self.G_excess_default() + self.G_landau_default()
+    def G_landau_2021(self):
+        if self.TC0 is None: return 0
+
+        # See SLB 2021 GJI
+        # three critical terms: TC0, VD, SD
+        # These are zero for most endmembers,
+        # this can lead to nans and infinities if not careful
+
+        # for species with landau transitions
+        # TC0 > 0 (commonly 5 K)
+        # SD > 0 (though vanishingly small for staurolite)
+        # VD >= 0 (but most commonly zero!)
+
+        # added conditional check for zero
+        TC = [sym.S.Zero if self.TC0[i]==0 else self.TC0syms[i] + self.VDsyms[i]*self.P/self.SDsyms[i] for i in range(len(self.TC0))]
+
+        #Q2 changed based on SLB 2021 GJI
+        #Q2 = [sym.sqrt(1-self.T/TC[i]) for i in range(len(TC))]
+        # added conditional check for zero
+        # following SLB 2021 discussion in appendex, limit Q to a maximum value of 2 (Q**2  <= 4)
+        Q2 = [sym.Piecewise((sym.S.Zero, self.T>=TC[i]), (sym.Min(sym.S(4), sym.sqrt((TC[i]-self.T)/self.TC0syms[i])), True)) for i in range(len(TC))]
+
+        G_landau_hip = [sym.S.Zero if self.TC0[i]==0 else self.n[i]*self.SDsyms[i]*((self.T-TC[i])*(Q2[i]-sym.S(1)) + self.TC0syms[i]*(Q2[i]*Q2[i]*Q2[i]-sym.S(1))/sym.S(3)) for i in range(len(TC))]
+        G_landau_hip = [G_landau_hip[i].simplify() for i in range(len(TC))]
+        G_landau = sum(G_landau_hip)
+        return G_landau
+    
+    def G_excess_2021(self):
+        if len(self.Wsarr)==0: return 0
+        W = sym.Matrix(self.Wsarr)
+        W_V = sym.Matrix(self.W_Vsarr)
+        for i in range(self.nc):
+            for j in range(self.nc):
+                # modified to add the W_V term, which is multiplied by pressure
+                W[i,j] = (W[i,j] + W_V[i,j]*self.P)/(self.dsyms[i] + self.dsyms[j])
+        Xdsum = sum([self.X[i]*self.dsyms[i] for i in range(self.nc)])
+        Phi = sym.diag(*self.dsyms)*self.X/Xdsum
+        G_excess = self.nT*Xdsum*Phi.T*W*Phi
+        G_excess = G_excess[0].simplify()
+        return G_excess
+    
+    def G_2021(self):
+        return self.G_ss_default() + self.G_config_default() + self.G_excess_2021() + self.G_landau_2021()
 
     def add_parameter(self, name, unit, symbol, value):
         self.param_strs.append(name)
@@ -209,6 +268,7 @@ class SLBPhase:
         values_dict = self.model.get_values()
         values_dict.update(self.values_dict())
         self.model.set_values(values_dict)
+        print(values_dict)
     
     def tofile(self,outdir):
         if self.G is None: self.G = self.G_default()
