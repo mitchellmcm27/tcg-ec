@@ -76,7 +76,7 @@ Arguments can be passed as follows to customize the model runs:
 
 ## Model outputs
 
-All outputs are saved to the **models/figs** directory.
+All outputs are saved to the **models/output** directory.
 Outputs will be automatically grouped into subdirectories based on the name of the reaction and composition.
 
 ## Perple_X: Adding new compositions
