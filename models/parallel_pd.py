@@ -1,7 +1,8 @@
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'tcg_slb','python'))
 
-from mcm.tcg import x2c,phi2F,get_reaction,composition_to_label, custom_solve
+from python.tcg import x2c,phi2F,get_reaction,composition_to_label, custom_solve
+from python.perplex import ppx_point_composition, ppx_rho_interpolator
 import numpy as np
 from matplotlib import pyplot as plt
 from pathlib import Path
@@ -11,7 +12,6 @@ from tcg_slb.phasediagram.base import GPa2Bar
 from multiprocessing import Pool
 import multiprocessing as mp
 from scipy.interpolate import griddata
-from mcm.perplex import ppx_point_composition, ppx_rho_interpolator
 
 SMALL_SIZE = 9
 MEDIUM_SIZE = 11
@@ -224,7 +224,7 @@ interp_py = ppx_rho_interpolator("xu_2008_pyrolite", "1000kg/m3")
 rho_pyrolite_g = interp_py((T_g, P_g))
 
 # Create folders if needed
-outputPath = Path("figs",reference,composition,rxn_name)
+outputPath = Path("output",reference,composition,rxn_name)
 outputPath.mkdir(parents=True, exist_ok=True)
 
 def save_current_fig_as(name):

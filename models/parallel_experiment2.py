@@ -2,7 +2,7 @@ import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'tcg_slb','python'))
 
 import pickle
-from mcm.tcg import get_reaction,get_names,x2c,phi2F
+from python.tcg import get_reaction,get_names,x2c,phi2F
 import numpy as np
 import numpy.ma as ma
 from matplotlib import pyplot as plt
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from multiprocessing import Pool
 import multiprocessing as mp
-from mcm.perplex import ppx_rho_interpolator, ppx_point_composition
+from python.perplex import ppx_rho_interpolator, ppx_point_composition
 from scipy.integrate import solve_ivp
 from geotherm_steady import geotherm_steady
 import csv
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 # Ready output directory #
 ##########################
 
-output_path = Path("figs",reference,rxn_name,prefix) if prefix is not None else Path("figs",reference,rxn_name)
+output_path = Path("output",reference,rxn_name,prefix) if prefix is not None else Path("output",reference,rxn_name)
 output_path.mkdir(parents=True, exist_ok=True)
 pickle_path = Path(output_path,"_outs.pickle")
 

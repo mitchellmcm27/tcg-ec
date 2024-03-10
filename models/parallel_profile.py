@@ -2,7 +2,7 @@ import sys, os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir, 'tcg_slb','python'))
 
-from mcm.tcg import get_reaction,latex_reactions,get_names,x2c,phi2F,custom_solve
+from python.tcg import get_reaction,latex_reactions,get_names,x2c,phi2F,custom_solve
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ from tcg_slb.base import GPa2Bar
 from tcg_slb.phasediagram.scipy import ScipyPDReactiveODE
 import multiprocessing as mp
 from multiprocessing import Pool
-from mcm.perplex import ppx_point_composition, ppx_profile_data
+from python.perplex import ppx_point_composition, ppx_profile_data
 
 ### ------------ INPUTS -------------------
 reference= 'parallel_profile'
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
 #====================================================
 
-outputPath = Path("figs",reference,composition,rxn_name)
+outputPath = Path("output",reference,composition,rxn_name)
 outputPath.mkdir(parents=True, exist_ok=True)
 
 df = ppx_profile_data(composition)
